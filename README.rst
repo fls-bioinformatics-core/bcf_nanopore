@@ -1,6 +1,9 @@
 bcf_nanopore
 ============
 
+.. image:: https://github.com/fls-bioinformatics-core/bcf_nanopore/workflows/Python%20CI/badge.svg
+   :target: https://github.com/fls-bioinformatics-core/bcf_nanopore/actions?query=workflow%3A%22Python+CI%22
+
 Overview
 --------
 
