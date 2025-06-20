@@ -1,0 +1,51 @@
+bcf_nanopore
+============
+
+Overview
+--------
+
+Provides Python utilities to help with the management of sequencing
+data from Oxford Nanopore Technologies (ONT) instruments (specifically
+PromethION data) within the Bioinformatics Core Facility (BCF) at the
+University of Manchester.
+
+Installation
+------------
+
+It is recommended to install the code by first ``git cloning`` the
+repository, and then using ``pip`` to install into a Python virtual
+environment using ``pip``, e.g.
+
+::
+
+   $ git clone https://github.com/fls-bioinformatics-core/bcf_nanopore.git
+   $ virtualenv -p python3 ./venv
+   $ source ./venv/bin/activate
+   $ pip install -r ./bcf_nanopore/requirements.txt
+   $ pip install ./bcf_nanopore/
+    
+
+*NB please use these instructions only as a starting point*
+
+Usage
+-----
+
+The package provides a single utility called ``bcf_nanopore`` which
+in turn provides a set of subcommands.
+
+To get general help run:
+
+::
+
+   $ bcf_nanopore -h
+
+The main commands are:
+
+* ``info``: reports information about a PromethION project directory
+  containing outputs from one or more runs of the sequencer
+* ``setup``: creates an "analysis" directory for a PromethION
+  project
+* ``fetch``: copies a subset of data from the sequencer output for
+  use with downstream analysis
+* ``report``: reports the metadata from a PromethION project analysis
+  directory

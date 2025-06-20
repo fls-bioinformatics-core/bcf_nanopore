@@ -1,0 +1,8 @@
+\#*\#
+.\#*
+*~
+*.pyc
+*.bak
+*.egg-info
+bcf_nanopore.ini
+build
