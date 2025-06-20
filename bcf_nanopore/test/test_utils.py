@@ -34,11 +34,11 @@ class TestMetadataTabFile(unittest.TestCase):
                                            "Barcode",
                                            "FlowCellID"])
         contents = "#SampleName\tBarcode\tFlowCellID\n"
-        self.assertEquals(len(metadata), 0)
+        self.assertEqual(len(metadata), 0)
         # Save to an actual file and check its contents
         metadata.save(self.metadata_file)
         with open(self.metadata_file, 'rt') as fp:
-            self.assertEquals(fp.read(), contents)
+            self.assertEqual(fp.read(), contents)
 
     def test_create_new_metadata_tab_file(self):
         """
