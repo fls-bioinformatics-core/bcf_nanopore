@@ -304,8 +304,8 @@ def bcf_nanopore_main():
                            help="applications(s) associated with project")
     setup_cmd.add_argument('-o', '--organism', action='store',
                            help="organism(s) associated with project")
-    setup_cmd.add_argument('-s', '--sample_sheet', action='store',
-                           help="CSV file with 'sample,barcode,flowcell' "
+    setup_cmd.add_argument('-s', '--samples_csv', action='store',
+                           help="CSV file with 'sample,barcode[,flowcell]' "
                            "information")
 
     # Report command
@@ -351,7 +351,7 @@ def bcf_nanopore_main():
     elif args.command == "setup":
         setup(args.project_dir, user=args.user, PI=args.pi,
               application=args.application, organism=args.organism,
-              sample_sheet_csv=args.sample_sheet)
+              samples_csv=args.samples_csv)
     elif args.command == "metadata":
         metadata(args.file, dump_json=args.json)
     elif args.command == "report":
