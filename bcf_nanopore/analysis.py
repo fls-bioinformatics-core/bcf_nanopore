@@ -236,9 +236,34 @@ locations).""")
         """
         Report information on the project analysis directory
 
+        Reporting mode can be either "summary" (key-value pairs,
+        one per line) or "tsv" (one line of tab-delimited values).
+
+        Available fields are:
+
+        - name (project name)
+        - id (project ID)
+        - datestamp (project datestamp)
+        - platform (platform name)
+        - user (associated users)
+        - pi (associated PIs)
+        - nsamples (number of samples)
+        - #samples (alias for 'nsamples')
+        - samples (comma-separated list of sample names)
+        - sample_names (alias for 'samples')
+        - primary_data (path to primary data)
+        - analysis_dir (path to the analysis directory)
+        - comments (associated comments)
+        - null (empty value)
+
+        A blank field name is the same as 'null'.
+
         Arguments:
             mode (str): reporting mode
             fields (str): comma separated list of field names
+
+        Returns:
+          String: the report text.
         """
         delimiter = {
             'summary': '\n',
