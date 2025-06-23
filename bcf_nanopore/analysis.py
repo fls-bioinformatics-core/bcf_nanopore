@@ -222,9 +222,9 @@ found in the primary data directory (renamed to identify the associated
 locations).""")
         # Report information
         print(self.report(mode="summary",
-                          fields="name,id,datestamp,platform,analysis_dir,,"
-                                 "user,pi,application,organism,primary_data,"
-                                 "comments"))
+                          fields="name,id,primary_data,analysis_dir,"
+                          "user,pi,application,organism,nsamples,"
+                          "sample_names"))
 
     def exists(self):
         """
