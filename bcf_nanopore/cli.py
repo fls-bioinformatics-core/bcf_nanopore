@@ -98,12 +98,38 @@ def metadata(metadata_file, dump_json=False):
 
 
 def setup(project_dir, user, PI, application=None, organism=None,
-          sample_sheet_csv=None, top_dir=None):
+          samples_csv=None, top_dir=None):
     """
     Set up a new analysis directory for a Promethion project
     """
-    # Read source data
+    # Read source project data
     project_name = os.path.basename(os.path.normpath(project_dir))
+    # Fetch sample information
+    samples = []
+    if samples_csv:
+        # Samples data should be a CSV format file with an
+        # initial header line (which is ignored) followed by
+        # lines with either 2 or 3 fields
+        prev_flowcell = None
+        ignore_line = True
+        with open(samples_csv, "rt") as fp:
+            for line in fp:
+                if ignore_line:
+                    # Ignore first line
+                    ignore_line = False
+                    continue
+                try:
+                    # Three fields: sample, barcode, flowcell ID
+                    sample, barcode, flowcell = line.strip().split(',')
+                except ValueError:
+                    # Two fields: sample, barcode
+                    # Assumes same flow cell as previous line
+                    sample, barcode = line.strip().split(',')
+                if flowcell:
+                    prev_flowcell = flowcell
+                else:
+                    flowcell = prev_flowcell
+                samples.append((sample, barcode, flowcell))
     # Create analysis dir
     if top_dir is None:
         top_dir = os.getcwd()
@@ -115,7 +141,7 @@ def setup(project_dir, user, PI, application=None, organism=None,
                         PI=PI,
                         application=application,
                         organism=organism,
-                        sample_sheet=sample_sheet_csv)
+                        samples=samples)
 
 
 def report(path, mode="summary", fields=None, template=None, out_file=None):
