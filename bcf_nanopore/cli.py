@@ -101,6 +101,26 @@ def setup(project_dir, user, PI, application=None, organism=None,
           samples_csv=None, top_dir=None):
     """
     Set up a new analysis directory for a Promethion project
+
+    The analysis directory will be called "<PROJECT>_analysis".
+
+    Information about the samples can be supplied via a CSV
+    file with the format:
+
+    ::
+
+        Header line
+        SAMPLE,BARCODE[,FLOWCELL]
+
+    Arguments:
+      project_dir (str): path to PromethION project
+      user (str): user(s) associated with the project
+      PI (str): principal investigator(s)
+      application (str): experimental application(s)
+      organism (str): associated origanism(s)
+      samples_csv (str): path to CSV file with sample information
+      top_dir (str): directory to make analysis directory
+        under (defaults to current directory)
     """
     # Read source project data
     project_name = os.path.basename(os.path.normpath(project_dir))
