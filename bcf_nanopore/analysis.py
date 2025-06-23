@@ -84,7 +84,7 @@ class ProjectAnalysisDir:
             self.samples_info = SamplesInfo()
 
     def create(self, project_dir, user, PI, application, organism,
-               sample_sheet=None):
+               sample_sheet=None, samples=[]):
         """
         Creates a new PromethION project analysis directory
 
@@ -94,9 +94,6 @@ class ProjectAnalysisDir:
         Optionally information about samples in the project
         can also be supplied.
 
-        FIXME: supply samples via dictionary, read data from
-        a fix via the CLI?
-
         Arguments:
           project_dir (str): path to PromethION project
             directory
@@ -104,10 +101,8 @@ class ProjectAnalysisDir:
           PI (str): name of PI (principal investigator)
           application (str): application type
           organism (str): associated organism(s)
-          sample_sheet (str): optional, path to an external
-            CSV "sample sheet" file with three columns
-            corresponding to sample name, barcode and flow
-            cell ID
+          samples (list): optional, list of tuples
+            of the form (SAMPLE, BARCODE, FLOWCELL)
         """
         if self.exists():
             raise OSError("%s: already exists" % self.path)
@@ -127,31 +122,17 @@ class ProjectAnalysisDir:
         self.info['id'] = self._make_project_id(self.info['name'])
         self.info['platform'] = "promethion"
         self.info.save(filen=self.project_info_file)
+        # Samples
         # Copy in data from external sample sheet
         # Sample sheet should be a CSV format file with an
         # initial header line (which is ignored) followed by
         # lines with either 2 or 3 fields
-        if sample_sheet is not None:
-            prev_flowcell = None
-            ignore_line = True
-            with open(sample_sheet, 'rt') as fp:
-                for line in fp:
-                    if ignore_line:
-                        # Ignore first line
-                        ignore_line = False
-                        continue
-                    try:
-                        # Three fields: sample, barcode, flowcell ID
-                        sample, barcode, flowcell = line.strip().split(',')
-                    except ValueError:
-                        # Two fields: sample, barcode
-                        # Assumes same flow cell as previous line
-                        sample, barcode = line.strip().split(',')
-                    if flowcell:
-                        prev_flowcell = flowcell
-                    else:
-                        flowcell = prev_flowcell
-                    self.samples_info.add_sample(sample, barcode, flowcell)
+        if samples:
+            for sample in samples:
+                sample_name, barcode, flowcell = sample
+                self.samples_info.add_sample(sample_name,
+                                             barcode,
+                                             flowcell)
             self.samples_info.save(fileout=self.samples_file)
         # Collate flow cell and base calls information into TSV
         project = ProjectDir(project_dir)

@@ -54,22 +54,15 @@ class TestProjectAnalysisDir(unittest.TestCase):
         self.assertTrue(Path(analysis_dir_path).joinpath("ScriptCode").is_dir())
         self.assertTrue(Path(analysis_dir_path).joinpath("logs").is_dir())
 
-    def test_project_analysis_dir_create_with_samplesheet(self):
+    def test_project_analysis_dir_create_with_samples(self):
         """
-        ProjectAnalysisDir: create new analysis directory with sample sheet
+        ProjectAnalysisDir: create new analysis directory with samples
         """
         data_dir = MockPromethionDataDir("PromethION_Project_001_PerGynt")
         data_dir.add_flow_cell("20240513_0829_1A_PAW15419_465bb23f", run="PG1-4_20240513", pool="PG1-2")
         data_dir.add_basecalls_dir(str(Path("PG1-4_20240513").joinpath("Rebasecalling","PG1-2")),
                                    flow_cell_name="20240513_0829_1A_PAW15419_465bb23f")
         project_dir = data_dir.create(self.wd)
-        sample_sheet = Path(self.wd).joinpath("sample_sheet.csv")
-        sample_sheet.write_text("""Sample name,Barcode,Flow cell ID
-PG1,NB03,PAW15419
-PG2,NB04,
-PG3,NB05,PAW15420
-PG4,NB06,
-""")
         analysis_dir_path = str(Path(self.wd).joinpath("PromethION_Project_001_PerGynt_analysis"))
         analysis_dir = ProjectAnalysisDir(analysis_dir_path)
         self.assertFalse(analysis_dir.exists())
@@ -78,7 +71,10 @@ PG4,NB06,
                             PI="Henrik Ibsen",
                             application="Methylation study",
                             organism="Human",
-                            sample_sheet=str(sample_sheet))
+                            samples=[("PG1", "NB03", "PAW15419"),
+                                     ("PG2", "NB04", "PAW15419"),
+                                     ("PG3", "NB05", "PAW15420"),
+                                     ("PG4", "NB06", "PAW15420")])
         self.assertTrue(analysis_dir.exists())
         self.assertEqual(analysis_dir.path, analysis_dir_path)
         self.assertEqual(analysis_dir.info.name, "PromethION_Project_001_PerGynt")
