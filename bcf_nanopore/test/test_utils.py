@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
-import os
-import tempfile
 
 # Tests for utils module
-
+import os
+import shutil
+import tempfile
 import unittest
+from auto_process_ngs.command import Command
+from bcftbx.JobRunner import SimpleJobRunner
 from bcf_nanopore.utils import MetadataTabFile
 from bcf_nanopore.utils import convert_field_name
+from bcf_nanopore.utils import execute_command
 from bcf_nanopore.utils import fmt_value
 from bcf_nanopore.utils import fmt_yes_no
+from pathlib import Path
 
 
 class TestMetadataTabFile(unittest.TestCase):
@@ -312,6 +316,36 @@ class TestMetadataTabFile(unittest.TestCase):
         metadata.save(self.metadata_file)
         with open(self.metadata_file, 'rt') as fp:
             self.assertEqual(fp.read(), sorted_contents)
+
+
+class TestExecuteCommand(unittest.TestCase):
+
+    def setUp(self):
+        self.pwd = os.getcwd()
+        self.wd = tempfile.mkdtemp()
+        os.chdir(self.wd)
+
+    def tearDown(self):
+        os.chdir(self.pwd)
+        if Path(self.wd).exists():
+            shutil.rmtree(self.wd)
+
+    def test_execute_command_using_subprocess(self):
+        """
+        execute_command: run command using subprocess
+        """
+        cmd = Command("touch", "test.file")
+        self.assertEqual(execute_command(cmd), 0)
+        self.assertTrue(Path(self.wd).joinpath("test.file").exists())
+
+    def test_execute_command_using_jobrunner(self):
+        """
+        execute_command: run command using job runner
+        """
+        cmd = Command("touch", "test.file")
+        runner = SimpleJobRunner(join_logs=True)
+        self.assertEqual(execute_command(cmd, runner=runner), 0)
+        self.assertTrue(Path(self.wd).joinpath("test.file").exists())
 
 
 class TestFmtValue(unittest.TestCase):
