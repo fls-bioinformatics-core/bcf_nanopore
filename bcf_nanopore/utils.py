@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 #
 #     utils.py: utility classes and functions
-#     Copyright (C) University of Manchester 2024 Peter Briggs
+#     Copyright (C) University of Manchester 2024-2025 Peter Briggs
 #
 
 """
 Utility classes and functions
 """
 
+import os
 import logging
-
+from auto_process_ngs.simple_scheduler import SchedulerJob
 from bcftbx.TabFile import TabFile
 
 # Module specific logger
@@ -262,6 +263,66 @@ class MetadataTabFile(TabFile):
         return (name.lstrip('#') in
                 [entry[self.index].lstrip('#')
                  for entry in self])
+
+
+def execute_command(cmd, runner=None, jobname=None):
+    """
+    Execute a command and return the exit status
+
+    Executes the supplied Command instance either
+    using the ``subprocess`` module, or via a
+    JobRunner instance (if one is supplied).
+
+    Log files are written to the current directory
+    then echoed to stdout before deletion when
+    the command job has completed.
+
+    Arguments:
+      cmd (Command): command to execute
+      runner (JobRunner): optional, job runner
+        instance to use to execute the command
+      jobname (str): optional, name for the job
+        (if using a job runner)
+
+    Returns:
+      Integer: exit status of the executed command.
+    """
+    if jobname is None:
+        jobname = cmd.command
+    if runner is None:
+        # Job execution via subprocess
+        log = f"{jobname}.log"
+        try:
+            exit_code = cmd.run_subprocess(log=log)
+        finally:
+            # Print and remove log
+            if os.path.exists(log):
+                with open(log, "rt") as fp:
+                    print(fp.read())
+                os.remove(log)
+            return exit_code
+    else:
+        # Job execution via a runner
+        job = SchedulerJob(runner,
+                           cmd.command_line,
+                           name=f"{jobname}")
+        job.start()
+        try:
+            # Wait for job to finish
+            job.wait()
+        except KeyboardInterrupt as ex:
+            # Terminated by Ctrl-C
+            logger.warning(f"Keyboard interrupt: terminating "
+                           f"'{cmd.command} ...'")
+            job.terminate()
+        finally:
+            # Print and remove logs
+            for log in (job.log, job.err):
+                if log and os.path.exists(log):
+                    with open(log, "rt") as fp:
+                        print(fp.read())
+                    os.remove(log)
+        return job.exit_code
 
 
 def fmt_value(value, none='?'):

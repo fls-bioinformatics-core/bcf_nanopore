@@ -8,9 +8,11 @@ import os
 import json
 from argparse import ArgumentParser
 from auto_process_ngs.command import Command
+from bcftbx.JobRunner import fetch_runner
 from .analysis import ProjectAnalysisDir
 from .nanopore.promethion import BasecallsMetadata
 from .nanopore.promethion import ProjectDir
+from .utils import execute_command
 from .utils import fmt_value
 from .utils import fmt_yes_no
 
@@ -200,10 +202,28 @@ def report(path, mode="summary", fields=None, template=None, out_file=None):
             fp.write(report_text + '\n')
 
 
-def fetch(project_dir, target_dir, dry_run=False):
+def fetch(project_dir, target_dir, dry_run=False, runner=None):
     """
     Fetch the BAM files and reports for a Promethion run
+
+    Arguments:
+      project_dir (str): path to PromethION project
+        (can local or remote)
+      target_dir (str): path to top-level directory to
+        copy project files into
+      dry_run (bool): if True then do dry run rsync only
+        (default is to actually fetch the data)
+      runner (str): job runner definition to use to
+        execute the fetch operations
     """
+    # Clean the project dir path
+    project_dir = project_dir.rstrip(os.sep)
+    # Project name
+    project_name = os.path.basename(project_dir)
+    # Fetch job runner
+    if runner is not None:
+        runner = fetch_runner(runner)
+        print(f"Using job runner '{runner}'")
     # Example rsync to only fetch BAM and index files:
     # rsync --dry-run -av -m --include="*/" \
     # --include="bam_pass/*/*.bam" --include="bam_pass/*/*.bai" \
@@ -224,9 +244,9 @@ def fetch(project_dir, target_dir, dry_run=False):
                         project_dir,
                         target_dir)
     print("Transferring BAM files with command: %s" % rsync_bams)
-    status = rsync_bams.run_subprocess()
+    status = execute_command(rsync_bams, runner=runner)
     if status != 0:
-        pass
+        raise Exception("fetch: failed to transfer data")
     # Example to fetch reports and sample sheets:
     # rsync --dry-run -av -m --include="*/" --include="report_*" \
     # --include="sample_sheet_*" --exclude="*" \
@@ -243,9 +263,9 @@ def fetch(project_dir, target_dir, dry_run=False):
                            project_dir,
                            target_dir)
     print("Transferring report files with command: %s" % rsync_reports)
-    status = rsync_reports.run_subprocess()
+    status = execute_command(rsync_reports, runner=runner)
     if status != 0:
-        pass
+        raise Exception("fetch: failed to transfer reports")
 
 
 def bcf_nanopore_main():
@@ -319,6 +339,8 @@ def bcf_nanopore_main():
                            "directory will be created under this)")
     fetch_cmd.add_argument('--dry-run', action="store_true",
                            help="dry run only (no data will be copied)")
+    fetch_cmd.add_argument('-r', '--runner', action="store",
+                           help="job runner to use (optional)")
 
     # Process command line
     args = p.parse_args()
@@ -336,4 +358,5 @@ def bcf_nanopore_main():
         report(args.analysis_dir, mode=args.mode, fields=args.fields,
                template=args.template, out_file=args.out_file)
     elif args.command == "fetch":
-        fetch(args.project_dir, args.dest, dry_run=args.dry_run)
+        fetch(args.project_dir, args.dest, dry_run=args.dry_run,
+              runner=args.runner)
