@@ -339,6 +339,8 @@ def bcf_nanopore_main():
                            "directory will be created under this)")
     fetch_cmd.add_argument('--dry-run', action="store_true",
                            help="dry run only (no data will be copied)")
+    fetch_cmd.add_argument('-r', '--runner', action="store",
+                           help="job runner to use (optional)")
 
     # Process command line
     args = p.parse_args()
@@ -356,4 +358,5 @@ def bcf_nanopore_main():
         report(args.analysis_dir, mode=args.mode, fields=args.fields,
                template=args.template, out_file=args.out_file)
     elif args.command == "fetch":
-        fetch(args.project_dir, args.dest, dry_run=args.dry_run)
+        fetch(args.project_dir, args.dest, dry_run=args.dry_run,
+              runner=args.runner)
