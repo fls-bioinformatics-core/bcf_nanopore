@@ -284,6 +284,12 @@ locations).""")
                 name = "#samples"
                 value = len(self.samples_info)
                 def fmt_func(n): return '?' if n == 0 else str(n)
+            elif field == 'sample_names' or field == 'samples':
+                name = "samples"
+                for s in self.samples_info:
+                    print(s)
+                value = ",".join([s["Sample"] for s in self.samples_info])
+                def fmt_func(s): return '?' if s == "" else s
             elif field == "primary_data":
                 name = "Primary data dir"
                 value = self.info.data_dir
