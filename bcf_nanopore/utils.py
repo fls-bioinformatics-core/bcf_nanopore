@@ -273,6 +273,10 @@ def execute_command(cmd, runner=None, jobname=None):
     using the ``subprocess`` module, or via a
     JobRunner instance (if one is supplied).
 
+    Log files are written to the current directory
+    then echoed to stdout before deletion when
+    the command job has completed.
+
     Arguments:
       cmd (Command): command to execute
       runner (JobRunner): optional, job runner
