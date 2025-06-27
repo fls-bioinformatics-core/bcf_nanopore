@@ -172,11 +172,14 @@ def report(path, mode="summary", fields=None, template=None, out_file=None):
     """
     # Templates
     _templates = {
+        # Default: for spreadsheet
         'default':
-        "name,id,user,pi,application,organism,"
-        "nsamples,primary_data,analysis_dir,comments",
+        "name,id,NULL,NULL,user,pi,application,organism,NULL,"
+        "nsamples,samples,NULL,NULL,NULL",
+        # BCF: for downstream spreadsheet
         'bcf': "datestamp,NULL,user,id,#samples,NULL,organism,application,PI,analysis_dir,NULL,primary_data",
-        'summary': "name,id,datestamp,platform,analysis_dir,,"
+        # Summary: for reporting run for downstream analysis
+        'summary': "name,id,datestamp,platform,analysis_dir,NULL,"
         "user,pi,application,organism,primary_data,comments",
     }
     # Read in data
