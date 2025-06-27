@@ -96,7 +96,10 @@ def metadata(metadata_file, dump_json=False):
     elif metadata_file.endswith(".json"):
         with open(metadata_file, "rt") as fp:
             data = json.load(fp)
-        print(json.dumps(data, sort_keys=True, indent=4))
+        try:
+            print(json.dumps(data, sort_keys=True, indent=4))
+        except BrokenPipeError:
+            pass
 
 
 def setup(project_dir, user, PI, application=None, organism=None,
