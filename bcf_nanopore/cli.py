@@ -299,6 +299,9 @@ def bcf_nanopore_main():
                               "Promethion project")
     setup_cmd.add_argument('project_dir',
                            help="top level PromethION project directory")
+    setup_cmd.add_argument('parent_dir', nargs="?",
+                           help="create project analysis directory under "
+                           "PARENT_DIR (defaults to current directory)")
     setup_cmd.add_argument('-u', '--user', action='store', required=True,
                            help="User associated with project")
     setup_cmd.add_argument('-p', '--pi', action='store', required=True,
@@ -354,7 +357,7 @@ def bcf_nanopore_main():
     elif args.command == "setup":
         setup(args.project_dir, user=args.user, PI=args.pi,
               application=args.application, organism=args.organism,
-              samples_csv=args.samples_csv)
+              samples_csv=args.samples_csv, top_dir=args.parent_dir)
     elif args.command == "metadata":
         metadata(args.file, dump_json=args.json)
     elif args.command == "report":
