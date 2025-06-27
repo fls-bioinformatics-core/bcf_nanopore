@@ -5,4 +5,7 @@
 #
 from bcf_nanopore.cli import bcf_nanopore_main
 if __name__ == "__main__":
-     bcf_nanopore_main()
+     try:
+          bcf_nanopore_main()
+     except KeyboardInterrupt:
+          pass
