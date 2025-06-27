@@ -155,6 +155,7 @@ def setup(project_dir, user, PI, application=None, organism=None,
     # Create analysis dir
     if top_dir is None:
         top_dir = os.getcwd()
+    top_dir = os.path.abspath(top_dir)
     analysis_dir = ProjectAnalysisDir(
         os.path.join(top_dir,
                      "%s_analysis" % project_name))
