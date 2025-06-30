@@ -93,6 +93,7 @@ def metadata(metadata_file, dump_json=False):
             print("Modified basecalling : %s" % data.modified_basecalling)
             print("Modified base context: %s" % data.modifications)
             print("Barcode trimming     : %s" % data.trim_barcodes)
+            print("Software versions    : %s" % data.software_versions)
     elif metadata_file.endswith(".json"):
         with open(metadata_file, "rt") as fp:
             data = json.load(fp)
