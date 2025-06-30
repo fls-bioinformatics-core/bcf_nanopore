@@ -181,6 +181,7 @@ class TestBasecallsMetadata(unittest.TestCase):
         self.assertEqual(data.modifications, None)
         self.assertEqual(data.modified_basecalling, None)
         self.assertEqual(data.trim_barcodes, None)
+        self.assertEqual(data.software_versions, None)
 
     def test_basecalls_metadata_minknow_2_4(self):
         """
@@ -197,6 +198,7 @@ class TestBasecallsMetadata(unittest.TestCase):
         self.assertEqual(data.modifications, "5mC & 5hmC")
         self.assertEqual(data.modified_basecalling, "On")
         self.assertEqual(data.trim_barcodes, "Off")
+        self.assertEqual(data.software_versions["minknow"], "24.02.19")
 
     def test_basecalls_metadata_minknow_2_5(self):
         """
@@ -213,6 +215,7 @@ class TestBasecallsMetadata(unittest.TestCase):
         self.assertEqual(data.modifications, None)
         self.assertEqual(data.modified_basecalling, "Off")
         self.assertEqual(data.trim_barcodes, "Off")
+        self.assertEqual(data.software_versions["minknow"], "25.03.7")
 
 
 class TestFlowcellBasecallsInfo(unittest.TestCase):

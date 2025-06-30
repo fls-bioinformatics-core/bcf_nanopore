@@ -263,6 +263,7 @@ class BasecallsMetadata:
         self.modified_basecalling = None
         self.modifications = None
         self.trim_barcodes = None
+        self.software_versions = None
 
     def load_from_report_html(self, html_file):
         """
@@ -298,6 +299,8 @@ class BasecallsMetadata:
             self.trim_barcodes = settings['trim_barcodes']
         except KeyError:
             self.trim_barcodes = None
+        # Store the software versions
+        self.software_versions = data["software_versions"]
         # Finish
         return self
 
