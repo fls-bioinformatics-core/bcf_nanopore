@@ -182,12 +182,12 @@ class TestBasecallsMetadata(unittest.TestCase):
         self.assertEqual(data.modified_basecalling, None)
         self.assertEqual(data.trim_barcodes, None)
 
-    def test_basecalls_metadata(self):
+    def test_basecalls_metadata_minknow_2_4(self):
         """
-        BasecallsMetadata: load from file
+        BasecallsMetadata: load from file (MinKNOW 2.4.*)
         """
         html_report_file = Path(self.wd).joinpath("report_BLAH.html")
-        create_html_report(str(html_report_file))
+        create_html_report(str(html_report_file), minknow_version="2.4")
         data = BasecallsMetadata()
         data.load_from_report_html(str(html_report_file))
         self.assertEqual(data.flow_cell_id, "PAW15677")
@@ -196,6 +196,22 @@ class TestBasecallsMetadata(unittest.TestCase):
         self.assertEqual(data.basecalling, "Super-accurate basecalling, 400 bps")
         self.assertEqual(data.modifications, "5mC & 5hmC")
         self.assertEqual(data.modified_basecalling, "On")
+        self.assertEqual(data.trim_barcodes, "Off")
+
+    def test_basecalls_metadata_minknow_2_5(self):
+        """
+        BasecallsMetadata: load from file (MinKNOW 2.5.*)
+        """
+        html_report_file = Path(self.wd).joinpath("report_BLAH.html")
+        create_html_report(str(html_report_file), minknow_version="2.5")
+        data = BasecallsMetadata()
+        data.load_from_report_html(str(html_report_file))
+        self.assertEqual(data.flow_cell_id, "PBC32212")
+        self.assertEqual(data.flow_cell_type, "FLO-PRO114M")
+        self.assertEqual(data.kit, "SQK-PCB114-24")
+        self.assertEqual(data.basecalling, "High-accuracy model 400bps")
+        self.assertEqual(data.modifications, None)
+        self.assertEqual(data.modified_basecalling, "Off")
         self.assertEqual(data.trim_barcodes, "Off")
 
 
