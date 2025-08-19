@@ -347,7 +347,7 @@ def create_barcode_dirs(top_dir, number_of_barcodes=24):
         barcode_dir.mkdir()
         # Don't populate with files for now
 
-def create_html_report(file_name, minknow_version="2.5"):
+def create_html_report(file_name, minknow_version="25"):
         """
         Create a mock MinKNOW HTML report file
 
