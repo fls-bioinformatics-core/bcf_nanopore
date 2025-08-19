@@ -183,12 +183,12 @@ class TestBasecallsMetadata(unittest.TestCase):
         self.assertEqual(data.trim_barcodes, None)
         self.assertEqual(data.software_versions, None)
 
-    def test_basecalls_metadata_minknow_2_4(self):
+    def test_basecalls_metadata_minknow_v24(self):
         """
-        BasecallsMetadata: load from file (MinKNOW 2.4.*)
+        BasecallsMetadata: load from file (MinKNOW v24.*)
         """
         html_report_file = Path(self.wd).joinpath("report_BLAH.html")
-        create_html_report(str(html_report_file), minknow_version="2.4")
+        create_html_report(str(html_report_file), minknow_version="24")
         data = BasecallsMetadata()
         data.load_from_report_html(str(html_report_file))
         self.assertEqual(data.flow_cell_id, "PAW15677")
@@ -200,12 +200,12 @@ class TestBasecallsMetadata(unittest.TestCase):
         self.assertEqual(data.trim_barcodes, "Off")
         self.assertEqual(data.software_versions["minknow"], "24.02.19")
 
-    def test_basecalls_metadata_minknow_2_5(self):
+    def test_basecalls_metadata_minknow_v25(self):
         """
-        BasecallsMetadata: load from file (MinKNOW 2.5.*)
+        BasecallsMetadata: load from file (MinKNOW v25.*)
         """
         html_report_file = Path(self.wd).joinpath("report_BLAH.html")
-        create_html_report(str(html_report_file), minknow_version="2.5")
+        create_html_report(str(html_report_file), minknow_version="25")
         data = BasecallsMetadata()
         data.load_from_report_html(str(html_report_file))
         self.assertEqual(data.flow_cell_id, "PBC32212")

@@ -17,8 +17,8 @@ from .analysis import FlowcellBasecallsInfo
 
 # Example JSON data from HTML files
 
-# MinKNOW 2.4
-HTML_JSON_DATA_2_4 = {
+# MinKNOW v24
+HTML_JSON_DATA_24 = {
     "run_setup": [{"title": "Flow cell type", "value": "FLO-PRO114M"},
                   {"title": "Flow cell type alias", "value": "FLO-PRO114M"},
                   {"title": "Flow cell ID", "value": "PAW15677"},
@@ -48,8 +48,8 @@ HTML_JSON_DATA_2_4 = {
                           {"title": "MinKNOW Core", "value": "5.9.12"}],
 }
 
-# MinKNOW 2.5
-HTML_JSON_DATA_2_5 = {
+# MinKNOW v25
+HTML_JSON_DATA_25 = {
     "run_setup": [{"title": "Flow cell type", "value": "FLO-PRO114M"},
                   {"title": "Flow cell type alias", "value": "FLO-PRO114M"},
                   {"title": "Flow cell ID", "value": "PBC32212"},
@@ -355,14 +355,14 @@ def create_html_report(file_name, minknow_version="2.5"):
           file_name (str): file name and path for new
             mock HTML report file
           minknow_version (str): version of MinKNOW to
-            mimick (either "2.4" or "2.5"; default is
-            "2.5")
+            mimick (either "24" or "25"; default is
+            "25")
         """
         # Fetch appropriate example JSON data
-        if minknow_version == "2.5":
-            json_data = HTML_JSON_DATA_2_5
-        elif minknow_version == "2.4":
-            json_data = HTML_JSON_DATA_2_4
+        if minknow_version == "25":
+            json_data = HTML_JSON_DATA_25
+        elif minknow_version == "24":
+            json_data = HTML_JSON_DATA_24
         else:
             raise Exception(f"Unable to create report for MinKNOW "
                             f"version '{minknow_version}'")
