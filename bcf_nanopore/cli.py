@@ -39,7 +39,7 @@ def info(project_dir):
                      "Kit",
                      "Modifications",
                      "TrimBarcodes",
-                     "MinKNOW"]))
+                     "MinKNOWVersion"]))
     for fc in project.flow_cells:
         kit = fmt_value(fc.metadata.kit)
         modifications = ("none" if fc.metadata.modified_basecalling == "Off"
