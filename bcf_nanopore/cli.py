@@ -38,36 +38,43 @@ def info(project_dir):
                      "Reports",
                      "Kit",
                      "Modifications",
-                     "TrimBarcodes"]))
+                     "TrimBarcodes",
+                     "MinKNOWVersion"]))
     for fc in project.flow_cells:
+        run = ("-" if fc.run is None else fc.run)
         kit = fmt_value(fc.metadata.kit)
         modifications = ("none" if fc.metadata.modified_basecalling == "Off"
                          else fmt_value(fc.metadata.modifications))
         trim_barcodes = fmt_value(fc.metadata.trim_barcodes)
+        minknow_version = fc.metadata.software_versions["minknow"]
         has_report = fmt_yes_no(fc.html_report)
-        print('\t'.join([str(s)for s in (fc.run,
+        print('\t'.join([str(s)for s in (run,
                                          fc.pool,
                                          fc,
                                          fc.id,
                                          has_report,
                                          kit,
                                          modifications,
-                                         trim_barcodes)]))
+                                         trim_barcodes,
+                                         minknow_version)]))
     for bc in project.basecalls_dirs:
         flow_cell_id = fmt_value(bc.metadata.flow_cell_id)
+        run = ("-" if bc.run is None else bc.run)
         kit = fmt_value(bc.metadata.kit)
         modifications = ("none" if bc.metadata.modified_basecalling == "Off"
                          else fmt_value(bc.metadata.modifications))
         trim_barcodes = fmt_value(bc.metadata.trim_barcodes)
+        minknow_version = fc.metadata.software_versions["minknow"]
         has_report = fmt_yes_no(bc.html_report)
-        print('\t'.join([str(s)for s in (bc.run,
+        print('\t'.join([str(s)for s in (run,
                                          bc.name,
                                          bc,
                                          flow_cell_id,
                                          has_report,
                                          kit,
                                          modifications,
-                                         trim_barcodes)]))
+                                         trim_barcodes,
+                                         minknow_version)]))
 
 
 def metadata(metadata_file, dump_json=False):
@@ -93,6 +100,7 @@ def metadata(metadata_file, dump_json=False):
             print("Modified basecalling : %s" % data.modified_basecalling)
             print("Modified base context: %s" % data.modifications)
             print("Barcode trimming     : %s" % data.trim_barcodes)
+            print("Software versions    : %s" % data.software_versions)
     elif metadata_file.endswith(".json"):
         with open(metadata_file, "rt") as fp:
             data = json.load(fp)

@@ -15,6 +15,66 @@ from .analysis import ProjectInfo
 from .analysis import SamplesInfo
 from .analysis import FlowcellBasecallsInfo
 
+# Example JSON data from HTML files
+
+# MinKNOW v24
+HTML_JSON_DATA_24 = {
+    "run_setup": [{"title": "Flow cell type", "value": "FLO-PRO114M"},
+                  {"title": "Flow cell type alias", "value": "FLO-PRO114M"},
+                  {"title": "Flow cell ID", "value": "PAW15677"},
+                  {"title": "Kit type", "value": "SQK-RBK114-24"}],
+    "run_settings": [{"title": "Run limit", "value": "72 hrs"},
+                     {"title": "Active channel selection", "value": "On"},
+                     {"title": "Pore scan freq.", "value": "1.5 hrs"},
+                     {"title": "Reserved pores", "value": "On"},
+                     {"title": "Minimum read length", "value": "200 bp"},
+                     {"title": "Basecalling", "value": "Super-accurate basecalling, 400 bps"},
+                     {"title": "Modified basecalling", "value": "On"},
+                     {"title": "Modified base context", "value": "5mC & 5hmC"},
+                     {"title": "Trim barcodes", "value": "Off"},
+                     {"title": "Mid-read barcode filtering", "value": "Off"},
+                     {"title": "Min Q score", "value": "10"}],
+    "data_output_settings": [{"title": "FAST5 output", "value": "Off"},
+                             {"title": "FASTQ data output", "value": "One file every 10 minutes"},
+                             {"title": "POD5 data output", "value": "One file per hour"},
+                             {"title": "BAM file output", "value": "On"},
+                             {"title": "BAM data output", "value": "One file every 10 minutes"},
+                             {"title": "Bulk file output", "value": "Off"},
+                             {"title": "Data location", "value": "__DATA_LOCATION__"}],
+    "software_versions": [{"title": "MinKNOW", "value": "24.02.19"},
+                          {"title": "Bream", "value": "7.9.8"},
+                          {"title": "Configuration", "value": "5.9.18"},
+                          {"title": "Dorado", "value": "7.3.11"},
+                          {"title": "MinKNOW Core", "value": "5.9.12"}],
+}
+
+# MinKNOW v25
+HTML_JSON_DATA_25 = {
+    "run_setup": [{"title": "Flow cell type", "value": "FLO-PRO114M"},
+                  {"title": "Flow cell type alias", "value": "FLO-PRO114M"},
+                  {"title": "Flow cell ID", "value": "PBC32212"},
+                  {"title": "Kit type", "value": "SQK-PCB114-24"}],
+    "run_settings": [{"title": "Run limit", "value": "72 hrs"},
+                     {"title": "Pore scan freq.", "value": "1.5 hrs"},
+                     {"title": "Reserved pores", "value": "On"},
+                     {"title": "Basecalling", "value": "High-accuracy model 400bps"},
+                     {"title": "Modified basecalling", "value": "Off"},
+                     {"title": "Trim barcodes", "value": "Off"},
+                     {"title": "Min Q score", "value": "9"}],
+    "data_output_settings": [{"title": "FAST5 output", "value": "Off"},
+                             {"title": "FASTQ data output", "value": "One file every 10 minutes"},
+                             {"title": "POD5 data output", "value": "One file per hour, or 500000000 bases per batch"},
+                             {"title": "BAM file output", "value": "On"},
+                             {"title": "BAM data output", "value": "One file every 10 minutes"},
+                             {"title": "Bulk file output", "value": "Off"},
+                             {"title": "Data location", "value": "__DATA_LOCATION__"}],
+    "software_versions": [{"title": "MinKNOW", "value": "25.03.7"},
+                          {"title": "Bream", "value": "8.4.4"},
+                          {"title": "Configuration", "value": "6.4.10"},
+                          {"title": "Dorado", "value": "7.8.3"},
+                          {"title": "MinKNOW Core", "value": "6.4.8"}],
+}
+
 
 class MockPromethionDataDir:
     """
@@ -287,44 +347,31 @@ def create_barcode_dirs(top_dir, number_of_barcodes=24):
         barcode_dir.mkdir()
         # Don't populate with files for now
 
-def create_html_report(file_name):
+def create_html_report(file_name, minknow_version="25"):
         """
         Create a mock MinKNOW HTML report file
 
         Arguments:
           file_name (str): file name and path for new
             mock HTML report file
+          minknow_version (str): version of MinKNOW to
+            mimick (either "24" or "25"; default is
+            "25")
         """
-        JSON_DATA = {
-            "run_setup": [{"title": "Flow cell type", "value": "FLO-PRO114M"},
-                          {"title": "Flow cell type alias", "value": "FLO-PRO114M"},
-                          {"title": "Flow cell ID", "value": "PAW15677"},
-                          {"title": "Kit type", "value": "SQK-RBK114-24"}],
-            "run_settings": [{"title": "Run limit", "value": "72 hrs"},
-                             {"title": "Active channel selection", "value": "On"},
-                             {"title": "Pore scan freq.", "value": "1.5 hrs"},
-                             {"title": "Reserved pores", "value": "On"},
-                             {"title": "Minimum read length", "value": "200 bp"},
-                             {"title": "Basecalling", "value": "Super-accurate basecalling, 400 bps"},
-                             {"title": "Modified basecalling", "value": "On"},
-                             {"title": "Modified base context", "value": "5mC & 5hmC"},
-                             {"title": "Trim barcodes", "value": "Off"},
-                             {"title": "Mid-read barcode filtering", "value": "Off"},
-                             {"title": "Min Q score", "value": "10"}],
-            "data_output_settings": [{"title": "FAST5 output", "value": "Off"},
-                                     {"title": "FASTQ data output", "value": "One file every 10 minutes"},
-                                     {"title": "POD5 data output", "value": "One file per hour"},
-                                     {"title": "BAM file output", "value": "On"},
-                                     {"title": "BAM data output", "value": "One file every 10 minutes"},
-                                     {"title": "Bulk file output", "value": "Off"},
-                                     {"title": "Data location", "value": f"\"{str(Path(file_name).parent)}\""}],
-            "software_versions": [{"title": "MinKNOW", "value": "24.02.19"},
-                                  {"title": "Bream", "value": "7.9.8"},
-                                  {"title": "Configuration", "value": "5.9.18"},
-                                  {"title": "Dorado", "value": "7.3.11"},
-                                  {"title": "MinKNOW Core", "value": "5.9.12"}],
-        }
+        # Fetch appropriate example JSON data
+        if minknow_version == "25":
+            json_data = HTML_JSON_DATA_25
+        elif minknow_version == "24":
+            json_data = HTML_JSON_DATA_24
+        else:
+            raise Exception(f"Unable to create report for MinKNOW "
+                            f"version '{minknow_version}'")
+        # Update the "Data location" value
+        for s in json_data["data_output_settings"]:
+            if s["title"] == "Data location":
+                s["value"] == f"\"{str(Path(file_name).parent)}\""
+        # Write the mock HTML file
         Path(file_name).write_text(
             dedent(f"""
-            const reportDataJson = {json.dumps(JSON_DATA)};
+            const reportDataJson = {json.dumps(json_data)};
             """))

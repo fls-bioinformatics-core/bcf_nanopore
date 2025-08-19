@@ -141,7 +141,7 @@ class ProjectAnalysisDir:
         fc_file = FlowcellBasecallsInfo()
         for fc in project.flow_cells:
             fc_file.add_base_calls(
-                run=fc.run,
+                run=("-" if fc.run is None else fc.run),
                 pool_name=fc.pool,
                 sub_dir=fc,
                 flow_cell_id=fc.id,
@@ -150,10 +150,11 @@ class ProjectAnalysisDir:
                 modifications=("none"
                                if fc.metadata.modified_basecalling == "Off"
                                else fmt_value(fc.metadata.modifications)),
-                trim_barcodes=fmt_value(fc.metadata.trim_barcodes))
+                trim_barcodes=fmt_value(fc.metadata.trim_barcodes),
+                minknow_version=fc.metadata.software_versions["minknow"])
         for bc in project.basecalls_dirs:
             fc_file.add_base_calls(
-                run=bc.run,
+                run=("-" if bc.run is None else bc.run),
                 pool_name=bc.name,
                 sub_dir=bc,
                 flow_cell_id=fmt_value(bc.metadata.flow_cell_id),
@@ -162,7 +163,8 @@ class ProjectAnalysisDir:
                 modifications=("none"
                                if bc.metadata.modified_basecalling == "Off"
                                else fmt_value(bc.metadata.modifications)),
-                trim_barcodes=fmt_value(bc.metadata.trim_barcodes))
+                trim_barcodes=fmt_value(bc.metadata.trim_barcodes),
+                minknow_version=bc.metadata.software_versions["minknow"])
         fc_file.save(flow_cells_file)
         # Get the earliest date stamp from flow cell names
         try:
@@ -515,6 +517,7 @@ class FlowcellBasecallsInfo(TabFile):
     - modifications: modifications used if modified basecalling
       was performed
     - trim_barcodes: whether barcodes were trimmed
+    - minknow_version: version of the MinKNOW software used
 
     Flow cell directories are added using the 'add_base_calls'
     method.
@@ -540,7 +543,8 @@ class FlowcellBasecallsInfo(TabFile):
                         "Reports",
                         "Kit",
                         "Modifications",
-                        "TrimBarcodes")
+                        "TrimBarcodes",
+                        "MinknowVersion")
         self._kws = tuple([convert_field_name(f)
                            for f in self._fields])
         TabFile.__init__(self,

@@ -249,7 +249,7 @@ class BasecallsMetadata:
     """
     Class representing data about a set of basecalls
 
-    The data is populated by extracting from an HTML
+    The data is populated by extracting data from an HTML
     report file, by invoking the 'load_from_report_html'
     method.
     """
@@ -263,6 +263,7 @@ class BasecallsMetadata:
         self.modified_basecalling = None
         self.modifications = None
         self.trim_barcodes = None
+        self.software_versions = None
 
     def load_from_report_html(self, html_file):
         """
@@ -298,6 +299,9 @@ class BasecallsMetadata:
             self.trim_barcodes = settings['trim_barcodes']
         except KeyError:
             self.trim_barcodes = None
+        # Store the software versions
+        self.software_versions = { k:data["software_versions"][k]
+                                   for k in data["software_versions"] }
         # Finish
         return self
 

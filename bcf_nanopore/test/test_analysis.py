@@ -2,6 +2,7 @@
 
 # Tests for the 'analysis' module
 
+import os
 import shutil
 import tempfile
 import unittest
@@ -9,6 +10,7 @@ from pathlib import Path
 from bcf_nanopore.mock import MockPromethionDataDir
 from bcf_nanopore.mock import MockProjectAnalysisDir
 from bcf_nanopore.analysis import ProjectAnalysisDir
+from bcf_nanopore.analysis import FlowcellBasecallsInfo
 
 
 class TestProjectAnalysisDir(unittest.TestCase):
@@ -140,3 +142,73 @@ class TestProjectAnalysisDir(unittest.TestCase):
         self.assertEqual(analysis_dir.report("tsv", "name,#samples,user,pi"),
                          "PromethION_Project_001_PerGynt\t2\tPer Gynt\t"
                          "Henrik Ibsen")
+
+
+class TestFlowcellBasecallsInfo(unittest.TestCase):
+
+    def setUp(self):
+        self.wd = tempfile.mkdtemp()
+
+    def tearDown(self):
+        if Path(self.wd).exists():
+            shutil.rmtree(self.wd)
+
+    def test_flowcell_basecalls_info_read_from_file(self):
+        """
+        FlowcellBasecallsInfo: read data from file
+        """
+        basecalls_file = os.path.join(self.wd, "basecalls.tsv")
+        with open(basecalls_file, "wt") as fp:
+            fp.write("""#Run	PoolName	SubDir	FlowCellID	Reports	Kit	Modifications	TrimBarcodes
+Run1	WT1_WT2_K27CL1_K27CL2	WT1_WT2_K27CL1_K27CL2/20250616_0817_1F_PBC32212_40107e18	PBC32212	yes	SQK-PCB114-24	none	Off
+""")
+        basecalls_info = FlowcellBasecallsInfo(basecalls_file)
+        self.assertEqual(len(basecalls_info), 1)
+        self.assertEqual(basecalls_info[0]["Run"], "Run1")
+        self.assertEqual(basecalls_info[0]["PoolName"], "WT1_WT2_K27CL1_K27CL2")
+        self.assertEqual(basecalls_info[0]["SubDir"], "WT1_WT2_K27CL1_K27CL2/20250616_0817_1F_PBC32212_40107e18")
+        self.assertEqual(basecalls_info[0]["FlowCellID"], "PBC32212")
+        self.assertEqual(basecalls_info[0]["Reports"], "yes")
+        self.assertEqual(basecalls_info[0]["Kit"], "SQK-PCB114-24")
+        self.assertEqual(basecalls_info[0]["Modifications"], "none")
+        self.assertEqual(basecalls_info[0]["TrimBarcodes"], "Off")
+
+    def test_flowcell_basecalls_info_create_file(self):
+        """
+        FlowcellBasecallsInfo: create new file
+        """
+        # New (empty) basecalls info metadata
+        basecalls_info = FlowcellBasecallsInfo()
+        self.assertEqual(len(basecalls_info), 0)
+        # Add data
+        basecalls_info.add_base_calls(
+            run="Run1",
+            pool_name="WT1_WT2_K27CL1_K27CL2",
+            sub_dir="WT1_WT2_K27CL1_K27CL2/20250616_0817_1F_PBC32212_40107e18",
+            flow_cell_id="PBC32212",
+            reports="yes",
+            kit="SQK-PCB114-24",
+            modifications="none",
+            trim_barcodes="Off",
+            minknow_version="25.03.7")
+        self.assertEqual(len(basecalls_info), 1)
+        self.assertEqual(basecalls_info[0]["Run"], "Run1")
+        self.assertEqual(basecalls_info[0]["PoolName"], "WT1_WT2_K27CL1_K27CL2")
+        self.assertEqual(basecalls_info[0]["SubDir"], "WT1_WT2_K27CL1_K27CL2/20250616_0817_1F_PBC32212_40107e18")
+        self.assertEqual(basecalls_info[0]["FlowCellID"], "PBC32212")
+        self.assertEqual(basecalls_info[0]["Reports"], "yes")
+        self.assertEqual(basecalls_info[0]["Kit"], "SQK-PCB114-24")
+        self.assertEqual(basecalls_info[0]["Modifications"], "none")
+        self.assertEqual(basecalls_info[0]["TrimBarcodes"], "Off")
+        # Save to file
+        basecalls_file = os.path.join(self.wd, "basecalls.tsv")
+        self.assertFalse(os.path.exists(basecalls_file))
+        basecalls_info.save(basecalls_file)
+        self.assertTrue(os.path.exists(basecalls_file))
+        # Check contents
+        with open(basecalls_file, "rt") as fp:
+            contents = fp.read()
+            self.assertEqual(contents,
+                             """#Run	PoolName	SubDir	FlowCellID	Reports	Kit	Modifications	TrimBarcodes	MinknowVersion
+Run1	WT1_WT2_K27CL1_K27CL2	WT1_WT2_K27CL1_K27CL2/20250616_0817_1F_PBC32212_40107e18	PBC32212	yes	SQK-PCB114-24	none	Off	25.03.7
+""")

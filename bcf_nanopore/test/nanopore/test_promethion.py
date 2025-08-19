@@ -181,13 +181,14 @@ class TestBasecallsMetadata(unittest.TestCase):
         self.assertEqual(data.modifications, None)
         self.assertEqual(data.modified_basecalling, None)
         self.assertEqual(data.trim_barcodes, None)
+        self.assertEqual(data.software_versions, None)
 
-    def test_basecalls_metadata(self):
+    def test_basecalls_metadata_minknow_v24(self):
         """
-        BasecallsMetadata: load from file
+        BasecallsMetadata: load from file (MinKNOW v24.*)
         """
         html_report_file = Path(self.wd).joinpath("report_BLAH.html")
-        create_html_report(str(html_report_file))
+        create_html_report(str(html_report_file), minknow_version="24")
         data = BasecallsMetadata()
         data.load_from_report_html(str(html_report_file))
         self.assertEqual(data.flow_cell_id, "PAW15677")
@@ -197,6 +198,24 @@ class TestBasecallsMetadata(unittest.TestCase):
         self.assertEqual(data.modifications, "5mC & 5hmC")
         self.assertEqual(data.modified_basecalling, "On")
         self.assertEqual(data.trim_barcodes, "Off")
+        self.assertEqual(data.software_versions["minknow"], "24.02.19")
+
+    def test_basecalls_metadata_minknow_v25(self):
+        """
+        BasecallsMetadata: load from file (MinKNOW v25.*)
+        """
+        html_report_file = Path(self.wd).joinpath("report_BLAH.html")
+        create_html_report(str(html_report_file), minknow_version="25")
+        data = BasecallsMetadata()
+        data.load_from_report_html(str(html_report_file))
+        self.assertEqual(data.flow_cell_id, "PBC32212")
+        self.assertEqual(data.flow_cell_type, "FLO-PRO114M")
+        self.assertEqual(data.kit, "SQK-PCB114-24")
+        self.assertEqual(data.basecalling, "High-accuracy model 400bps")
+        self.assertEqual(data.modifications, None)
+        self.assertEqual(data.modified_basecalling, "Off")
+        self.assertEqual(data.trim_barcodes, "Off")
+        self.assertEqual(data.software_versions["minknow"], "25.03.7")
 
 
 class TestFlowcellBasecallsInfo(unittest.TestCase):
