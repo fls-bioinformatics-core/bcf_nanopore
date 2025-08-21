@@ -285,6 +285,7 @@ class BasecallsMetadata:
     """
 
     def __init__(self):
+        self.html_json_data = None
         self.json_data = None
         self.flow_cell_id = None
         self.flow_cell_type = None
@@ -302,12 +303,12 @@ class BasecallsMetadata:
         Arguments:
           html_file (str): path to the HTML report
         """
-        self.json_data = HtmlReport(html_file).extract_json()
+        self.html_json_data = HtmlReport(html_file).extract_json()
         data = {}
         for k in ('run_settings',
                   'run_setup',
                   'software_versions'):
-            data[k] = self._extract_section(k)
+            data[k] = self._extract_section(self.html_json_data, k)
         # Set values
         setup = data['run_setup']
         ##print(setup)
@@ -335,15 +336,16 @@ class BasecallsMetadata:
         # Finish
         return self
 
-    def json(self):
+    def html_json(self):
         """
-        Return the JSON data
+        Return JSON data extracted from the HTML report
         """
-        if self.json_data is None:
+        if self.html_json_data is None:
             return {}
-        return json.dumps(self.json_data, sort_keys=True, indent=4)
+        return json.dumps(self.html_json_data, sort_keys=True,
+                          indent=4)
 
-    def _extract_section(self, name):
+    def _extract_section(self, json_data, name):
         """
         Internal: extracts data from JSON for a section
 
@@ -356,6 +358,7 @@ class BasecallsMetadata:
         and '.' characters to underscores.
 
         Arguments:
+          json_data (dict): JSON data
           name (str): name of the section to extract
         """
         return {
@@ -363,7 +366,7 @@ class BasecallsMetadata:
             .replace(' ', '_')
             .replace('-', '_')
             .replace('.', ''): s['value']
-            for s in self.json_data[name]
+            for s in json_data[name]
         }
 
     def _fetch_item(self, data, name):

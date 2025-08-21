@@ -92,7 +92,7 @@ def metadata(metadata_file, dump_json=False):
         data = BasecallsMetadata()
         data.load_from_report_html(metadata_file)
         if dump_json:
-            print(data.json())
+            print(data.html_json())
         else:
             print("Flow cell ID         : %s" % data.flow_cell_id)
             print("Flow cell type       : %s" % data.flow_cell_type)
