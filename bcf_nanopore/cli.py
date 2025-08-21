@@ -105,11 +105,14 @@ def metadata(metadata_file, dump_json=False):
             print("Barcode trimming     : %s" % data.trim_barcodes)
             print("Software versions    : %s" % data.software_versions)
     elif metadata_file.endswith(".json"):
-        data.load_from_report_json(metadata_file)
-        try:
-            print(data.json())
-        except BrokenPipeError:
-            pass
+        if dump_json:
+            try:
+                print(data.json())
+            except BrokenPipeError:
+                pass
+        else:
+            print("Basecalling model    : %s" % data.basecalling_model)
+            print("Basecalling config   : %s" % data.basecalling_config)
 
 
 def setup(project_dir, user, PI, application=None, organism=None,
@@ -305,7 +308,7 @@ def bcf_nanopore_main():
                         help="HTML or JSON report file")
     md_cmd.add_argument('-j', '--json', action='store_true',
                         help="dump extracted JSON data instead of metadata "
-                        "items (HTML reports only)")
+                        "items")
 
     # Setup command
     setup_cmd = sp.add_parser("setup",
