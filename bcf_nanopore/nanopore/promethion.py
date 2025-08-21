@@ -230,7 +230,7 @@ class HtmlReport:
         report file and return as a JSON object.
         """
         json_data = None
-        with open(self.path) as fp:
+        with open(self.path, "rt") as fp:
             for line in fp:
                 if line.strip().startswith("const reportDataJson = {"):
                     json_data = line.strip()[len("const reportDataJson = "):-1]
