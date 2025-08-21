@@ -209,8 +209,11 @@ class TestBasecallsMetadata(unittest.TestCase):
         """
         html_report_file = Path(self.wd).joinpath("report_BLAH.html")
         create_html_report(str(html_report_file), minknow_version="24")
+        json_report_file = Path(self.wd).joinpath("report_BLAH.json")
+        create_json_report(str(json_report_file), minknow_version="24")
         data = BasecallsMetadata()
         data.load_from_report_html(str(html_report_file))
+        data.load_from_report_json(str(json_report_file))
         self.assertEqual(data.flow_cell_id, "PAW15677")
         self.assertEqual(data.flow_cell_type, "FLO-PRO114M")
         self.assertEqual(data.kit, "SQK-RBK114-24")
@@ -226,8 +229,11 @@ class TestBasecallsMetadata(unittest.TestCase):
         """
         html_report_file = Path(self.wd).joinpath("report_BLAH.html")
         create_html_report(str(html_report_file), minknow_version="25")
+        json_report_file = Path(self.wd).joinpath("report_BLAH.json")
+        create_json_report(str(json_report_file), minknow_version="25")
         data = BasecallsMetadata()
         data.load_from_report_html(str(html_report_file))
+        data.load_from_report_json(str(json_report_file))
         self.assertEqual(data.flow_cell_id, "PBC32212")
         self.assertEqual(data.flow_cell_type, "FLO-PRO114M")
         self.assertEqual(data.kit, "SQK-PCB114-24")

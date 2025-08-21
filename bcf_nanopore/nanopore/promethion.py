@@ -263,7 +263,6 @@ class JsonReport:
 
         Returns data as a JSON object.
         """
-        json_data = None
         with open(self.path, "rt") as fp:
             try:
                 return json.load(fp)
@@ -280,8 +279,9 @@ class BasecallsMetadata:
     Class representing data about a set of basecalls
 
     The data is populated by extracting data from an HTML
-    report file, by invoking the 'load_from_report_html'
-    method.
+    report file (by invoking the 'load_from_report_html'
+    method) and a JSON report file (by invoking
+    'load_from_report_json').
     """
 
     def __init__(self):
@@ -343,6 +343,25 @@ class BasecallsMetadata:
         if self.html_json_data is None:
             return {}
         return json.dumps(self.html_json_data, sort_keys=True,
+                          indent=4)
+
+    def load_from_report_json(self, json_file):
+        """
+        Load metadata from a JSON report file
+
+        Arguments:
+          json_file (str): path to the JSON report
+        """
+        self.json_data = JsonReport(json_file).extract_json()
+        return self
+
+    def json(self):
+        """
+        Return data extracted from the JSON report
+        """
+        if self.json_data is None:
+            return {}
+        return json.dumps(self.json_data, sort_keys=True,
                           indent=4)
 
     def _extract_section(self, json_data, name):

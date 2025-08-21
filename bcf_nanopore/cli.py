@@ -88,11 +88,14 @@ def metadata(metadata_file, dump_json=False):
         (default) then only print extract metadata items;
         otherwise dump the extract JSON data
     """
+    data = BasecallsMetadata()
     if metadata_file.endswith(".html"):
-        data = BasecallsMetadata()
         data.load_from_report_html(metadata_file)
         if dump_json:
-            print(data.html_json())
+            try:
+                print(data.html_json())
+            except BrokenPipeError:
+                pass
         else:
             print("Flow cell ID         : %s" % data.flow_cell_id)
             print("Flow cell type       : %s" % data.flow_cell_type)
@@ -102,10 +105,9 @@ def metadata(metadata_file, dump_json=False):
             print("Barcode trimming     : %s" % data.trim_barcodes)
             print("Software versions    : %s" % data.software_versions)
     elif metadata_file.endswith(".json"):
-        with open(metadata_file, "rt") as fp:
-            data = json.load(fp)
+        data.load_from_report_json(metadata_file)
         try:
-            print(json.dumps(data, sort_keys=True, indent=4))
+            print(data.json())
         except BrokenPipeError:
             pass
 
