@@ -48,6 +48,24 @@ HTML_JSON_DATA_24 = {
                           {"title": "MinKNOW Core", "value": "5.9.12"}],
 }
 
+JSON_DATA_24 = {
+    "acquisitions": [
+        { "acquisition_run_info":
+          { "config_summary":
+            { "barcoding_enabled": "true",
+              "barcoding_kits": [ "SQK-NBD114-24" ],
+              "basecalling_enabled": "true",
+              "basecalling_model_names": {
+                  "modified_models": [ "dna_r10.4.1_e8.2_400bps_hac@v4.3.0_5mCG_5hmCG@v1" ],
+                  "simplex_model": "dna_r10.4.1_e8.2_400bps_hac@v4.3.0" },
+              "basecalling_model_version": "dna_r10.4.1_e8.2_400bps_hac@v4.3.0",
+              "channel_count": 3000,
+             }
+           }
+         }
+    ]
+}
+
 # MinKNOW v25
 HTML_JSON_DATA_25 = {
     "run_setup": [{"title": "Flow cell type", "value": "FLO-PRO114M"},
@@ -73,6 +91,19 @@ HTML_JSON_DATA_25 = {
                           {"title": "Configuration", "value": "6.4.10"},
                           {"title": "Dorado", "value": "7.8.3"},
                           {"title": "MinKNOW Core", "value": "6.4.8"}],
+}
+
+JSON_DATA_25 = {
+    "acquisitions": [
+        { "acquisition_run_info":
+          { "config_summary":
+            { "basecalling_config_filename": "dna_r10.4.1_e8.2_400bps_5khz_modbases_5hmc_5mc_cg_hac.cfg",
+              "basecalling_enabled": "true",
+              "basecalling_model_version": "dna_r10.4.1_e8.2_400bps_hac@v4.3.0",
+              "channel_count": 3000 }
+           }
+         }
+    ]
 }
 
 
@@ -375,3 +406,25 @@ def create_html_report(file_name, minknow_version="25"):
             dedent(f"""
             const reportDataJson = {json.dumps(json_data)};
             """))
+
+def create_json_report(file_name, minknow_version="25"):
+        """
+        Create a mock MinKNOW JSON report file
+
+        Arguments:
+          file_name (str): file name and path for new
+            mock JSON report file
+          minknow_version (str): version of MinKNOW to
+            mimick (either "24" or "25"; default is
+            "25")
+        """
+        # Fetch appropriate example JSON data
+        if minknow_version == "25":
+            json_data = JSON_DATA_25
+        elif minknow_version == "24":
+            json_data = JSON_DATA_24
+        else:
+            raise Exception(f"Unable to create report for MinKNOW "
+                            f"version '{minknow_version}'")
+        # Write the mock JSON file
+        Path(file_name).write_text(json.dumps(json_data) + "\n")
