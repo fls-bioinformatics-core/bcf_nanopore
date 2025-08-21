@@ -14,6 +14,7 @@ Provides the following classes:
 * FlowCell: handles a PromethION flow cell directory
 * BasecallsDir: handles a Promethion basecalls directory
 * HtmlReport: handles a MinKNOW HTML report
+* JsonReport: handles a MinKNOW JSON report
 * BasecallsMetadata: metadata extracted from MinKNOW report
 * ProjectAnalysisDir: analysis directory associated with a project
 
@@ -240,6 +241,35 @@ class HtmlReport:
         if json_data is None:
             raise Exception("%s: unable to extract JSON data" % self.path)
         return json.loads(json_data)
+
+    def __repr__(self):
+        return self.path
+
+
+class JsonReport:
+    """
+    Class for handling JSON report from MinKNOW
+
+    Arguments:
+      path (str): path to the JSON file
+    """
+
+    def __init__(self, path):
+        self.path = os.path.abspath(path)
+
+    def extract_json(self):
+        """
+        Read and return JSON data from the file
+
+        Returns data as a JSON object.
+        """
+        json_data = None
+        with open(self.path, "rt") as fp:
+            try:
+                return json.load(fp)
+            except Exception as ex:
+                raise Exception(f"{self.path}: unable to extract "
+                                f"JSON data: {ex}")
 
     def __repr__(self):
         return self.path

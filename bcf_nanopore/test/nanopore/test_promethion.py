@@ -10,6 +10,7 @@ from bcf_nanopore.mock import MockPromethionDataDir
 from bcf_nanopore.mock import MockFlowcellDir
 from bcf_nanopore.mock import MockBasecallsDir
 from bcf_nanopore.mock import create_html_report
+from bcf_nanopore.mock import create_json_report
 from bcf_nanopore.nanopore.promethion import is_flow_cell_name
 from bcf_nanopore.nanopore.promethion import get_flow_cell_id
 from bcf_nanopore.nanopore.promethion import get_flow_cell_datestamp
@@ -17,6 +18,7 @@ from bcf_nanopore.nanopore.promethion import ProjectDir
 from bcf_nanopore.nanopore.promethion import FlowCell
 from bcf_nanopore.nanopore.promethion import BasecallsDir
 from bcf_nanopore.nanopore.promethion import HtmlReport
+from bcf_nanopore.nanopore.promethion import JsonReport
 from bcf_nanopore.nanopore.promethion import BasecallsMetadata
 
 
@@ -159,6 +161,24 @@ class TestHtmlReport(unittest.TestCase):
         create_html_report(str(html_report_file))
         html_report = HtmlReport(str(html_report_file))
         self.assertIsNotNone(html_report.extract_json())
+
+class TestJsonReport(unittest.TestCase):
+
+    def setUp(self):
+        self.wd = tempfile.mkdtemp()
+
+    def tearDown(self):
+        if Path(self.wd).exists():
+            shutil.rmtree(self.wd)
+
+    def test_json_report(self):
+        """
+        JsonReport: load from file
+        """
+        json_report_file = Path(self.wd).joinpath("report_BLAH.json")
+        create_json_report(str(json_report_file))
+        json_report = JsonReport(str(json_report_file))
+        self.assertIsNotNone(json_report.extract_json())
 
 class TestBasecallsMetadata(unittest.TestCase):
 
