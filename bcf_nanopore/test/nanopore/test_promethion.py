@@ -202,6 +202,8 @@ class TestBasecallsMetadata(unittest.TestCase):
         self.assertEqual(data.modified_basecalling, None)
         self.assertEqual(data.trim_barcodes, None)
         self.assertEqual(data.software_versions, None)
+        self.assertEqual(data.basecalling_model, None)
+        self.assertEqual(data.basecalling_config, None)
 
     def test_basecalls_metadata_minknow_v24(self):
         """
@@ -222,6 +224,9 @@ class TestBasecallsMetadata(unittest.TestCase):
         self.assertEqual(data.modified_basecalling, "On")
         self.assertEqual(data.trim_barcodes, "Off")
         self.assertEqual(data.software_versions["minknow"], "24.02.19")
+        self.assertEqual(data.basecalling_model,
+                         "dna_r10.4.1_e8.2_400bps_hac@v4.3.0")
+        self.assertEqual(data.basecalling_config, None)
 
     def test_basecalls_metadata_minknow_v25(self):
         """
@@ -242,6 +247,10 @@ class TestBasecallsMetadata(unittest.TestCase):
         self.assertEqual(data.modified_basecalling, "Off")
         self.assertEqual(data.trim_barcodes, "Off")
         self.assertEqual(data.software_versions["minknow"], "25.03.7")
+        self.assertEqual(data.basecalling_model,
+                         "dna_r10.4.1_e8.2_400bps_hac@v4.3.0")
+        self.assertEqual(data.basecalling_config,
+                         "dna_r10.4.1_e8.2_400bps_5khz_modbases_5hmc_5mc_cg_hac.cfg")
 
 
 class TestFlowcellBasecallsInfo(unittest.TestCase):

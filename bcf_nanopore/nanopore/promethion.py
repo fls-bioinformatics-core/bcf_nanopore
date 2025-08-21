@@ -295,6 +295,8 @@ class BasecallsMetadata:
         self.modifications = None
         self.trim_barcodes = None
         self.software_versions = None
+        self.basecalling_model = None
+        self.basecalling_config = None
 
     def load_from_report_html(self, html_file):
         """
@@ -353,6 +355,22 @@ class BasecallsMetadata:
           json_file (str): path to the JSON report
         """
         self.json_data = JsonReport(json_file).extract_json()
+        try:
+            for acquisition in self.json_data["acquisitions"]:
+                # Basecalling model
+                if not self.basecalling_model:
+                    try:
+                        self.basecalling_model = acquisition["acquisition_run_info"]["config_summary"]["basecalling_model_version"]
+                    except KeyError:
+                        pass
+                # Basecalling config
+                if not self.basecalling_config:
+                    try:
+                        self.basecalling_config = acquisition["acquisition_run_info"]["config_summary"]["basecalling_config_filename"]
+                    except KeyError:
+                        pass
+        except KeyError:
+            pass
         return self
 
     def json(self):
