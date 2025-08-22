@@ -64,19 +64,23 @@ def info(project_dir):
         if basecalling_model is None:
             basecalling_model = fc.metadata.basecalling_config
         basecalling_model = fmt_value(basecalling_model)
-        print('\t'.join([str(s)for s in (run,
-                                         fc.pool,
-                                         fc,
-                                         fc.id,
-                                         reports,
-                                         kit,
-                                         modifications,
-                                         trim_barcodes,
-                                         minknow_version,
-                                         basecalling_model)]))
+        print('\t'.join([str(s) for s in (run,
+                                          fc.pool,
+                                          fc,
+                                          fc.id,
+                                          reports,
+                                          kit,
+                                          modifications,
+                                          trim_barcodes,
+                                          minknow_version,
+                                          basecalling_model)]))
     for bc in project.basecalls_dirs:
         flow_cell_id = fmt_value(bc.metadata.flow_cell_id)
         run = ("-" if bc.run is None else bc.run)
+        if bc.pool:
+            pool = bc.pool
+        else:
+            pool = bc.name
         kit = fmt_value(bc.metadata.kit)
         modifications = ("none" if bc.metadata.modified_basecalling == "Off"
                          else fmt_value(bc.metadata.modifications))
@@ -98,16 +102,16 @@ def info(project_dir):
         if basecalling_model is None:
             basecalling_model = bc.metadata.basecalling_config
         basecalling_model = fmt_value(basecalling_model)
-        print('\t'.join([str(s)for s in (run,
-                                         bc.name,
-                                         bc,
-                                         flow_cell_id,
-                                         reports,
-                                         kit,
-                                         modifications,
-                                         trim_barcodes,
-                                         minknow_version,
-                                         basecalling_model)]))
+        print('\t'.join([str(s) for s in (run,
+                                          pool,
+                                          bc,
+                                          flow_cell_id,
+                                          reports,
+                                          kit,
+                                          modifications,
+                                          trim_barcodes,
+                                          minknow_version,
+                                          basecalling_model)]))
 
 
 def metadata(metadata_file, dump_json=False):
