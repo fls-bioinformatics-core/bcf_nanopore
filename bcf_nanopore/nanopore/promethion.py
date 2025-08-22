@@ -140,11 +140,13 @@ class FlowCell:
         for f in os.listdir(self.path):
             if f.startswith("report_"):
                 self.reports.append(f)
-                try:
-                    self.metadata.load_from_report(
-                        os.path.join(self.path, f))
-                except Exception as ex:
-                    print(f"{f}: failed to load metadata from file (ignored): {ex}")
+                if f.endswith(".html") or f.endswith(".json"):
+                    try:
+                        self.metadata.load_from_report(
+                            os.path.join(self.path, f))
+                    except Exception as ex:
+                        print(f"{f}: failed to load metadata from file "
+                              f"(ignored): {ex}")
             elif f.startswith("sample_sheet_"):
                 self.sample_sheet = f
 
@@ -197,11 +199,13 @@ class BasecallsDir:
         for f in os.listdir(self.path):
             if f.startswith("report_"):
                 self.reports.append(f)
-                try:
-                    self.metadata.load_from_report(
-                        os.path.join(self.path, f))
-                except Exception as ex:
-                    print(f"{f}: failed to load metadata from file (ignored): {ex}")
+                if f.endswith(".html") or f.endswith(".json"):
+                    try:
+                        self.metadata.load_from_report(
+                            os.path.join(self.path, f))
+                    except Exception as ex:
+                        print(f"{f}: failed to load metadata from file "
+                              f"(ignored): {ex}")
             elif f.startswith("sample_sheet_"):
                 self.sample_sheet = f
 
