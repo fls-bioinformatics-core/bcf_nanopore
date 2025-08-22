@@ -140,12 +140,21 @@ class ProjectAnalysisDir:
                                        "%s.tsv" % self.info.name)
         fc_file = FlowcellBasecallsInfo()
         for fc in project.flow_cells:
+            reports = []
+            if fc.html_report:
+                reports.append("html")
+            if fc.json_report:
+                reports.append("json")
+            if reports:
+                reports = ",".join(reports)
+            else:
+                reports = None
             fc_file.add_base_calls(
                 run=("-" if fc.run is None else fc.run),
                 pool_name=fc.pool,
                 sub_dir=fc,
                 flow_cell_id=fc.id,
-                reports=fmt_yes_no(fc.html_report),
+                reports=fmt_value(reports),
                 kit=fmt_value(fc.metadata.kit),
                 modifications=("none"
                                if fc.metadata.modified_basecalling == "Off"
@@ -154,12 +163,21 @@ class ProjectAnalysisDir:
                 minknow_version=fc.metadata.software_versions["minknow"],
                 basecalling_model=fmt_value(fc.metadata.basecalling_model))
         for bc in project.basecalls_dirs:
+            reports = []
+            if bc.html_report:
+                reports.append("html")
+            if bc.json_report:
+                reports.append("json")
+            if reports:
+                reports = ",".join(reports)
+            else:
+                reports = None
             fc_file.add_base_calls(
                 run=("-" if bc.run is None else bc.run),
                 pool_name=(bc.pool if bc.pool else bc.name),
                 sub_dir=bc,
                 flow_cell_id=fmt_value(bc.metadata.flow_cell_id),
-                reports=fmt_yes_no(bc.html_report),
+                reports=fmt_value(reports),
                 kit=fmt_value(bc.metadata.kit),
                 modifications=("none"
                                if bc.metadata.modified_basecalling == "Off"
