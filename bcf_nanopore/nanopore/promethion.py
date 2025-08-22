@@ -155,6 +155,17 @@ class FlowCell:
                 self.sample_sheet = f
 
     @property
+    def file_types(self):
+        file_types = []
+        if self.pod5:
+            file_types.append("pod5")
+        if self.bam_pass:
+            file_types.append("bam")
+        if self.fastq_pass:
+            file_types.append("fastq")
+        return file_types
+
+    @property
     def html_report(self):
         for f in self.reports:
             if f.endswith(".html"):
@@ -212,6 +223,13 @@ class BasecallsDir:
                               f"(ignored): {ex}")
             elif f.startswith("sample_sheet_"):
                 self.sample_sheet = f
+
+    @property
+    def file_types(self):
+        if self.pass_dir:
+            return ["bam", "fastq"]
+        else:
+            return []
 
     @property
     def html_report(self):

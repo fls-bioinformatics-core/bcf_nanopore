@@ -73,6 +73,7 @@ class TestFlowCell(unittest.TestCase):
         self.assertEqual(flow_cell.pod5,str(Path(flow_cell_dir).joinpath("pod5")))
         self.assertEqual(flow_cell.bam_pass, str(Path(flow_cell_dir).joinpath("bam_pass")))
         self.assertEqual(flow_cell.fastq_pass, str(Path(flow_cell_dir).joinpath("fastq_pass")))
+        self.assertEqual(flow_cell.file_types, ["pod5", "bam", "fastq"])
         self.assertEqual(str(flow_cell), "PG1-2/20240513_0829_1A_PAW15419_465bb23f")
         self.assertEqual(flow_cell.metadata.flow_cell_id, "PBC32212")
         self.assertEqual(flow_cell.metadata.flow_cell_type, "FLO-PRO114M")
@@ -113,6 +114,7 @@ class TestFlowCell(unittest.TestCase):
         self.assertEqual(flow_cell.pod5,str(flow_cell_dir.joinpath("pod5")))
         self.assertEqual(flow_cell.bam_pass, str(flow_cell_dir.joinpath("bam_pass")))
         self.assertEqual(flow_cell.fastq_pass, str(flow_cell_dir.joinpath("fastq_pass")))
+        self.assertEqual(flow_cell.file_types, ["pod5", "bam", "fastq"])
         self.assertEqual(str(flow_cell), "PG1-2/20240513_0829_1A_PAW15419_465bb23f")
         self.assertEqual(flow_cell.metadata.flow_cell_id, "PBC32212")
         self.assertEqual(flow_cell.metadata.flow_cell_type, "FLO-PRO114M")
@@ -151,6 +153,7 @@ class TestBasecallsDir(unittest.TestCase):
         self.assertEqual(basecalls.run, None)
         self.assertEqual(basecalls.pass_dir,
                          str(Path(basecalls_dir).joinpath("pass")))
+        self.assertEqual(basecalls.file_types, ["bam", "fastq"])
         self.assertEqual(basecalls.html_report,
                          str(Path(basecalls_dir).joinpath("report_20240513_0829_1A_PAW15419_465bb23f.html")))
         self.assertEqual(basecalls.json_report,
@@ -187,6 +190,7 @@ class TestBasecallsDir(unittest.TestCase):
         self.assertEqual(basecalls.run, "PG1-4_20240513")
         self.assertEqual(basecalls.pass_dir,
                          str(Path(basecalls_dir).joinpath("pass")))
+        self.assertEqual(basecalls.file_types, ["bam", "fastq"])
         self.assertEqual(basecalls.html_report,
                          str(Path(basecalls_dir).joinpath("report_20240513_0829_1A_PAW15419_465bb23f.html")))
         self.assertEqual(basecalls.json_report,
