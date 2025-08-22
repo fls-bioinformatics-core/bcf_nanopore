@@ -134,6 +134,10 @@ class FlowCell:
         self.bam_pass = os.path.join(self.path, "bam_pass")
         if not os.path.exists(self.bam_pass):
             self.bam_pass = None
+        # FASTQs directory
+        self.fastq_pass = os.path.join(self.path, "fastq_pass")
+        if not os.path.exists(self.fastq_pass):
+            self.fastq_pass = None
         # Reports
         self.reports = []
         self.sample_sheet = None
@@ -189,10 +193,10 @@ class BasecallsDir:
         self.run = run
         # Associated metadata
         self.metadata = BasecallsMetadata()
-        # BAMs directory
-        self.bam_pass = os.path.join(self.path, "pass")
-        if not os.path.exists(self.bam_pass):
-            self.bam_pass = None
+        # BAMs and FASTQs directory
+        self.pass_dir = os.path.join(self.path, "pass")
+        if not os.path.exists(self.pass_dir):
+            self.pass_dir = None
         # Reports
         self.reports = []
         self.sample_sheet = None
