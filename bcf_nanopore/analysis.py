@@ -161,7 +161,9 @@ class ProjectAnalysisDir:
                                else fmt_value(fc.metadata.modifications)),
                 trim_barcodes=fmt_value(fc.metadata.trim_barcodes),
                 minknow_version=fc.metadata.software_versions["minknow"],
-                basecalling_model=fmt_value(fc.metadata.basecalling_model))
+                basecalling_model=fmt_value(fc.metadata.basecalling_model),
+                file_types=(",".join(fc.file_types)
+                            if fc.file_types else "none"))
         for bc in project.basecalls_dirs:
             reports = []
             if bc.html_report:
@@ -184,7 +186,9 @@ class ProjectAnalysisDir:
                                else fmt_value(bc.metadata.modifications)),
                 trim_barcodes=fmt_value(bc.metadata.trim_barcodes),
                 minknow_version=bc.metadata.software_versions["minknow"],
-                basecalling_model=fmt_value(bc.metadata.basecalling_model))
+                basecalling_model=fmt_value(bc.metadata.basecalling_model),
+                file_types=(",".join(bc.file_types)
+                            if bc.file_types else "none"))
         fc_file.save(flow_cells_file)
         # Get the earliest date stamp from flow cell names
         try:
