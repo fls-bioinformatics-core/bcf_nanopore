@@ -52,15 +52,10 @@ JSON_DATA_24 = {
     "acquisitions": [
         { "acquisition_run_info":
           { "config_summary":
-            { "barcoding_enabled": "true",
-              "barcoding_kits": [ "SQK-NBD114-24" ],
+            { "basecalling_config_filename": "dna_r10.4.1_e8.2_400bps_5khz_modbases_5hmc_5mc_cg_hac.cfg",
               "basecalling_enabled": "true",
-              "basecalling_model_names": {
-                  "modified_models": [ "dna_r10.4.1_e8.2_400bps_hac@v4.3.0_5mCG_5hmCG@v1" ],
-                  "simplex_model": "dna_r10.4.1_e8.2_400bps_hac@v4.3.0" },
               "basecalling_model_version": "dna_r10.4.1_e8.2_400bps_hac@v4.3.0",
-              "channel_count": 3000,
-             }
+              "channel_count": 3000 }
            }
          }
     ]
@@ -97,10 +92,15 @@ JSON_DATA_25 = {
     "acquisitions": [
         { "acquisition_run_info":
           { "config_summary":
-            { "basecalling_config_filename": "dna_r10.4.1_e8.2_400bps_5khz_modbases_5hmc_5mc_cg_hac.cfg",
+            { "barcoding_enabled": "true",
+              "barcoding_kits": [ "SQK-NBD114-24" ],
               "basecalling_enabled": "true",
+              "basecalling_model_names": {
+                  "modified_models": [ "dna_r10.4.1_e8.2_400bps_hac@v4.3.0_5mCG_5hmCG@v1" ],
+                  "simplex_model": "dna_r10.4.1_e8.2_400bps_hac@v4.3.0" },
               "basecalling_model_version": "dna_r10.4.1_e8.2_400bps_hac@v4.3.0",
-              "channel_count": 3000 }
+              "channel_count": 3000,
+             }
            }
          }
     ]

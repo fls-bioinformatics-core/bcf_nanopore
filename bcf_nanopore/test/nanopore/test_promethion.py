@@ -84,8 +84,7 @@ class TestFlowCell(unittest.TestCase):
         self.assertEqual(flow_cell.metadata.software_versions["minknow"], "25.03.7")
         self.assertEqual(flow_cell.metadata.basecalling_model,
                          "dna_r10.4.1_e8.2_400bps_hac@v4.3.0")
-        self.assertEqual(flow_cell.metadata.basecalling_config,
-                         "dna_r10.4.1_e8.2_400bps_5khz_modbases_5hmc_5mc_cg_hac.cfg")
+        self.assertEqual(flow_cell.metadata.basecalling_config, None)
 
     def test_flow_cell_from_project(self):
         """
@@ -124,8 +123,7 @@ class TestFlowCell(unittest.TestCase):
         self.assertEqual(flow_cell.metadata.software_versions["minknow"], "25.03.7")
         self.assertEqual(flow_cell.metadata.basecalling_model,
                          "dna_r10.4.1_e8.2_400bps_hac@v4.3.0")
-        self.assertEqual(flow_cell.metadata.basecalling_config,
-                         "dna_r10.4.1_e8.2_400bps_5khz_modbases_5hmc_5mc_cg_hac.cfg")
+        self.assertEqual(flow_cell.metadata.basecalling_config, None)
 
 class TestBasecallsDir(unittest.TestCase):
 
@@ -165,8 +163,7 @@ class TestBasecallsDir(unittest.TestCase):
         self.assertEqual(basecalls.metadata.software_versions["minknow"], "25.03.7")
         self.assertEqual(basecalls.metadata.basecalling_model,
                          "dna_r10.4.1_e8.2_400bps_hac@v4.3.0")
-        self.assertEqual(basecalls.metadata.basecalling_config,
-                         "dna_r10.4.1_e8.2_400bps_5khz_modbases_5hmc_5mc_cg_hac.cfg")
+        self.assertEqual(basecalls.metadata.basecalling_config, None)
 
     def test_basecalls_dir_from_project(self):
         """
@@ -201,8 +198,7 @@ class TestBasecallsDir(unittest.TestCase):
         self.assertEqual(basecalls.metadata.software_versions["minknow"], "25.03.7")
         self.assertEqual(basecalls.metadata.basecalling_model,
                          "dna_r10.4.1_e8.2_400bps_hac@v4.3.0")
-        self.assertEqual(basecalls.metadata.basecalling_config,
-                         "dna_r10.4.1_e8.2_400bps_5khz_modbases_5hmc_5mc_cg_hac.cfg")
+        self.assertEqual(basecalls.metadata.basecalling_config, None)
 
 class TestHtmlReport(unittest.TestCase):
 
@@ -286,7 +282,8 @@ class TestBasecallsMetadata(unittest.TestCase):
         self.assertEqual(data.software_versions["minknow"], "24.02.19")
         self.assertEqual(data.basecalling_model,
                          "dna_r10.4.1_e8.2_400bps_hac@v4.3.0")
-        self.assertEqual(data.basecalling_config, None)
+        self.assertEqual(data.basecalling_config,
+                         "dna_r10.4.1_e8.2_400bps_5khz_modbases_5hmc_5mc_cg_hac.cfg")
 
     def test_basecalls_metadata_minknow_v25(self):
         """
@@ -309,8 +306,7 @@ class TestBasecallsMetadata(unittest.TestCase):
         self.assertEqual(data.software_versions["minknow"], "25.03.7")
         self.assertEqual(data.basecalling_model,
                          "dna_r10.4.1_e8.2_400bps_hac@v4.3.0")
-        self.assertEqual(data.basecalling_config,
-                         "dna_r10.4.1_e8.2_400bps_5khz_modbases_5hmc_5mc_cg_hac.cfg")
+        self.assertEqual(data.basecalling_config, None)
 
 
 class TestFlowcellBasecallsInfo(unittest.TestCase):
