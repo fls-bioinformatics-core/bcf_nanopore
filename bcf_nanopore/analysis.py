@@ -156,7 +156,7 @@ class ProjectAnalysisDir:
         for bc in project.basecalls_dirs:
             fc_file.add_base_calls(
                 run=("-" if bc.run is None else bc.run),
-                pool_name=bc.name,
+                pool_name=(bc.pool if bc.pool else bc.name),
                 sub_dir=bc,
                 flow_cell_id=fmt_value(bc.metadata.flow_cell_id),
                 reports=fmt_yes_no(bc.html_report),
