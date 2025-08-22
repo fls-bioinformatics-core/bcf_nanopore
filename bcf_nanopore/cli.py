@@ -89,8 +89,8 @@ def metadata(metadata_file, dump_json=False):
         otherwise dump the extract JSON data
     """
     data = BasecallsMetadata()
+    data.load_from_report(metadata_file)
     if metadata_file.endswith(".html"):
-        data.load_from_report_html(metadata_file)
         if dump_json:
             try:
                 print(data.html_json())
