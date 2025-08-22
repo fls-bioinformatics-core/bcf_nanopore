@@ -73,6 +73,19 @@ class TestFlowCell(unittest.TestCase):
         self.assertEqual(flow_cell.pod5,str(Path(flow_cell_dir).joinpath("pod5")))
         self.assertEqual(flow_cell.bam_pass, str(Path(flow_cell_dir).joinpath("bam_pass")))
         self.assertEqual(str(flow_cell), "PG1-2/20240513_0829_1A_PAW15419_465bb23f")
+        self.assertEqual(flow_cell.metadata.flow_cell_id, "PBC32212")
+        self.assertEqual(flow_cell.metadata.flow_cell_type, "FLO-PRO114M")
+        self.assertEqual(flow_cell.metadata.kit, "SQK-PCB114-24")
+        self.assertEqual(flow_cell.metadata.basecalling,
+                         "High-accuracy model 400bps")
+        self.assertEqual(flow_cell.metadata.modifications, None)
+        self.assertEqual(flow_cell.metadata.modified_basecalling, "Off")
+        self.assertEqual(flow_cell.metadata.trim_barcodes, "Off")
+        self.assertEqual(flow_cell.metadata.software_versions["minknow"], "25.03.7")
+        self.assertEqual(flow_cell.metadata.basecalling_model,
+                         "dna_r10.4.1_e8.2_400bps_hac@v4.3.0")
+        self.assertEqual(flow_cell.metadata.basecalling_config,
+                         "dna_r10.4.1_e8.2_400bps_5khz_modbases_5hmc_5mc_cg_hac.cfg")
 
     def test_flow_cell_from_project(self):
         """
@@ -100,6 +113,19 @@ class TestFlowCell(unittest.TestCase):
         self.assertEqual(flow_cell.pod5,str(flow_cell_dir.joinpath("pod5")))
         self.assertEqual(flow_cell.bam_pass, str(flow_cell_dir.joinpath("bam_pass")))
         self.assertEqual(str(flow_cell), "PG1-2/20240513_0829_1A_PAW15419_465bb23f")
+        self.assertEqual(flow_cell.metadata.flow_cell_id, "PBC32212")
+        self.assertEqual(flow_cell.metadata.flow_cell_type, "FLO-PRO114M")
+        self.assertEqual(flow_cell.metadata.kit, "SQK-PCB114-24")
+        self.assertEqual(flow_cell.metadata.basecalling,
+                         "High-accuracy model 400bps")
+        self.assertEqual(flow_cell.metadata.modifications, None)
+        self.assertEqual(flow_cell.metadata.modified_basecalling, "Off")
+        self.assertEqual(flow_cell.metadata.trim_barcodes, "Off")
+        self.assertEqual(flow_cell.metadata.software_versions["minknow"], "25.03.7")
+        self.assertEqual(flow_cell.metadata.basecalling_model,
+                         "dna_r10.4.1_e8.2_400bps_hac@v4.3.0")
+        self.assertEqual(flow_cell.metadata.basecalling_config,
+                         "dna_r10.4.1_e8.2_400bps_5khz_modbases_5hmc_5mc_cg_hac.cfg")
 
 class TestBasecallsDir(unittest.TestCase):
 
@@ -128,6 +154,19 @@ class TestBasecallsDir(unittest.TestCase):
                          str(Path(basecalls_dir).joinpath("report_20240513_0829_1A_PAW15419_465bb23f.html")))
         self.assertEqual(basecalls.json_report,
                          str(Path(basecalls_dir).joinpath("report_20240513_0829_1A_PAW15419_465bb23f.json")))
+        self.assertEqual(basecalls.metadata.flow_cell_id, "PBC32212")
+        self.assertEqual(basecalls.metadata.flow_cell_type, "FLO-PRO114M")
+        self.assertEqual(basecalls.metadata.kit, "SQK-PCB114-24")
+        self.assertEqual(basecalls.metadata.basecalling,
+                         "High-accuracy model 400bps")
+        self.assertEqual(basecalls.metadata.modifications, None)
+        self.assertEqual(basecalls.metadata.modified_basecalling, "Off")
+        self.assertEqual(basecalls.metadata.trim_barcodes, "Off")
+        self.assertEqual(basecalls.metadata.software_versions["minknow"], "25.03.7")
+        self.assertEqual(basecalls.metadata.basecalling_model,
+                         "dna_r10.4.1_e8.2_400bps_hac@v4.3.0")
+        self.assertEqual(basecalls.metadata.basecalling_config,
+                         "dna_r10.4.1_e8.2_400bps_5khz_modbases_5hmc_5mc_cg_hac.cfg")
 
     def test_basecalls_dir_from_project(self):
         """
@@ -151,6 +190,19 @@ class TestBasecallsDir(unittest.TestCase):
                          str(Path(basecalls_dir).joinpath("report_20240513_0829_1A_PAW15419_465bb23f.html")))
         self.assertEqual(basecalls.json_report,
                          str(Path(basecalls_dir).joinpath("report_20240513_0829_1A_PAW15419_465bb23f.json")))
+        self.assertEqual(basecalls.metadata.flow_cell_id, "PBC32212")
+        self.assertEqual(basecalls.metadata.flow_cell_type, "FLO-PRO114M")
+        self.assertEqual(basecalls.metadata.kit, "SQK-PCB114-24")
+        self.assertEqual(basecalls.metadata.basecalling,
+                         "High-accuracy model 400bps")
+        self.assertEqual(basecalls.metadata.modifications, None)
+        self.assertEqual(basecalls.metadata.modified_basecalling, "Off")
+        self.assertEqual(basecalls.metadata.trim_barcodes, "Off")
+        self.assertEqual(basecalls.metadata.software_versions["minknow"], "25.03.7")
+        self.assertEqual(basecalls.metadata.basecalling_model,
+                         "dna_r10.4.1_e8.2_400bps_hac@v4.3.0")
+        self.assertEqual(basecalls.metadata.basecalling_config,
+                         "dna_r10.4.1_e8.2_400bps_5khz_modbases_5hmc_5mc_cg_hac.cfg")
 
 class TestHtmlReport(unittest.TestCase):
 
