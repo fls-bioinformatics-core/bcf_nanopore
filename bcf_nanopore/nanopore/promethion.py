@@ -166,6 +166,15 @@ class FlowCell:
         return file_types
 
     @property
+    def report_types(self):
+        report_types = []
+        if self.html_report:
+            report_types.append("html")
+        if self.json_report:
+            report_types.append("json")
+        return report_types
+
+    @property
     def html_report(self):
         for f in self.reports:
             if f.endswith(".html"):
@@ -230,6 +239,15 @@ class BasecallsDir:
             return ["bam", "fastq"]
         else:
             return []
+
+    @property
+    def report_types(self):
+        report_types = []
+        if self.html_report:
+            report_types.append("html")
+        if self.json_report:
+            report_types.append("json")
+        return report_types
 
     @property
     def html_report(self):
