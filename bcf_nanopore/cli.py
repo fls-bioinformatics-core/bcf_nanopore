@@ -61,13 +61,7 @@ def info(project_dir):
             reports = ",".join(reports)
         else:
             reports = "none"
-        file_types = []
-        if fc.pod5:
-            file_types.append("pod5")
-        if fc.bam_pass:
-            file_types.append("bam")
-        if fc.fastq_pass:
-            file_types.append("fastq")
+        file_types = fc.file_types
         if file_types:
             file_types = ",".join(file_types)
         else:
@@ -111,10 +105,7 @@ def info(project_dir):
             reports = ",".join(reports)
         else:
             reports = "none"
-        if bc.pass_dir:
-            file_types = ["bam", "fastq"]
-        else:
-            file_types = []
+        file_types = bc.file_types
         if file_types:
             file_types = ",".join(file_types)
         else:
