@@ -39,42 +39,79 @@ def info(project_dir):
                      "Kit",
                      "Modifications",
                      "TrimBarcodes",
-                     "MinKNOWVersion"]))
+                     "MinKNOWVersion",
+                     "BasecallingModel"]))
     for fc in project.flow_cells:
         run = ("-" if fc.run is None else fc.run)
         kit = fmt_value(fc.metadata.kit)
         modifications = ("none" if fc.metadata.modified_basecalling == "Off"
                          else fmt_value(fc.metadata.modifications))
         trim_barcodes = fmt_value(fc.metadata.trim_barcodes)
-        minknow_version = fc.metadata.software_versions["minknow"]
-        has_report = fmt_yes_no(fc.html_report)
-        print('\t'.join([str(s)for s in (run,
-                                         fc.pool,
-                                         fc,
-                                         fc.id,
-                                         has_report,
-                                         kit,
-                                         modifications,
-                                         trim_barcodes,
-                                         minknow_version)]))
+        try:
+            minknow_version = fc.metadata.software_versions["minknow"]
+        except (TypeError, KeyError):
+            minknow_version = "?"
+        reports = []
+        if fc.html_report:
+            reports.append("html")
+        if fc.json_report:
+            reports.append("json")
+        if reports:
+            reports = ",".join(reports)
+        else:
+            reports = "none"
+        basecalling_model = fc.metadata.basecalling_model
+        if basecalling_model is None:
+            basecalling_model = fc.metadata.basecalling_config
+        basecalling_model = fmt_value(basecalling_model)
+        print('\t'.join([str(s) for s in (run,
+                                          fc.pool,
+                                          fc,
+                                          fc.id,
+                                          reports,
+                                          kit,
+                                          modifications,
+                                          trim_barcodes,
+                                          minknow_version,
+                                          basecalling_model)]))
     for bc in project.basecalls_dirs:
         flow_cell_id = fmt_value(bc.metadata.flow_cell_id)
         run = ("-" if bc.run is None else bc.run)
+        if bc.pool:
+            pool = bc.pool
+        else:
+            pool = bc.name
         kit = fmt_value(bc.metadata.kit)
         modifications = ("none" if bc.metadata.modified_basecalling == "Off"
                          else fmt_value(bc.metadata.modifications))
         trim_barcodes = fmt_value(bc.metadata.trim_barcodes)
-        minknow_version = fc.metadata.software_versions["minknow"]
-        has_report = fmt_yes_no(bc.html_report)
-        print('\t'.join([str(s)for s in (run,
-                                         bc.name,
-                                         bc,
-                                         flow_cell_id,
-                                         has_report,
-                                         kit,
-                                         modifications,
-                                         trim_barcodes,
-                                         minknow_version)]))
+        try:
+            minknow_version = bc.metadata.software_versions["minknow"]
+        except (TypeError, KeyError):
+            minknow_version = "?"
+        reports = []
+        if bc.html_report:
+            reports.append("html")
+        if bc.json_report:
+            reports.append("json")
+        if reports:
+            reports = ",".join(reports)
+        else:
+            reports = "none"
+        basecalling_model = bc.metadata.basecalling_model
+        if basecalling_model is None:
+            basecalling_model = bc.metadata.basecalling_config
+        basecalling_model = fmt_value(basecalling_model)
+        print('\t'.join([str(s) for s in (run,
+                                          pool,
+                                          bc,
+                                          flow_cell_id,
+                                          reports,
+                                          kit,
+                                          modifications,
+                                          trim_barcodes,
+                                          minknow_version,
+                                          basecalling_model)]))
 
 
 def metadata(metadata_file, dump_json=False):
@@ -88,11 +125,14 @@ def metadata(metadata_file, dump_json=False):
         (default) then only print extract metadata items;
         otherwise dump the extract JSON data
     """
+    data = BasecallsMetadata()
+    data.load_from_report(metadata_file)
     if metadata_file.endswith(".html"):
-        data = BasecallsMetadata()
-        data.load_from_report_html(metadata_file)
         if dump_json:
-            print(data.json())
+            try:
+                print(data.html_json())
+            except BrokenPipeError:
+                pass
         else:
             print("Flow cell ID         : %s" % data.flow_cell_id)
             print("Flow cell type       : %s" % data.flow_cell_type)
@@ -102,12 +142,14 @@ def metadata(metadata_file, dump_json=False):
             print("Barcode trimming     : %s" % data.trim_barcodes)
             print("Software versions    : %s" % data.software_versions)
     elif metadata_file.endswith(".json"):
-        with open(metadata_file, "rt") as fp:
-            data = json.load(fp)
-        try:
-            print(json.dumps(data, sort_keys=True, indent=4))
-        except BrokenPipeError:
-            pass
+        if dump_json:
+            try:
+                print(data.json())
+            except BrokenPipeError:
+                pass
+        else:
+            print("Basecalling model    : %s" % data.basecalling_model)
+            print("Basecalling config   : %s" % data.basecalling_config)
 
 
 def setup(project_dir, user, PI, application=None, organism=None,
@@ -303,7 +345,7 @@ def bcf_nanopore_main():
                         help="HTML or JSON report file")
     md_cmd.add_argument('-j', '--json', action='store_true',
                         help="dump extracted JSON data instead of metadata "
-                        "items (HTML reports only)")
+                        "items")
 
     # Setup command
     setup_cmd = sp.add_parser("setup",

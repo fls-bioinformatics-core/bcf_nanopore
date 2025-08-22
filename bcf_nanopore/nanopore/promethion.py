@@ -14,6 +14,7 @@ Provides the following classes:
 * FlowCell: handles a PromethION flow cell directory
 * BasecallsDir: handles a Promethion basecalls directory
 * HtmlReport: handles a MinKNOW HTML report
+* JsonReport: handles a MinKNOW JSON report
 * BasecallsMetadata: metadata extracted from MinKNOW report
 * ProjectAnalysisDir: analysis directory associated with a project
 
@@ -139,12 +140,13 @@ class FlowCell:
         for f in os.listdir(self.path):
             if f.startswith("report_"):
                 self.reports.append(f)
-                if f.endswith(".html"):
+                if f.endswith(".html") or f.endswith(".json"):
                     try:
-                        self.metadata.load_from_report_html(
+                        self.metadata.load_from_report(
                             os.path.join(self.path, f))
                     except Exception as ex:
-                        print(f"{f}: failed to load metadata from file (ignored): {ex}")
+                        print(f"{f}: failed to load metadata from file "
+                              f"(ignored): {ex}")
             elif f.startswith("sample_sheet_"):
                 self.sample_sheet = f
 
@@ -152,6 +154,13 @@ class FlowCell:
     def html_report(self):
         for f in self.reports:
             if f.endswith(".html"):
+                return os.path.join(self.path, f)
+        return None
+
+    @property
+    def json_report(self):
+        for f in self.reports:
+            if f.endswith(".json"):
                 return os.path.join(self.path, f)
         return None
 
@@ -190,12 +199,13 @@ class BasecallsDir:
         for f in os.listdir(self.path):
             if f.startswith("report_"):
                 self.reports.append(f)
-                if f.endswith(".html"):
+                if f.endswith(".html") or f.endswith(".json"):
                     try:
-                        self.metadata.load_from_report_html(
+                        self.metadata.load_from_report(
                             os.path.join(self.path, f))
                     except Exception as ex:
-                        print(f"{f}: failed to load metadata from file (ignored): {ex}")
+                        print(f"{f}: failed to load metadata from file "
+                              f"(ignored): {ex}")
             elif f.startswith("sample_sheet_"):
                 self.sample_sheet = f
 
@@ -203,6 +213,13 @@ class BasecallsDir:
     def html_report(self):
         for f in self.reports:
             if f.endswith(".html"):
+                return os.path.join(self.path, f)
+        return None
+
+    @property
+    def json_report(self):
+        for f in self.reports:
+            if f.endswith(".json"):
                 return os.path.join(self.path, f)
         return None
 
@@ -229,7 +246,7 @@ class HtmlReport:
         report file and return as a JSON object.
         """
         json_data = None
-        with open(self.path) as fp:
+        with open(self.path, "rt") as fp:
             for line in fp:
                 if line.strip().startswith("const reportDataJson = {"):
                     json_data = line.strip()[len("const reportDataJson = "):-1]
@@ -245,16 +262,45 @@ class HtmlReport:
         return self.path
 
 
+class JsonReport:
+    """
+    Class for handling JSON report from MinKNOW
+
+    Arguments:
+      path (str): path to the JSON file
+    """
+
+    def __init__(self, path):
+        self.path = os.path.abspath(path)
+
+    def extract_json(self):
+        """
+        Read and return JSON data from the file
+
+        Returns data as a JSON object.
+        """
+        with open(self.path, "rt") as fp:
+            try:
+                return json.load(fp)
+            except Exception as ex:
+                raise Exception(f"{self.path}: unable to extract "
+                                f"JSON data: {ex}")
+
+    def __repr__(self):
+        return self.path
+
+
 class BasecallsMetadata:
     """
     Class representing data about a set of basecalls
 
     The data is populated by extracting data from an HTML
-    report file, by invoking the 'load_from_report_html'
-    method.
+    and JSON report files (by invoking the 'load_from_report'
+    method on each file).
     """
 
     def __init__(self):
+        self.html_json_data = None
         self.json_data = None
         self.flow_cell_id = None
         self.flow_cell_type = None
@@ -264,6 +310,20 @@ class BasecallsMetadata:
         self.modifications = None
         self.trim_barcodes = None
         self.software_versions = None
+        self.basecalling_model = None
+        self.basecalling_config = None
+
+    def load_from_report(self, report_file):
+        """
+        Load metadata from a report file
+        """
+        if report_file.endswith(".html"):
+            return self.load_from_report_html(report_file)
+        elif report_file.endswith(".json"):
+            return self.load_from_report_json(report_file)
+        else:
+            raise Exception(f"{report_file}: unsupported report file "
+                            f"type")
 
     def load_from_report_html(self, html_file):
         """
@@ -272,12 +332,12 @@ class BasecallsMetadata:
         Arguments:
           html_file (str): path to the HTML report
         """
-        self.json_data = HtmlReport(html_file).extract_json()
+        self.html_json_data = HtmlReport(html_file).extract_json()
         data = {}
         for k in ('run_settings',
                   'run_setup',
                   'software_versions'):
-            data[k] = self._extract_section(k)
+            data[k] = self._extract_section(self.html_json_data, k)
         # Set values
         setup = data['run_setup']
         ##print(setup)
@@ -305,15 +365,51 @@ class BasecallsMetadata:
         # Finish
         return self
 
+    def html_json(self):
+        """
+        Return JSON data extracted from the HTML report
+        """
+        if self.html_json_data is None:
+            return {}
+        return json.dumps(self.html_json_data, sort_keys=True,
+                          indent=4)
+
+    def load_from_report_json(self, json_file):
+        """
+        Load metadata from a JSON report file
+
+        Arguments:
+          json_file (str): path to the JSON report
+        """
+        self.json_data = JsonReport(json_file).extract_json()
+        try:
+            for acquisition in self.json_data["acquisitions"]:
+                # Basecalling model
+                if not self.basecalling_model:
+                    try:
+                        self.basecalling_model = acquisition["acquisition_run_info"]["config_summary"]["basecalling_model_version"]
+                    except KeyError:
+                        pass
+                # Basecalling config
+                if not self.basecalling_config:
+                    try:
+                        self.basecalling_config = acquisition["acquisition_run_info"]["config_summary"]["basecalling_config_filename"]
+                    except KeyError:
+                        pass
+        except KeyError:
+            pass
+        return self
+
     def json(self):
         """
-        Return the JSON data
+        Return data extracted from the JSON report
         """
         if self.json_data is None:
             return {}
-        return json.dumps(self.json_data, sort_keys=True, indent=4)
+        return json.dumps(self.json_data, sort_keys=True,
+                          indent=4)
 
-    def _extract_section(self, name):
+    def _extract_section(self, json_data, name):
         """
         Internal: extracts data from JSON for a section
 
@@ -326,6 +422,7 @@ class BasecallsMetadata:
         and '.' characters to underscores.
 
         Arguments:
+          json_data (dict): JSON data
           name (str): name of the section to extract
         """
         return {
@@ -333,7 +430,7 @@ class BasecallsMetadata:
             .replace(' ', '_')
             .replace('-', '_')
             .replace('.', ''): s['value']
-            for s in self.json_data[name]
+            for s in json_data[name]
         }
 
     def _fetch_item(self, data, name):

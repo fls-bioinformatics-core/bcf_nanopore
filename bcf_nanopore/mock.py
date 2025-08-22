@@ -48,6 +48,19 @@ HTML_JSON_DATA_24 = {
                           {"title": "MinKNOW Core", "value": "5.9.12"}],
 }
 
+JSON_DATA_24 = {
+    "acquisitions": [
+        { "acquisition_run_info":
+          { "config_summary":
+            { "basecalling_config_filename": "dna_r10.4.1_e8.2_400bps_5khz_modbases_5hmc_5mc_cg_hac.cfg",
+              "basecalling_enabled": "true",
+              "basecalling_model_version": "dna_r10.4.1_e8.2_400bps_hac@v4.3.0",
+              "channel_count": 3000 }
+           }
+         }
+    ]
+}
+
 # MinKNOW v25
 HTML_JSON_DATA_25 = {
     "run_setup": [{"title": "Flow cell type", "value": "FLO-PRO114M"},
@@ -73,6 +86,24 @@ HTML_JSON_DATA_25 = {
                           {"title": "Configuration", "value": "6.4.10"},
                           {"title": "Dorado", "value": "7.8.3"},
                           {"title": "MinKNOW Core", "value": "6.4.8"}],
+}
+
+JSON_DATA_25 = {
+    "acquisitions": [
+        { "acquisition_run_info":
+          { "config_summary":
+            { "barcoding_enabled": "true",
+              "barcoding_kits": [ "SQK-NBD114-24" ],
+              "basecalling_enabled": "true",
+              "basecalling_model_names": {
+                  "modified_models": [ "dna_r10.4.1_e8.2_400bps_hac@v4.3.0_5mCG_5hmCG@v1" ],
+                  "simplex_model": "dna_r10.4.1_e8.2_400bps_hac@v4.3.0" },
+              "basecalling_model_version": "dna_r10.4.1_e8.2_400bps_hac@v4.3.0",
+              "channel_count": 3000,
+             }
+           }
+         }
+    ]
 }
 
 
@@ -162,7 +193,7 @@ class MockFlowcellDir:
         self.create_pod5_dirs(fc_path)
         for name in ("bam", "fastq"):
             self.create_data_dirs(name,fc_path)
-        self.create_report(fc_path)
+        self.create_reports(fc_path)
         return str(fc_path)
 
     def create_data_dirs(self, name, top_dir):
@@ -193,16 +224,40 @@ class MockFlowcellDir:
             pod5_path.mkdir()
             print(f"...made {pod5_path}")
 
-    def create_report(self, top_dir):
+    def create_reports(self, top_dir, reports=("html", "json"),
+                       minknow_version="25"):
         """
-        Create HTML report
+        Create report files
+
+        Arguments:
+          top_dir (Path): directory to create the
+            mock reports under
+          reports (list): list of the report types to create
+            (default: "html" and "json")
+          minknow_version (str): version of MinKNOW to
+            mimick when writing reports (either "24" or
+            "25", default: "25")
+        """
+        for report in reports:
+            self.create_report(top_dir, report, minknow_version)
+
+    def create_report(self, top_dir, report_type, minknow_version):
+        """
+        Create report file
 
         Arguments:
           top_dir (Path): directory to create the
             mock report under
+          report_type (str): either "html" or "json"
+          minknow_version (str): either "24" or "25"
         """
-        report_file = top_dir.joinpath(f"report_{self.name}.html")
-        create_html_report(str(report_file))
+        report_file = top_dir.joinpath(f"report_{self.name}.{report_type}")
+        if report_type == "html":
+            create_html_report(str(report_file), minknow_version=minknow_version)
+        elif report_type == "json":
+            create_json_report(str(report_file), minknow_version=minknow_version)
+        else:
+            raise Exception(f"{report_type}: unsupported report type")
         print(f"...made {report_file}")
 
 
@@ -231,7 +286,7 @@ class MockBasecallsDir:
         print(f"...made {bc_path}")
         # Make subdirs
         self.create_pass_dir(bc_path)
-        self.create_report(bc_path)
+        self.create_reports(bc_path)
         return str(bc_path)
 
     def create_pass_dir(self, top_dir):
@@ -247,17 +302,45 @@ class MockBasecallsDir:
         print(f"...made {pass_dir}")
         create_barcode_dirs(pass_dir)
 
-    def create_report(self, top_dir):
+    def create_reports(self, top_dir, reports=("html", "json"),
+                       minknow_version="25"):
         """
-        Create HTML report
+        Create report files
+
+        Arguments:
+          top_dir (Path): directory to create the
+            mock reports under
+          reports (list): list of the report types to create
+            (default: "html" and "json")
+          minknow_version (str): version of MinKNOW to
+            mimick when writing reports (either "24" or
+            "25", default: "25")
+        """
+        for report in reports:
+            self.create_report(top_dir, report, minknow_version)
+
+    def create_report(self, top_dir, report_type, minknow_version):
+        """
+        Create report file
 
         Arguments:
           top_dir (Path): directory to create the
             mock report under
+          report_type (str): either "html" or "json"
+          minknow_version (str): either "24" or "25"
         """
+
         if self.flow_cell_name:
-            report_file = top_dir.joinpath(f"report_{self.flow_cell_name}.html")
-            create_html_report(str(report_file))
+            report_file = top_dir.joinpath(
+                f"report_{self.flow_cell_name}.{report_type}")
+            if report_type == "html":
+                create_html_report(str(report_file),
+                                   minknow_version=minknow_version)
+            elif report_type == "json":
+                create_json_report(str(report_file),
+                                   minknow_version=minknow_version)
+            else:
+                raise Exception(f"{report_type}: unsupported report type")
             print(f"...made {report_file}")
 
 
@@ -375,3 +458,25 @@ def create_html_report(file_name, minknow_version="25"):
             dedent(f"""
             const reportDataJson = {json.dumps(json_data)};
             """))
+
+def create_json_report(file_name, minknow_version="25"):
+        """
+        Create a mock MinKNOW JSON report file
+
+        Arguments:
+          file_name (str): file name and path for new
+            mock JSON report file
+          minknow_version (str): version of MinKNOW to
+            mimick (either "24" or "25"; default is
+            "25")
+        """
+        # Fetch appropriate example JSON data
+        if minknow_version == "25":
+            json_data = JSON_DATA_25
+        elif minknow_version == "24":
+            json_data = JSON_DATA_24
+        else:
+            raise Exception(f"Unable to create report for MinKNOW "
+                            f"version '{minknow_version}'")
+        # Write the mock JSON file
+        Path(file_name).write_text(json.dumps(json_data) + "\n")
