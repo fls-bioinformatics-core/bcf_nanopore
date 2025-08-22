@@ -52,11 +52,7 @@ def info(project_dir):
             minknow_version = fc.metadata.software_versions["minknow"]
         except (TypeError, KeyError):
             minknow_version = "?"
-        reports = []
-        if fc.html_report:
-            reports.append("html")
-        if fc.json_report:
-            reports.append("json")
+        reports = fc.report_types
         if reports:
             reports = ",".join(reports)
         else:
@@ -96,11 +92,7 @@ def info(project_dir):
             minknow_version = bc.metadata.software_versions["minknow"]
         except (TypeError, KeyError):
             minknow_version = "?"
-        reports = []
-        if bc.html_report:
-            reports.append("html")
-        if bc.json_report:
-            reports.append("json")
+        reports = bc.report_types
         if reports:
             reports = ",".join(reports)
         else:
