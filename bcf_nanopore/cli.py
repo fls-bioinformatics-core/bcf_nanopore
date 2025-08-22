@@ -40,7 +40,7 @@ def info(project_dir):
                      "Modifications",
                      "TrimBarcodes",
                      "MinKNOWVersion",
-                     "ModelVersion"]))
+                     "BasecallingModel"]))
     for fc in project.flow_cells:
         run = ("-" if fc.run is None else fc.run)
         kit = fmt_value(fc.metadata.kit)
