@@ -68,6 +68,8 @@ class TestFlowCell(unittest.TestCase):
         self.assertEqual(flow_cell.pool, "PG1-2")
         self.assertEqual(flow_cell.html_report,
                          str(Path(flow_cell_dir).joinpath("report_20240513_0829_1A_PAW15419_465bb23f.html")))
+        self.assertEqual(flow_cell.json_report,
+                         str(Path(flow_cell_dir).joinpath("report_20240513_0829_1A_PAW15419_465bb23f.json")))
         self.assertEqual(flow_cell.pod5,str(Path(flow_cell_dir).joinpath("pod5")))
         self.assertEqual(flow_cell.bam_pass, str(Path(flow_cell_dir).joinpath("bam_pass")))
         self.assertEqual(str(flow_cell), "PG1-2/20240513_0829_1A_PAW15419_465bb23f")
@@ -93,6 +95,8 @@ class TestFlowCell(unittest.TestCase):
         self.assertEqual(flow_cell.pool, "PG1-2")
         self.assertEqual(flow_cell.html_report,
                          str(flow_cell_dir.joinpath("report_20240513_0829_1A_PAW15419_465bb23f.html")))
+        self.assertEqual(flow_cell.json_report,
+                         str(flow_cell_dir.joinpath("report_20240513_0829_1A_PAW15419_465bb23f.json")))
         self.assertEqual(flow_cell.pod5,str(flow_cell_dir.joinpath("pod5")))
         self.assertEqual(flow_cell.bam_pass, str(flow_cell_dir.joinpath("bam_pass")))
         self.assertEqual(str(flow_cell), "PG1-2/20240513_0829_1A_PAW15419_465bb23f")
@@ -122,6 +126,8 @@ class TestBasecallsDir(unittest.TestCase):
         self.assertEqual(basecalls.bam_pass, str(Path(basecalls_dir).joinpath("pass")))
         self.assertEqual(basecalls.html_report,
                          str(Path(basecalls_dir).joinpath("report_20240513_0829_1A_PAW15419_465bb23f.html")))
+        self.assertEqual(basecalls.json_report,
+                         str(Path(basecalls_dir).joinpath("report_20240513_0829_1A_PAW15419_465bb23f.json")))
 
     def test_basecalls_dir_from_project(self):
         """
@@ -143,6 +149,8 @@ class TestBasecallsDir(unittest.TestCase):
         self.assertEqual(basecalls.bam_pass, str(Path(basecalls_dir).joinpath("pass")))
         self.assertEqual(basecalls.html_report,
                          str(Path(basecalls_dir).joinpath("report_20240513_0829_1A_PAW15419_465bb23f.html")))
+        self.assertEqual(basecalls.json_report,
+                         str(Path(basecalls_dir).joinpath("report_20240513_0829_1A_PAW15419_465bb23f.json")))
 
 class TestHtmlReport(unittest.TestCase):
 

@@ -140,12 +140,11 @@ class FlowCell:
         for f in os.listdir(self.path):
             if f.startswith("report_"):
                 self.reports.append(f)
-                if f.endswith(".html"):
-                    try:
-                        self.metadata.load_from_report_html(
-                            os.path.join(self.path, f))
-                    except Exception as ex:
-                        print(f"{f}: failed to load metadata from file (ignored): {ex}")
+                try:
+                    self.metadata.load_from_report(
+                        os.path.join(self.path, f))
+                except Exception as ex:
+                    print(f"{f}: failed to load metadata from file (ignored): {ex}")
             elif f.startswith("sample_sheet_"):
                 self.sample_sheet = f
 
@@ -153,6 +152,13 @@ class FlowCell:
     def html_report(self):
         for f in self.reports:
             if f.endswith(".html"):
+                return os.path.join(self.path, f)
+        return None
+
+    @property
+    def json_report(self):
+        for f in self.reports:
+            if f.endswith(".json"):
                 return os.path.join(self.path, f)
         return None
 
@@ -191,12 +197,11 @@ class BasecallsDir:
         for f in os.listdir(self.path):
             if f.startswith("report_"):
                 self.reports.append(f)
-                if f.endswith(".html"):
-                    try:
-                        self.metadata.load_from_report_html(
-                            os.path.join(self.path, f))
-                    except Exception as ex:
-                        print(f"{f}: failed to load metadata from file (ignored): {ex}")
+                try:
+                    self.metadata.load_from_report(
+                        os.path.join(self.path, f))
+                except Exception as ex:
+                    print(f"{f}: failed to load metadata from file (ignored): {ex}")
             elif f.startswith("sample_sheet_"):
                 self.sample_sheet = f
 
@@ -204,6 +209,13 @@ class BasecallsDir:
     def html_report(self):
         for f in self.reports:
             if f.endswith(".html"):
+                return os.path.join(self.path, f)
+        return None
+
+    @property
+    def json_report(self):
+        for f in self.reports:
+            if f.endswith(".json"):
                 return os.path.join(self.path, f)
         return None
 
@@ -279,9 +291,8 @@ class BasecallsMetadata:
     Class representing data about a set of basecalls
 
     The data is populated by extracting data from an HTML
-    report file (by invoking the 'load_from_report_html'
-    method) and a JSON report file (by invoking
-    'load_from_report_json').
+    and JSON report files (by invoking the 'load_from_report'
+    method on each file).
     """
 
     def __init__(self):
@@ -297,6 +308,18 @@ class BasecallsMetadata:
         self.software_versions = None
         self.basecalling_model = None
         self.basecalling_config = None
+
+    def load_from_report(self, report_file):
+        """
+        Load metadata from a report file
+        """
+        if report_file.endswith(".html"):
+            return self.load_from_report_html(report_file)
+        elif report_file.endswith(".json"):
+            return self.load_from_report_json(report_file)
+        else:
+            raise Exception(f"{report_file}: unsupported report file "
+                            f"type")
 
     def load_from_report_html(self, html_file):
         """
