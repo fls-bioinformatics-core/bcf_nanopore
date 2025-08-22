@@ -151,7 +151,8 @@ class ProjectAnalysisDir:
                                if fc.metadata.modified_basecalling == "Off"
                                else fmt_value(fc.metadata.modifications)),
                 trim_barcodes=fmt_value(fc.metadata.trim_barcodes),
-                minknow_version=fc.metadata.software_versions["minknow"])
+                minknow_version=fc.metadata.software_versions["minknow"],
+                basecalling_model=fmt_value(fc.metadata.basecalling_model))
         for bc in project.basecalls_dirs:
             fc_file.add_base_calls(
                 run=("-" if bc.run is None else bc.run),
@@ -164,7 +165,8 @@ class ProjectAnalysisDir:
                                if bc.metadata.modified_basecalling == "Off"
                                else fmt_value(bc.metadata.modifications)),
                 trim_barcodes=fmt_value(bc.metadata.trim_barcodes),
-                minknow_version=bc.metadata.software_versions["minknow"])
+                minknow_version=bc.metadata.software_versions["minknow"],
+                basecalling_model=fmt_value(bc.metadata.basecalling_model))
         fc_file.save(flow_cells_file)
         # Get the earliest date stamp from flow cell names
         try:
@@ -544,7 +546,8 @@ class FlowcellBasecallsInfo(TabFile):
                         "Kit",
                         "Modifications",
                         "TrimBarcodes",
-                        "MinknowVersion")
+                        "MinknowVersion",
+                        "BasecallingModel")
         self._kws = tuple([convert_field_name(f)
                            for f in self._fields])
         TabFile.__init__(self,
