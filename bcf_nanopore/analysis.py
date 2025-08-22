@@ -565,7 +565,8 @@ class FlowcellBasecallsInfo(TabFile):
                         "Modifications",
                         "TrimBarcodes",
                         "MinknowVersion",
-                        "BasecallingModel")
+                        "BasecallingModel",
+                        "FileTypes")
         self._kws = tuple([convert_field_name(f)
                            for f in self._fields])
         TabFile.__init__(self,
