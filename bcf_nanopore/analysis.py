@@ -52,6 +52,7 @@ class ProjectAnalysisDir:
       |
       +-- README
           project.info
+          basecalling.tsv
           samples.tsv
     
     An analysis directory can be created for a PromethION
@@ -136,8 +137,7 @@ class ProjectAnalysisDir:
             self.samples_info.save(fileout=self.samples_file)
         # Collate flow cell and base calls information into TSV
         project = ProjectDir(project_dir)
-        flow_cells_file = os.path.join(self.path,
-                                       "%s.tsv" % self.info.name)
+        basecalling_info_file = os.path.join(self.path, "basecalling.tsv")
         fc_file = FlowcellBasecallsInfo()
         for fc in project.flow_cells:
             fc_file.add_base_calls(
@@ -173,7 +173,7 @@ class ProjectAnalysisDir:
                 basecalling_model=fmt_value(bc.metadata.basecalling_model),
                 file_types=(",".join(bc.file_types)
                             if bc.file_types else "none"))
-        fc_file.save(flow_cells_file)
+        fc_file.save(basecalling_info_file)
         # Get the earliest date stamp from flow cell names
         try:
             datestamps = set()
@@ -218,7 +218,7 @@ class ProjectAnalysisDir:
 The following files have been automatically generated:
 
 - '{os.path.basename(self.project_info_file)}': top-level information about the project
-- '{os.path.basename(flow_cells_file)}': TSV file with information about
+- '{os.path.basename(basecalling_info_file)}': TSV file with information about
   the flow cell and base calling directories (extracted from the primary
   data directory)
 """)
