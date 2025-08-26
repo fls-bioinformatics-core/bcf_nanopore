@@ -410,7 +410,7 @@ class MockProjectAnalysisDir:
         # Add in flowcells data file
         if data_dir:
             flowcells = FlowcellBasecallsInfo()
-            flowcells.save(fileout=str(top_dir.joinpath(f"{str(Path(data_dir).name)}.tsv")))
+            flowcells.save(fileout=str(top_dir.joinpath("basecalling.tsv")))
         return str(top_dir)
 
 def create_barcode_dirs(top_dir, number_of_barcodes=24):
