@@ -40,7 +40,8 @@ def info(project_dir):
                      "Modifications",
                      "TrimBarcodes",
                      "MinKNOWVersion",
-                     "BasecallingModel"]))
+                     "BasecallingModel",
+                     "FileTypes"]))
     for fc in project.flow_cells:
         run = ("-" if fc.run is None else fc.run)
         kit = fmt_value(fc.metadata.kit)
@@ -51,15 +52,16 @@ def info(project_dir):
             minknow_version = fc.metadata.software_versions["minknow"]
         except (TypeError, KeyError):
             minknow_version = "?"
-        reports = []
-        if fc.html_report:
-            reports.append("html")
-        if fc.json_report:
-            reports.append("json")
+        reports = fc.report_types
         if reports:
             reports = ",".join(reports)
         else:
             reports = "none"
+        file_types = fc.file_types
+        if file_types:
+            file_types = ",".join(file_types)
+        else:
+            file_types = "none"
         basecalling_model = fc.metadata.basecalling_model
         if basecalling_model is None:
             basecalling_model = fc.metadata.basecalling_config
@@ -73,7 +75,8 @@ def info(project_dir):
                                           modifications,
                                           trim_barcodes,
                                           minknow_version,
-                                          basecalling_model)]))
+                                          basecalling_model,
+                                          file_types)]))
     for bc in project.basecalls_dirs:
         flow_cell_id = fmt_value(bc.metadata.flow_cell_id)
         run = ("-" if bc.run is None else bc.run)
@@ -89,15 +92,16 @@ def info(project_dir):
             minknow_version = bc.metadata.software_versions["minknow"]
         except (TypeError, KeyError):
             minknow_version = "?"
-        reports = []
-        if bc.html_report:
-            reports.append("html")
-        if bc.json_report:
-            reports.append("json")
+        reports = bc.report_types
         if reports:
             reports = ",".join(reports)
         else:
             reports = "none"
+        file_types = bc.file_types
+        if file_types:
+            file_types = ",".join(file_types)
+        else:
+            file_types = "none"
         basecalling_model = bc.metadata.basecalling_model
         if basecalling_model is None:
             basecalling_model = bc.metadata.basecalling_config
@@ -111,7 +115,8 @@ def info(project_dir):
                                           modifications,
                                           trim_barcodes,
                                           minknow_version,
-                                          basecalling_model)]))
+                                          basecalling_model,
+                                          file_types)]))
 
 
 def metadata(metadata_file, dump_json=False):

@@ -134,6 +134,10 @@ class FlowCell:
         self.bam_pass = os.path.join(self.path, "bam_pass")
         if not os.path.exists(self.bam_pass):
             self.bam_pass = None
+        # FASTQs directory
+        self.fastq_pass = os.path.join(self.path, "fastq_pass")
+        if not os.path.exists(self.fastq_pass):
+            self.fastq_pass = None
         # Reports
         self.reports = []
         self.sample_sheet = None
@@ -149,6 +153,26 @@ class FlowCell:
                               f"(ignored): {ex}")
             elif f.startswith("sample_sheet_"):
                 self.sample_sheet = f
+
+    @property
+    def file_types(self):
+        file_types = []
+        if self.pod5:
+            file_types.append("pod5")
+        if self.bam_pass:
+            file_types.append("bam")
+        if self.fastq_pass:
+            file_types.append("fastq")
+        return file_types
+
+    @property
+    def report_types(self):
+        report_types = []
+        if self.html_report:
+            report_types.append("html")
+        if self.json_report:
+            report_types.append("json")
+        return report_types
 
     @property
     def html_report(self):
@@ -189,10 +213,10 @@ class BasecallsDir:
         self.run = run
         # Associated metadata
         self.metadata = BasecallsMetadata()
-        # BAMs directory
-        self.bam_pass = os.path.join(self.path, "pass")
-        if not os.path.exists(self.bam_pass):
-            self.bam_pass = None
+        # BAMs and FASTQs directory
+        self.pass_dir = os.path.join(self.path, "pass")
+        if not os.path.exists(self.pass_dir):
+            self.pass_dir = None
         # Reports
         self.reports = []
         self.sample_sheet = None
@@ -208,6 +232,22 @@ class BasecallsDir:
                               f"(ignored): {ex}")
             elif f.startswith("sample_sheet_"):
                 self.sample_sheet = f
+
+    @property
+    def file_types(self):
+        if self.pass_dir:
+            return ["bam", "fastq"]
+        else:
+            return []
+
+    @property
+    def report_types(self):
+        report_types = []
+        if self.html_report:
+            report_types.append("html")
+        if self.json_report:
+            report_types.append("json")
+        return report_types
 
     @property
     def html_report(self):
