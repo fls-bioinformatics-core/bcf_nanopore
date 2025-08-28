@@ -30,6 +30,19 @@ environment using ``pip``, e.g.
 
 *NB please use these instructions only as a starting point*
 
+Configuration
+-------------
+
+The installed package can be configured via an ``.ini``-style file
+called ``bcf_nanopore.ini`` placed either in the current directory
+or in the ``config`` directory of the package installation.
+
+.. note::
+
+   A sample version of the config file called
+   ``bcf_nanopore.ini.sample``can be found in the ``config``
+   directory.
+
 Usage
 -----
 
@@ -44,6 +57,7 @@ To get general help run:
 
 The main commands are:
 
+* ``config``: print current configuration information
 * ``info``: reports information about a PromethION project directory
   containing outputs from one or more runs of the sequencer
 * ``setup``: creates an "analysis" directory for a PromethION
