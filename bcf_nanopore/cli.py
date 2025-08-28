@@ -6,8 +6,11 @@
 
 import os
 import json
+import tempfile
+import shutil
 from argparse import ArgumentParser
 from auto_process_ngs.command import Command
+from auto_process_ngs.fileops import copy
 from bcftbx.JobRunner import fetch_runner
 from .analysis import ProjectAnalysisDir
 from .nanopore.promethion import BasecallsMetadata
@@ -253,6 +256,16 @@ def setup(project_dir, user, PI, application=None, organism=None,
 def report(path, mode="summary", fields=None, template=None, out_file=None):
     """
     Report on Promethion project analysis directory
+
+    Arguments:
+      path (str): path to PromethION project analysis dir
+      mode (str): either "summary" or "tsv" (default: summary)
+      fields (str): optional, list of fields to report (overrides
+        "template")
+      template (str): optional, name of a pre-defined template
+        (i.e. set of fields) to use from configuration
+      out_file (str): optional, file to write the report to
+        (default is to write to stdout)
     """
     # Read in data
     analysis_dir = ProjectAnalysisDir(path)
@@ -266,12 +279,21 @@ def report(path, mode="summary", fields=None, template=None, out_file=None):
             raise Exception("%s: undefined template" % template)
     # Report
     report_text = analysis_dir.report(mode, fields)
-    if out_file is None:
-        print(report_text)
-    else:
-        print(f"Writing to {out_file}")
-        with open(out_file, 'wt') as fp:
+    if out_file:
+        # File extension for report file
+        ext = "tsv" if mode == "tsv" else "txt"
+        # Temporary copy
+        temp_dir = tempfile.mkdtemp()
+        temp_file = os.path.join(temp_dir,
+                                 f"{analysis_dir.info.id}.{ext}")
+        with open(temp_file, "wt") as fp:
             fp.write(report_text + '\n')
+        # Copy to final location
+        copy(temp_file, str(out_file))
+        shutil.rmtree(temp_dir)
+        print(f"Written to {out_file}")
+    else:
+        print(report_text)
 
 
 def fetch(project_dir, target_dir, dry_run=False, runner=None):
