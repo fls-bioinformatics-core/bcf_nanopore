@@ -47,7 +47,7 @@ setup(name = "bcf_nanopore",
       # Sample configuration file
       data_files = [("config", ["config/bcf_nanopore.ini.sample"]),],
       classifiers=[
-          "Development Status :: 2 - Pre-Alpha",
+          "Development Status :: 3 - Alpha",
           "Environment :: Console",
           "Intended Audience :: End Users/Desktop",
           "Intended Audience :: Science/Research",
@@ -61,6 +61,8 @@ setup(name = "bcf_nanopore",
           'Programming Language :: Python :: 3.8',
           'Programming Language :: Python :: 3.9',
           'Programming Language :: Python :: 3.10',
+          'Programming Language :: Python :: 3.11',
+          'Programming Language :: Python :: 3.12',
       ],
       include_package_data=True,
       zip_safe = False)
