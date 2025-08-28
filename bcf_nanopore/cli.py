@@ -11,6 +11,7 @@ import shutil
 from argparse import ArgumentParser
 from auto_process_ngs.command import Command
 from auto_process_ngs.fileops import copy
+from auto_process_ngs.fileops import set_permissions
 from bcftbx.JobRunner import fetch_runner
 from .analysis import ProjectAnalysisDir
 from .nanopore.promethion import BasecallsMetadata
@@ -186,7 +187,7 @@ def metadata(metadata_file, dump_json=False):
 
 
 def setup(project_dir, user, PI, application=None, organism=None,
-          samples_csv=None, top_dir=None):
+          samples_csv=None, top_dir=None, permissions=None):
     """
     Set up a new analysis directory for a Promethion project
 
@@ -209,6 +210,9 @@ def setup(project_dir, user, PI, application=None, organism=None,
       samples_csv (str): path to CSV file with sample information
       top_dir (str): directory to make analysis directory
         under (defaults to current directory)
+      permissions (str): update file permissions on the
+        copied files and directories using the supplied
+        mode (e.g. 'g+w')
     """
     # Read source project data
     project_name = os.path.basename(os.path.normpath(project_dir))
@@ -251,6 +255,9 @@ def setup(project_dir, user, PI, application=None, organism=None,
                         application=application,
                         organism=organism,
                         samples=samples)
+    # Set permissions
+    if permissions:
+        set_permissions(permissions, analysis_dir.path)
 
 
 def report(path, mode="summary", fields=None, template=None, out_file=None):
