@@ -45,7 +45,7 @@ setup(name = "bcf_nanopore",
       # Scripts
       scripts = scripts,
       # Sample configuration file
-      #data_files = [("config" ,["config/bcf_nanopore.ini.sample"]),],
+      data_files = [("config", ["config/bcf_nanopore.ini.sample"]),],
       classifiers=[
           "Development Status :: 2 - Pre-Alpha",
           "Environment :: Console",
