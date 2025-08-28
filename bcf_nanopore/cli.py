@@ -12,9 +12,20 @@ from bcftbx.JobRunner import fetch_runner
 from .analysis import ProjectAnalysisDir
 from .nanopore.promethion import BasecallsMetadata
 from .nanopore.promethion import ProjectDir
+from .settings import Settings
 from .utils import execute_command
 from .utils import fmt_value
 from .utils import fmt_yes_no
+
+# Configuration
+__settings = Settings()
+
+def config():
+    """
+    Print configuration information
+    """
+    settings = Settings(resolve_undefined=True)
+    print(settings.report_settings(exclude_undefined=False))
 
 
 def info(project_dir):
@@ -336,6 +347,10 @@ def bcf_nanopore_main():
     p = ArgumentParser()
     sp = p.add_subparsers(dest='command')
 
+    # Config command
+    config_cmd = sp.add_parser("config",
+                               help="Print configuration information")
+
     # Info command
     info_cmd = sp.add_parser("info",
                              help="Get information on a Promethion project "
@@ -405,12 +420,16 @@ def bcf_nanopore_main():
     fetch_cmd.add_argument('--dry-run', action="store_true",
                            help="dry run only (no data will be copied)")
     fetch_cmd.add_argument('-r', '--runner', action="store",
-                           help="job runner to use (optional)")
+                           default=default_runner,
+                           help=f"job runner to use (default: "
+                           f"'{default_runner}')")
 
     # Process command line
     args = p.parse_args()
 
     # Execute command
+    if args.command == "config":
+        config()
     if args.command == "info":
         info(args.project_dir)
     elif args.command == "setup":
