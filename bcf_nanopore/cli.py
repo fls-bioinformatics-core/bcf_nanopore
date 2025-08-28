@@ -20,6 +20,20 @@ from .utils import fmt_yes_no
 # Configuration
 __settings = Settings()
 
+# Reporting templates
+REPORTING_TEMPLATES = {
+    # Default: for spreadsheet
+    'default': "name,id,NULL,NULL,user,pi,application,organism,NULL,"
+    "nsamples,samples,NULL,NULL,NULL",
+    # BCF: for downstream spreadsheet
+    'bcf': "datestamp,NULL,user,id,#samples,NULL,organism,application,PI,analysis_dir,NULL,primary_data",
+    # Summary: for reporting run for downstream analysis
+    'summary': "name,id,datestamp,platform,analysis_dir,NULL,"
+    "user,pi,application,organism,primary_data,comments",
+}
+for t in [t for t in __settings.reporting_templates]:
+    REPORTING_TEMPLATES[t] = __settings.reporting_templates[t]
+
 def config():
     """
     Print configuration information
@@ -240,29 +254,14 @@ def report(path, mode="summary", fields=None, template=None, out_file=None):
     """
     Report on Promethion project analysis directory
     """
-    # Templates
-    _templates = {
-        # Default: for spreadsheet
-        'default':
-        "name,id,NULL,NULL,user,pi,application,organism,NULL,"
-        "nsamples,samples,NULL,NULL,NULL",
-        # BCF: for downstream spreadsheet
-        'bcf': "datestamp,NULL,user,id,#samples,NULL,organism,application,PI,analysis_dir,NULL,primary_data",
-        # Summary: for reporting run for downstream analysis
-        'summary': "name,id,datestamp,platform,analysis_dir,NULL,"
-        "user,pi,application,organism,primary_data,comments",
-    }
     # Read in data
     analysis_dir = ProjectAnalysisDir(path)
     # Set fields
     if fields is None:
         if template is None:
-            if mode == "summary":
-                template = "summary"
-            else:
-                template = "default"
+            template = "default"
         try:
-            fields = _templates[template]
+            fields = REPORTING_TEMPLATES[template]
         except KeyError:
             raise Exception("%s: undefined template" % template)
     # Report
@@ -398,7 +397,7 @@ def bcf_nanopore_main():
                             choices=['summary', 'tsv'], default='summary',
                             help="specify reporting mode")
     report_cmd.add_argument('-t', '--template',
-                            choices=['default', 'bcf', 'summary'],
+                            choices=[t for t in REPORTING_TEMPLATES],
                             help="specify template used to set fields "
                             "for reporting")
     report_cmd.add_argument('-f', '--fields',
