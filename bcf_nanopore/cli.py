@@ -404,6 +404,7 @@ def bcf_nanopore_main():
                         "items")
 
     # Setup command
+    default_permissions = __settings.general.permissions
     setup_cmd = sp.add_parser("setup",
                               help="Set up a new analysis directory for a "
                               "Promethion project")
@@ -423,6 +424,15 @@ def bcf_nanopore_main():
     setup_cmd.add_argument('-s', '--samples_csv', action='store',
                            help="CSV file with 'sample,barcode[,flowcell]' "
                            "information")
+    setup_cmd.add_argument('--chmod', action="store",
+                           dest="permissions", metavar="PERMISSIONS",
+                           default=default_permissions,
+                           help="specify permissions for the analysis "
+                           "directory. PERMISSIONS should be a string "
+                           "recognised by the 'chmod' command (e.g. "
+                           "'o-rwX') (default: %s)" %
+                           (f"'{default_permissions}'" if default_permissions
+                            else "don't set permissions",))
 
     # Report command
     report_cmd = sp.add_parser("report",
