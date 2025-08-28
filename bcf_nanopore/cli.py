@@ -296,7 +296,8 @@ def report(path, mode="summary", fields=None, template=None, out_file=None):
         print(report_text)
 
 
-def fetch(project_dir, target_dir, dry_run=False, runner=None):
+def fetch(project_dir, target_dir, dry_run=False, runner=None,
+          permissions=None):
     """
     Fetch the BAM files and reports for a Promethion run
 
@@ -309,6 +310,9 @@ def fetch(project_dir, target_dir, dry_run=False, runner=None):
         (default is to actually fetch the data)
       runner (str): job runner definition to use to
         execute the fetch operations
+      permissions (str): update file permissions on the
+        copied files and directories using the supplied
+        mode (e.g. 'g+w')
     """
     # Clean the project dir path
     project_dir = project_dir.rstrip(os.sep)
@@ -334,8 +338,10 @@ def fetch(project_dir, target_dir, dry_run=False, runner=None):
                         '--include=bam_pass/*/*.bai',
                         '--include=pass/*/*.bam',
                         '--include=pass/*/*.bai',
-                        '--exclude=*',
-                        project_dir,
+                        '--exclude=*')
+    if permissions:
+        rsync_bams.add_args(f"--chmod={permissions}")
+    rsync_bams.add_args(project_dir,
                         target_dir)
     print("Transferring BAM files with command: %s" % rsync_bams)
     status = execute_command(rsync_bams, runner=runner)
@@ -353,8 +359,10 @@ def fetch(project_dir, target_dir, dry_run=False, runner=None):
                            '--include=*/',
                            '--include=report_*',
                            '--include=sample_sheet_*',
-                           '--exclude=*',
-                           project_dir,
+                           '--exclude=*')
+    if permissions:
+        rsync_reports.add_args(f"--chmod={permissions}")
+    rsync_reports.add_args(project_dir,
                            target_dir)
     print("Transferring report files with command: %s" % rsync_reports)
     status = execute_command(rsync_reports, runner=runner)
