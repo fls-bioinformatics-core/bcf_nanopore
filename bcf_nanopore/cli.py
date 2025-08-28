@@ -12,9 +12,34 @@ from bcftbx.JobRunner import fetch_runner
 from .analysis import ProjectAnalysisDir
 from .nanopore.promethion import BasecallsMetadata
 from .nanopore.promethion import ProjectDir
+from .settings import Settings
 from .utils import execute_command
 from .utils import fmt_value
 from .utils import fmt_yes_no
+
+# Configuration
+__settings = Settings()
+
+# Reporting templates
+REPORTING_TEMPLATES = {
+    # Default: for spreadsheet
+    'default': "name,id,NULL,NULL,user,pi,application,organism,NULL,"
+    "nsamples,samples,NULL,NULL,NULL",
+    # BCF: for downstream spreadsheet
+    'bcf': "datestamp,NULL,user,id,#samples,NULL,organism,application,PI,analysis_dir,NULL,primary_data",
+    # Summary: for reporting run for downstream analysis
+    'summary': "name,id,datestamp,platform,analysis_dir,NULL,"
+    "user,pi,application,organism,primary_data,comments",
+}
+for t in [t for t in __settings.reporting_templates]:
+    REPORTING_TEMPLATES[t] = __settings.reporting_templates[t]
+
+def config():
+    """
+    Print configuration information
+    """
+    settings = Settings(resolve_undefined=True)
+    print(settings.report_settings(exclude_undefined=False))
 
 
 def info(project_dir):
@@ -229,29 +254,14 @@ def report(path, mode="summary", fields=None, template=None, out_file=None):
     """
     Report on Promethion project analysis directory
     """
-    # Templates
-    _templates = {
-        # Default: for spreadsheet
-        'default':
-        "name,id,NULL,NULL,user,pi,application,organism,NULL,"
-        "nsamples,samples,NULL,NULL,NULL",
-        # BCF: for downstream spreadsheet
-        'bcf': "datestamp,NULL,user,id,#samples,NULL,organism,application,PI,analysis_dir,NULL,primary_data",
-        # Summary: for reporting run for downstream analysis
-        'summary': "name,id,datestamp,platform,analysis_dir,NULL,"
-        "user,pi,application,organism,primary_data,comments",
-    }
     # Read in data
     analysis_dir = ProjectAnalysisDir(path)
     # Set fields
     if fields is None:
         if template is None:
-            if mode == "summary":
-                template = "summary"
-            else:
-                template = "default"
+            template = "default"
         try:
-            fields = _templates[template]
+            fields = REPORTING_TEMPLATES[template]
         except KeyError:
             raise Exception("%s: undefined template" % template)
     # Report
@@ -336,6 +346,10 @@ def bcf_nanopore_main():
     p = ArgumentParser()
     sp = p.add_subparsers(dest='command')
 
+    # Config command
+    config_cmd = sp.add_parser("config",
+                               help="Print configuration information")
+
     # Info command
     info_cmd = sp.add_parser("info",
                              help="Get information on a Promethion project "
@@ -383,7 +397,7 @@ def bcf_nanopore_main():
                             choices=['summary', 'tsv'], default='summary',
                             help="specify reporting mode")
     report_cmd.add_argument('-t', '--template',
-                            choices=['default', 'bcf', 'summary'],
+                            choices=[t for t in REPORTING_TEMPLATES],
                             help="specify template used to set fields "
                             "for reporting")
     report_cmd.add_argument('-f', '--fields',
@@ -394,6 +408,7 @@ def bcf_nanopore_main():
                             "than stdout")
 
     # Fetch command
+    default_runner = __settings.runners.rsync
     fetch_cmd = sp.add_parser("fetch",
                               help="fetch BAM files from PromethION project "
                               "directory")
@@ -405,12 +420,16 @@ def bcf_nanopore_main():
     fetch_cmd.add_argument('--dry-run', action="store_true",
                            help="dry run only (no data will be copied)")
     fetch_cmd.add_argument('-r', '--runner', action="store",
-                           help="job runner to use (optional)")
+                           default=default_runner,
+                           help=f"job runner to use (default: "
+                           f"'{default_runner}')")
 
     # Process command line
     args = p.parse_args()
 
     # Execute command
+    if args.command == "config":
+        config()
     if args.command == "info":
         info(args.project_dir)
     elif args.command == "setup":

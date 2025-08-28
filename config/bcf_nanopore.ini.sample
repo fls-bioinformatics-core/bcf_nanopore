@@ -1,0 +1,14 @@
+# Configuration file for bcf_nanopore
+#
+# General configuration
+;[general]
+;default_runner = SimpleJobRunner
+
+# Define runners for specific jobs
+;[runners]
+;rsync = SimpleJobRunner
+
+# Templates for reporting
+# Assign fields to template names for reporting projects
+;[reporting_templates]
+;bcf = datestamp,NULL,user,id,#samples,NULL,organism,application,PI,analysis_dir,NULL,primary_data
