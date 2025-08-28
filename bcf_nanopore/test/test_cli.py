@@ -9,8 +9,10 @@ import unittest
 from pathlib import Path
 from bcf_nanopore.analysis import ProjectAnalysisDir
 from bcf_nanopore.mock import MockPromethionDataDir
+from bcf_nanopore.mock import MockProjectAnalysisDir
 from bcf_nanopore.cli import setup as cli_setup
 from bcf_nanopore.cli import fetch as cli_fetch
+from bcf_nanopore.cli import report as cli_report
 
 class TestSetupCommand(unittest.TestCase):
 
@@ -148,3 +150,71 @@ class TestFetchCommand(unittest.TestCase):
         target_dir = os.path.join(self.wd, "target")
         cli_fetch(project_dir, target_dir, runner="SimpleJobRunner(join_logs=True)")
         self.assertTrue(Path(target_dir).joinpath("PromethION_Project_001_PerGynt").exists())
+
+
+class TestReportCommand(unittest.TestCase):
+
+    def setUp(self):
+        self.wd = tempfile.mkdtemp()
+
+    def tearDown(self):
+        if Path(self.wd).exists():
+            shutil.rmtree(self.wd)
+
+    def test_report_default_summary_mode(self):
+        """
+        report: default template in 'summary' mode
+        """
+        data_dir = "/mnt/data/PromethION_Project_001_PerGynt"
+        analysis_dir_path = MockProjectAnalysisDir("PromethION_Project_001_PerGynt_analysis").create(
+            self.wd,
+            user="Per Gynt",
+            principal_investigator="Henrik Ibsen",
+            application="Methylation study",
+            organism="Human",
+            data_dir=data_dir,
+            run_id="PROMETHION#001")
+        ##analysis_dir = ProjectAnalysisDir(analysis_dir_path)
+        out_file = Path(self.wd).joinpath("report.txt")
+        cli_report(analysis_dir_path, out_file=out_file)
+        expected_report = """PromethION_Project_001_PerGynt
+==============================
+Project name    : PromethION_Project_001_PerGynt
+Project ID      : PROMETHION#001
+
+
+User            : Per Gynt
+PI              : Henrik Ibsen
+Application     : Methylation study
+Organism        : Human
+
+#samples        : 2
+samples         : PG1,PG2
+
+
+
+"""
+        self.assertTrue(out_file.exists())
+        with open(out_file, "rt") as fp:
+            self.assertEqual(fp.read(), expected_report)
+
+    def test_report_default_tsv_mode(self):
+        """
+        report: default template in 'tsv' mode
+        """
+        data_dir = "/mnt/data/PromethION_Project_001_PerGynt"
+        analysis_dir_path = MockProjectAnalysisDir("PromethION_Project_001_PerGynt_analysis").create(
+            self.wd,
+            user="Per Gynt",
+            principal_investigator="Henrik Ibsen",
+            application="Methylation study",
+            organism="Human",
+            data_dir=data_dir,
+            run_id="PROMETHION#001")
+        out_file = Path(self.wd).joinpath("report.txt")
+        cli_report(analysis_dir_path, mode="tsv", out_file=out_file)
+        expected_report = """PromethION_Project_001_PerGynt	PROMETHION#001			Per Gynt	Henrik Ibsen	Methylation study	Human		2	PG1,PG2			
+"""
+        self.assertTrue(out_file.exists())
+        with open(out_file, "rt") as fp:
+            self.assertEqual(fp.read(), expected_report)
