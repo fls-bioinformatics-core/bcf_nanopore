@@ -409,6 +409,7 @@ def bcf_nanopore_main():
                             "than stdout")
 
     # Fetch command
+    default_runner = __settings.runners.rsync
     fetch_cmd = sp.add_parser("fetch",
                               help="fetch BAM files from PromethION project "
                               "directory")
