@@ -390,6 +390,10 @@ def fetch(project_dir, target_dir, dry_run=False, runner=None,
 
 def bcf_nanopore_main():
 
+    # Defaults
+    default_permissions = __settings.general.permissions
+    default_group = __settings.general.group
+
     # Main parser
     p = ArgumentParser()
     sp = p.add_subparsers(dest='command')
@@ -415,7 +419,6 @@ def bcf_nanopore_main():
                         "items")
 
     # Setup command
-    default_permissions = __settings.general.permissions
     setup_cmd = sp.add_parser("setup",
                               help="Set up a new analysis directory for a "
                               "Promethion project")
@@ -444,6 +447,12 @@ def bcf_nanopore_main():
                            "'o-rwX') (default: %s)" %
                            (f"'{default_permissions}'" if default_permissions
                             else "don't set permissions",))
+    setup_cmd.add_argument('--group', action='store',
+                           default=default_group,
+                           help="specify the name of group for the "
+                           "analysis directory (default: %s)" %
+                           (f"'{default_group}'" if default_group
+                            else "don't set group",))
 
     # Report command
     report_cmd = sp.add_parser("report",
@@ -467,8 +476,6 @@ def bcf_nanopore_main():
 
     # Fetch command
     default_runner = __settings.runners.rsync
-    default_permissions = __settings.general.permissions
-    default_group = __settings.general.group
     fetch_cmd = sp.add_parser("fetch",
                               help="fetch BAM files from PromethION project "
                               "directory")
