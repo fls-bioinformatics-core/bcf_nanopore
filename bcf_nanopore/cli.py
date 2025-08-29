@@ -465,6 +465,7 @@ def bcf_nanopore_main():
     # Fetch command
     default_runner = __settings.runners.rsync
     default_permissions = __settings.general.permissions
+    default_group = __settings.general.group
     fetch_cmd = sp.add_parser("fetch",
                               help="fetch BAM files from PromethION project "
                               "directory")
@@ -481,6 +482,12 @@ def bcf_nanopore_main():
                            "'chmod' command (e.g. 'o-rwX') (default: %s)" %
                            (f"'{default_permissions}'" if default_permissions
                             else "don't set permissions",))
+    fetch_cmd.add_argument('--group', action='store',
+                           default=default_group,
+                           help="specify the name of group for the copied "
+                           "files (default: %s)" %
+                           (f"'{default_group}'" if default_group
+                            else "don't set group",))
     fetch_cmd.add_argument('--dry-run', action="store_true",
                            help="dry run only (no data will be copied)")
     fetch_cmd.add_argument('-r', '--runner', action="store",
