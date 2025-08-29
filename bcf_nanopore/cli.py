@@ -11,6 +11,7 @@ import shutil
 from argparse import ArgumentParser
 from auto_process_ngs.command import Command
 from auto_process_ngs.fileops import copy
+from auto_process_ngs.fileops import set_group
 from auto_process_ngs.fileops import set_permissions
 from bcftbx.JobRunner import fetch_runner
 from .analysis import ProjectAnalysisDir
@@ -304,7 +305,7 @@ def report(path, mode="summary", fields=None, template=None, out_file=None):
 
 
 def fetch(project_dir, target_dir, dry_run=False, runner=None,
-          permissions=None):
+          permissions=None, group=None):
     """
     Fetch the BAM files and reports for a Promethion run
 
@@ -320,6 +321,8 @@ def fetch(project_dir, target_dir, dry_run=False, runner=None,
       permissions (str): update file permissions on the
         copied files and directories using the supplied
         mode (e.g. 'g+w')
+      group (str): update the filesystem group associated
+        with the copied files to the supplied group name
     """
     # Clean the project dir path
     project_dir = project_dir.rstrip(os.sep)
@@ -375,6 +378,11 @@ def fetch(project_dir, target_dir, dry_run=False, runner=None,
     status = execute_command(rsync_reports, runner=runner)
     if status != 0:
         raise Exception("fetch: failed to transfer reports")
+    # Set the group
+    if group is not None:
+        print(f"Setting group on copied files to '{group}'")
+        if not dry_run:
+            set_group(group, os.path.join(target_dir, project_name))
 
 
 def bcf_nanopore_main():

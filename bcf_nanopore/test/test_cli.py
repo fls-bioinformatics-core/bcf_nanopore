@@ -3,6 +3,8 @@
 # Tests for the 'cli' module
 
 import os
+import pwd
+import grp
 import shutil
 import tempfile
 import unittest
@@ -197,6 +199,42 @@ class TestFetchCommand(unittest.TestCase):
         target_dir = os.path.join(self.wd, "target")
         cli_fetch(project_dir, target_dir, permissions="ugo+rwX")
         self.assertTrue(Path(target_dir).joinpath("PromethION_Project_001_PerGynt").exists())
+
+    def test_fetch_set_group(self):
+        """
+        fetch: copy PromethION data (set group)
+        """
+        # Find groups for current user
+        current_user = pwd.getpwuid(os.getuid()).pw_name
+        groups = [g.gr_gid
+                  for g in grp.getgrall()
+                  if current_user in g.gr_mem]
+        if len(groups) < 2:
+            raise unittest.SkipTest(f"user '{current_user}' must be in at "
+                                    "least two groups for this test")
+        # Find a group to set archived files to
+        current_gid = os.stat(self.wd).st_gid
+        new_group = None
+        for gid in groups:
+            if gid != current_gid:
+                new_group = gid
+                break
+        self.assertTrue(new_group is not None)
+        # Make source data
+        data_dir = MockPromethionDataDir("PromethION_Project_001_PerGynt")
+        data_dir.add_flow_cell("20240513_0829_1A_PAW15419_465bb23f", run="PG1-4_20240513", pool="PG1-2")
+        data_dir.add_basecalls_dir(str(Path("PG1-4_20240513").joinpath("Rebasecalling","PG1-2")),
+                                   flow_cell_name="20240513_0829_1A_PAW15419_465bb23f")
+        source_dir = os.path.join(self.wd, "source")
+        os.mkdir(source_dir)
+        project_dir = data_dir.create(source_dir)
+        # Fetch subset
+        target_dir = os.path.join(self.wd, "target")
+        cli_fetch(project_dir, target_dir, group=new_group)
+        self.assertTrue(Path(target_dir).joinpath(
+            "PromethION_Project_001_PerGynt").exists())
+        self.assertEqual(
+            Path(target_dir).joinpath("PromethION_Project_001_PerGynt").stat().st_gid, new_group)
 
 
 class TestReportCommand(unittest.TestCase):
