@@ -122,6 +122,54 @@ PG4,NB06,
         self.assertTrue(Path(analysis_dir_path).joinpath("ScriptCode").is_dir())
         self.assertTrue(Path(analysis_dir_path).joinpath("logs").is_dir())
 
+    def test_setup_set_group(self):
+        """
+        setup: create new analysis directory (set group)
+        """
+        # Find groups for current user
+        current_user = pwd.getpwuid(os.getuid()).pw_name
+        groups = [g.gr_gid
+                  for g in grp.getgrall()
+                  if current_user in g.gr_mem]
+        if len(groups) < 2:
+            raise unittest.SkipTest(f"user '{current_user}' must be in at "
+                                    "least two groups for this test")
+        # Find a group to set archived files to
+        current_gid = os.stat(self.wd).st_gid
+        new_group = None
+        for gid in groups:
+            if gid != current_gid:
+                new_group = gid
+                break
+        self.assertTrue(new_group is not None)
+        # Create mock PromethION project
+        data_dir = MockPromethionDataDir("PromethION_Project_001_PerGynt")
+        data_dir.add_flow_cell("20240513_0829_1A_PAW15419_465bb23f", run="PG1-4_20240513", pool="PG1-2")
+        data_dir.add_basecalls_dir(str(Path("PG1-4_20240513").joinpath("Rebasecalling","PG1-2")),
+                                   flow_cell_name="20240513_0829_1A_PAW15419_465bb23f")
+        project_dir = data_dir.create(self.wd)
+        analysis_dir_path = str(Path(self.wd).joinpath("PromethION_Project_001_PerGynt_analysis"))
+        cli_setup(project_dir, "Per Gynt", "Henrik Ibsen", "Methylation study",
+                  "Human", top_dir=self.wd, group=new_group)
+        analysis_dir = ProjectAnalysisDir(analysis_dir_path)
+        self.assertTrue(analysis_dir.exists())
+        self.assertEqual(analysis_dir.path, analysis_dir_path)
+        self.assertEqual(analysis_dir.info.name, "PromethION_Project_001_PerGynt")
+        self.assertEqual(analysis_dir.info.id, "PROMETHION#001")
+        self.assertEqual(analysis_dir.info.platform, "promethion")
+        self.assertEqual(analysis_dir.info.data_dir, project_dir)
+        self.assertEqual(analysis_dir.info.user, "Per Gynt")
+        self.assertEqual(analysis_dir.info.PI, "Henrik Ibsen")
+        self.assertEqual(analysis_dir.info.application, "Methylation study")
+        self.assertEqual(analysis_dir.info.organism, "Human")
+        self.assertTrue(Path(analysis_dir_path).joinpath("README").exists())
+        self.assertTrue(Path(analysis_dir_path).joinpath("project.info").exists())
+        self.assertTrue(Path(analysis_dir_path).joinpath("basecalling.tsv").exists())
+        self.assertFalse(Path(analysis_dir_path).joinpath("samples.tsv").exists())
+        self.assertTrue(Path(analysis_dir_path).joinpath("ScriptCode").is_dir())
+        self.assertTrue(Path(analysis_dir_path).joinpath("logs").is_dir())
+        self.assertEqual(Path(analysis_dir_path).stat().st_gid, new_group)
+
 
 class TestFetchCommand(unittest.TestCase):
 

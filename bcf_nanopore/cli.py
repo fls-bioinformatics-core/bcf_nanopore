@@ -188,7 +188,7 @@ def metadata(metadata_file, dump_json=False):
 
 
 def setup(project_dir, user, PI, application=None, organism=None,
-          samples_csv=None, top_dir=None, permissions=None):
+          samples_csv=None, top_dir=None, permissions=None, group=None):
     """
     Set up a new analysis directory for a Promethion project
 
@@ -212,8 +212,9 @@ def setup(project_dir, user, PI, application=None, organism=None,
       top_dir (str): directory to make analysis directory
         under (defaults to current directory)
       permissions (str): update file permissions on the
-        copied files and directories using the supplied
-        mode (e.g. 'g+w')
+        analysis directory using the supplied mode (e.g. 'g+w')
+      group (str): update the filesystem group associated
+        with the analysis directory to the supplied group name
     """
     # Read source project data
     project_name = os.path.basename(os.path.normpath(project_dir))
@@ -256,9 +257,11 @@ def setup(project_dir, user, PI, application=None, organism=None,
                         application=application,
                         organism=organism,
                         samples=samples)
-    # Set permissions
+    # Set permissions and group
     if permissions:
         set_permissions(permissions, analysis_dir.path)
+    if group:
+        set_group(group, analysis_dir.path)
 
 
 def report(path, mode="summary", fields=None, template=None, out_file=None):
