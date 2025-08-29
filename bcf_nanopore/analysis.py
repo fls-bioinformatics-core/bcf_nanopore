@@ -143,7 +143,7 @@ class ProjectAnalysisDir:
             fc_file.add_base_calls(
                 run=("-" if fc.run is None else fc.run),
                 pool_name=fc.pool,
-                sub_dir=fc,
+                sub_dir=os.path.relpath(fc.path, project.path),
                 flow_cell_id=fc.id,
                 reports=(",".join(fc.report_types)
                          if fc.report_types else "none"),
@@ -160,7 +160,7 @@ class ProjectAnalysisDir:
             fc_file.add_base_calls(
                 run=("-" if bc.run is None else bc.run),
                 pool_name=(bc.pool if bc.pool else bc.name),
-                sub_dir=bc,
+                sub_dir=os.path.relpath(bc.path, project.path),
                 flow_cell_id=fmt_value(bc.metadata.flow_cell_id),
                 reports=(",".join(bc.report_types)
                          if bc.report_types else "none"),
