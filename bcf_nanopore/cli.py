@@ -14,6 +14,7 @@ from auto_process_ngs.fileops import copy
 from auto_process_ngs.fileops import set_group
 from auto_process_ngs.fileops import set_permissions
 from bcftbx.JobRunner import fetch_runner
+from bcftbx.JobRunner import BaseJobRunner
 from .analysis import ProjectAnalysisDir
 from .nanopore.promethion import BasecallsMetadata
 from .nanopore.promethion import ProjectDir
@@ -332,9 +333,9 @@ def fetch(project_dir, target_dir, dry_run=False, runner=None,
     # Project name
     project_name = os.path.basename(project_dir)
     # Fetch job runner
-    if runner is not None:
-        runner = fetch_runner(runner)
-        print(f"Using job runner '{runner}'")
+    if runner is not None and not isinstance(runner, BaseJobRunner):
+            runner = fetch_runner(runner)
+    print(f"Using job runner '{runner}'")
     # Example rsync to only fetch BAM and index files:
     # rsync --dry-run -av -m --include="*/" \
     # --include="bam_pass/*/*.bam" --include="bam_pass/*/*.bai" \
