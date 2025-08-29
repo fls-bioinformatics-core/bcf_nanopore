@@ -96,7 +96,8 @@ def info(project_dir):
         basecalling_model = fmt_value(basecalling_model)
         print('\t'.join([str(s) for s in (run,
                                           fc.pool,
-                                          fc,
+                                          os.path.relpath(fc.path,
+                                                          project.path),
                                           fc.id,
                                           reports,
                                           kit,
@@ -136,7 +137,8 @@ def info(project_dir):
         basecalling_model = fmt_value(basecalling_model)
         print('\t'.join([str(s) for s in (run,
                                           pool,
-                                          bc,
+                                          os.path.relpath(bc.path,
+                                                          project.path),
                                           flow_cell_id,
                                           reports,
                                           kit,
