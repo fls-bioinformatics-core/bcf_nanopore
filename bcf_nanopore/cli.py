@@ -516,7 +516,8 @@ def bcf_nanopore_main():
     elif args.command == "setup":
         setup(args.project_dir, user=args.user, PI=args.pi,
               application=args.application, organism=args.organism,
-              samples_csv=args.samples_csv, top_dir=args.parent_dir)
+              samples_csv=args.samples_csv, top_dir=args.parent_dir,
+              permissions=args.permissions, group=args.group)
     elif args.command == "metadata":
         metadata(args.file, dump_json=args.json)
     elif args.command == "report":
@@ -524,4 +525,5 @@ def bcf_nanopore_main():
                template=args.template, out_file=args.out_file)
     elif args.command == "fetch":
         fetch(args.project_dir, args.dest, dry_run=args.dry_run,
-              runner=args.runner, permissions=args.permissions)
+              runner=args.runner, permissions=args.permissions,
+              group=args.group)
