@@ -3,6 +3,8 @@
 # General configuration
 ;[general]
 ;default_runner = SimpleJobRunner
+;permissions = None
+;group = None
 
 # Define runners for specific jobs
 ;[runners]

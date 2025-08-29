@@ -51,7 +51,9 @@ class Settings(GenericSettings):
             self,
             # Define the sections, parameters and types
             settings = {
-                "general": { "default_runner": jobrunner },
+                "general": { "default_runner": jobrunner,
+                             "permissions": str,
+                             "group": str },
                 "runners": { "rsync": jobrunner },
                 "reporting_templates": { "*": str },
             },

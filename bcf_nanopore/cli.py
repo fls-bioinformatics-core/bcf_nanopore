@@ -11,6 +11,8 @@ import shutil
 from argparse import ArgumentParser
 from auto_process_ngs.command import Command
 from auto_process_ngs.fileops import copy
+from auto_process_ngs.fileops import set_group
+from auto_process_ngs.fileops import set_permissions
 from bcftbx.JobRunner import fetch_runner
 from .analysis import ProjectAnalysisDir
 from .nanopore.promethion import BasecallsMetadata
@@ -186,7 +188,7 @@ def metadata(metadata_file, dump_json=False):
 
 
 def setup(project_dir, user, PI, application=None, organism=None,
-          samples_csv=None, top_dir=None):
+          samples_csv=None, top_dir=None, permissions=None, group=None):
     """
     Set up a new analysis directory for a Promethion project
 
@@ -209,6 +211,10 @@ def setup(project_dir, user, PI, application=None, organism=None,
       samples_csv (str): path to CSV file with sample information
       top_dir (str): directory to make analysis directory
         under (defaults to current directory)
+      permissions (str): update file permissions on the
+        analysis directory using the supplied mode (e.g. 'g+w')
+      group (str): update the filesystem group associated
+        with the analysis directory to the supplied group name
     """
     # Read source project data
     project_name = os.path.basename(os.path.normpath(project_dir))
@@ -251,6 +257,11 @@ def setup(project_dir, user, PI, application=None, organism=None,
                         application=application,
                         organism=organism,
                         samples=samples)
+    # Set permissions and group
+    if permissions:
+        set_permissions(permissions, analysis_dir.path)
+    if group:
+        set_group(group, analysis_dir.path)
 
 
 def report(path, mode="summary", fields=None, template=None, out_file=None):
@@ -296,7 +307,8 @@ def report(path, mode="summary", fields=None, template=None, out_file=None):
         print(report_text)
 
 
-def fetch(project_dir, target_dir, dry_run=False, runner=None):
+def fetch(project_dir, target_dir, dry_run=False, runner=None,
+          permissions=None, group=None):
     """
     Fetch the BAM files and reports for a Promethion run
 
@@ -309,6 +321,11 @@ def fetch(project_dir, target_dir, dry_run=False, runner=None):
         (default is to actually fetch the data)
       runner (str): job runner definition to use to
         execute the fetch operations
+      permissions (str): update file permissions on the
+        copied files and directories using the supplied
+        mode (e.g. 'g+w')
+      group (str): update the filesystem group associated
+        with the copied files to the supplied group name
     """
     # Clean the project dir path
     project_dir = project_dir.rstrip(os.sep)
@@ -334,8 +351,10 @@ def fetch(project_dir, target_dir, dry_run=False, runner=None):
                         '--include=bam_pass/*/*.bai',
                         '--include=pass/*/*.bam',
                         '--include=pass/*/*.bai',
-                        '--exclude=*',
-                        project_dir,
+                        '--exclude=*')
+    if permissions:
+        rsync_bams.add_args(f"--chmod={permissions}")
+    rsync_bams.add_args(project_dir,
                         target_dir)
     print("Transferring BAM files with command: %s" % rsync_bams)
     status = execute_command(rsync_bams, runner=runner)
@@ -353,16 +372,27 @@ def fetch(project_dir, target_dir, dry_run=False, runner=None):
                            '--include=*/',
                            '--include=report_*',
                            '--include=sample_sheet_*',
-                           '--exclude=*',
-                           project_dir,
+                           '--exclude=*')
+    if permissions:
+        rsync_reports.add_args(f"--chmod={permissions}")
+    rsync_reports.add_args(project_dir,
                            target_dir)
     print("Transferring report files with command: %s" % rsync_reports)
     status = execute_command(rsync_reports, runner=runner)
     if status != 0:
         raise Exception("fetch: failed to transfer reports")
+    # Set the group
+    if group is not None:
+        print(f"Setting group on copied files to '{group}'")
+        if not dry_run:
+            set_group(group, os.path.join(target_dir, project_name))
 
 
 def bcf_nanopore_main():
+
+    # Defaults
+    default_permissions = __settings.general.permissions
+    default_group = __settings.general.group
 
     # Main parser
     p = ArgumentParser()
@@ -408,6 +438,21 @@ def bcf_nanopore_main():
     setup_cmd.add_argument('-s', '--samples_csv', action='store',
                            help="CSV file with 'sample,barcode[,flowcell]' "
                            "information")
+    setup_cmd.add_argument('--chmod', action="store",
+                           dest="permissions", metavar="PERMISSIONS",
+                           default=default_permissions,
+                           help="specify permissions for the analysis "
+                           "directory. PERMISSIONS should be a string "
+                           "recognised by the 'chmod' command (e.g. "
+                           "'o-rwX') (default: %s)" %
+                           (f"'{default_permissions}'" if default_permissions
+                            else "don't set permissions",))
+    setup_cmd.add_argument('--group', action='store',
+                           default=default_group,
+                           help="specify the name of group for the "
+                           "analysis directory (default: %s)" %
+                           (f"'{default_group}'" if default_group
+                            else "don't set group",))
 
     # Report command
     report_cmd = sp.add_parser("report",
@@ -439,6 +484,20 @@ def bcf_nanopore_main():
     fetch_cmd.add_argument('dest',
                            help="destination directory (copy of top-level "
                            "directory will be created under this)")
+    fetch_cmd.add_argument('--chmod', action="store",
+                           dest="permissions", metavar="PERMISSIONS",
+                           default=default_permissions,
+                           help="specify permissions for the copied files. "
+                           "PERMISSIONS should be a string recognised by the "
+                           "'chmod' command (e.g. 'o-rwX') (default: %s)" %
+                           (f"'{default_permissions}'" if default_permissions
+                            else "don't set permissions",))
+    fetch_cmd.add_argument('--group', action='store',
+                           default=default_group,
+                           help="specify the name of group for the copied "
+                           "files (default: %s)" %
+                           (f"'{default_group}'" if default_group
+                            else "don't set group",))
     fetch_cmd.add_argument('--dry-run', action="store_true",
                            help="dry run only (no data will be copied)")
     fetch_cmd.add_argument('-r', '--runner', action="store",
@@ -457,7 +516,8 @@ def bcf_nanopore_main():
     elif args.command == "setup":
         setup(args.project_dir, user=args.user, PI=args.pi,
               application=args.application, organism=args.organism,
-              samples_csv=args.samples_csv, top_dir=args.parent_dir)
+              samples_csv=args.samples_csv, top_dir=args.parent_dir,
+              permissions=args.permissions, group=args.group)
     elif args.command == "metadata":
         metadata(args.file, dump_json=args.json)
     elif args.command == "report":
@@ -465,4 +525,5 @@ def bcf_nanopore_main():
                template=args.template, out_file=args.out_file)
     elif args.command == "fetch":
         fetch(args.project_dir, args.dest, dry_run=args.dry_run,
-              runner=args.runner)
+              runner=args.runner, permissions=args.permissions,
+              group=args.group)
