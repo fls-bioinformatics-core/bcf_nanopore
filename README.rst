@@ -66,3 +66,8 @@ The main commands are:
   use with downstream analysis
 * ``report``: reports the metadata from a PromethION project analysis
   directory
+
+Documentation
+-------------
+
+Documentation can be found at `docs/overview.rst`_.
