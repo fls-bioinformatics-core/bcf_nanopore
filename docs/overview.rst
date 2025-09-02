@@ -36,3 +36,4 @@ Contents
 * `Background information on the structure of PromethION sequencer outputs <background.rst>`_
 * `Configuration <configuration.rst>`_
 * `Usage <usage.rst>`_
+* `Local naming and structure conventions at UoM <local.rst>`_
