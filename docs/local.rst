@@ -36,6 +36,7 @@ folders under the top-level project directory:
 * **Run folders** are named:
 
   ::
+
      <SampleRange>_<DDMMYYYY>
 
   For example, for samples ``PG1`` to ``PG8`` on 26th March 2024
