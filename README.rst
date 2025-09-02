@@ -70,4 +70,4 @@ The main commands are:
 Documentation
 -------------
 
-Documentation can be found at `docs/overview.rst`_.
+Documentation can be found `here <docs/overview.rst>`_.
