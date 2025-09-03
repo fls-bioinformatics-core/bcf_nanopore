@@ -40,7 +40,7 @@ or in the ``config`` directory of the package installation.
 .. note::
 
    A sample version of the config file called
-   ``bcf_nanopore.ini.sample``can be found in the ``config``
+   ``bcf_nanopore.ini.sample`` can be found in the ``config``
    directory.
 
 Usage
