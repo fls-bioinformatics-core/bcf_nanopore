@@ -513,6 +513,13 @@ def bcf_nanopore_main():
     fetch_cmd.add_argument('dest',
                            help="destination directory (copy of top-level "
                            "directory will be created under this)")
+    fetch_cmd.add_argument('--files', action="store",
+                           dest="file_types", metavar="FILETYPES",
+                           default="bam",
+                           help="specify types of data files to copy "
+                           "as a comma-separated list (e.g. 'fastq,bams') "
+                           "(valid types are 'pod5', 'fastq', 'bams'; "
+                           "default: 'bam')")
     fetch_cmd.add_argument('--chmod', action="store",
                            dest="permissions", metavar="PERMISSIONS",
                            default=default_permissions,
@@ -553,6 +560,7 @@ def bcf_nanopore_main():
         report(args.analysis_dir, mode=args.mode, fields=args.fields,
                template=args.template, out_file=args.out_file)
     elif args.command == "fetch":
-        fetch(args.project_dir, args.dest, dry_run=args.dry_run,
-              runner=args.runner, permissions=args.permissions,
-              group=args.group)
+        fetch(args.project_dir, args.dest,
+              file_types=[x for x in str(args.file_types).split(",")],
+              dry_run=args.dry_run, runner=args.runner,
+              permissions=args.permissions, group=args.group)
