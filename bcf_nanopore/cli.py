@@ -26,6 +26,10 @@ from .utils import fmt_yes_no
 # Configuration
 __settings = Settings()
 
+# File types
+FILE_TYPES = [ "POD5", "FASTQ", "BAM" ]
+FILE_TYPES_LOWER = [t.lower() for t in FILE_TYPES]
+
 # Reporting templates
 REPORTING_TEMPLATES = {
     # Default: for spreadsheet
@@ -310,8 +314,8 @@ def report(path, mode="summary", fields=None, template=None, out_file=None):
         print(report_text)
 
 
-def fetch(project_dir, target_dir, dry_run=False, runner=None,
-          permissions=None, group=None):
+def fetch(project_dir, target_dir, file_types=None, dry_run=False,
+          runner=None, permissions=None, group=None):
     """
     Fetch the BAM files and reports for a Promethion run
 
@@ -320,6 +324,9 @@ def fetch(project_dir, target_dir, dry_run=False, runner=None,
         (can local or remote)
       target_dir (str): path to top-level directory to
         copy project files into
+      file_types (list): list of file types to include
+        (can be one or more of "pod5", "fastq", "bam";
+        defaults to "bam" if none supplied)
       dry_run (bool): if True then do dry run rsync only
         (default is to actually fetch the data)
       runner (str): job runner definition to use to
@@ -338,29 +345,48 @@ def fetch(project_dir, target_dir, dry_run=False, runner=None,
     if runner is not None and not isinstance(runner, BaseJobRunner):
             runner = fetch_runner(runner)
     print(f"Using job runner '{runner}'")
+    # File types to include
+    if not file_types:
+        file_types = ["bam"]
+    for t in file_types:
+        if t.lower() not in FILE_TYPES_LOWER:
+            raise Exception(f"fetch: unknown file type requested: "
+                            f"'{t}'")
+    file_types = [t.lower() for t in file_types]
     # Example rsync to only fetch BAM and index files:
     # rsync --dry-run -av -m --include="*/" \
     # --include="bam_pass/*/*.bam" --include="bam_pass/*/*.bai" \
     # --include="pass/*/*.bam" --include="pass/*/*.bai" \
     # --exclude="*" \
     # <PromethION_PROJECT_DIR> .
-    rsync_bams = Command('rsync')
+    rsync_data = Command('rsync')
     if dry_run:
-        rsync_bams.add_args('--dry-run')
-    rsync_bams.add_args('-av',
-                        '-m',
-                        '--include=*/',
-                        '--include=bam_pass/*/*.bam',
-                        '--include=bam_pass/*/*.bai',
-                        '--include=pass/*/*.bam',
-                        '--include=pass/*/*.bai',
-                        '--exclude=*')
+        rsync_data.add_args("--dry-run")
+    rsync_data.add_args("-av",
+                        "-m",
+                        "--include=*/")
+    if "pod5" in file_types:
+        rsync_data.add_args(
+            "--include=pod5/*/*.pod5")
+    if "fastq" in file_types:
+        rsync_data.add_args(
+            "--include=fastq_pass/*/*.fastq",
+            "--include=fastq_pass/*/*.fastq.gz",
+            "--include=pass/*/*.fastq",
+            "--include=pass/*/*.fastq.gz")
+    if "bam" in file_types:
+        rsync_data.add_args(
+            "--include=bam_pass/*/*.bam",
+            "--include=bam_pass/*/*.bai",
+            "--include=pass/*/*.bam",
+            "--include=pass/*/*.bai")
+    rsync_data.add_args("--exclude=*")
     if permissions:
-        rsync_bams.add_args(f"--chmod={permissions}")
-    rsync_bams.add_args(project_dir,
+        rsync_data.add_args(f"--chmod={permissions}")
+    rsync_data.add_args(project_dir,
                         target_dir)
-    print("Transferring BAM files with command: %s" % rsync_bams)
-    status = execute_command(rsync_bams, runner=runner)
+    print("Transferring data files with command: %s" % rsync_data)
+    status = execute_command(rsync_data, runner=runner)
     if status != 0:
         raise Exception("fetch: failed to transfer data")
     # Example to fetch reports and sample sheets:
