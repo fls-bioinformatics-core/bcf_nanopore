@@ -100,15 +100,28 @@ Usage:
 
 ::
 
-   bcf_nanopore fetch PROJECT DEST
+   bcf_nanopore fetch PROJECT DEST [--files FILETYPES]
    
 Copies a subset of the Promethion output data from ``PROJECT``
 under ``DEST``.
 
 ``PROJECT`` can be a local or remote directory.
 
-The subset currently consists of BAM files from the basecalling
-plus any report files found in the source.
+By default the subset consists of BAM files from the basecalling
+plus any report files found in the source; the ``--files`` option
+can be used to specify the set of file types, for example:
+
+::
+
+   --files pod5,fastq,bam
+
+will copy POD5, FASTQ and BAM files, whereas
+
+::
+
+   --files fastq,bam
+
+will only copy FASTQ and BAM files.
 
 ----------
 ``report``
