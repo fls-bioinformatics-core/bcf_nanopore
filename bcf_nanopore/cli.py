@@ -363,10 +363,10 @@ def fetch(project_dir, target_dir, dry_run=False, runner=None,
     status = execute_command(rsync_bams, runner=runner)
     if status != 0:
         raise Exception("fetch: failed to transfer data")
-    # Example to fetch reports and sample sheets:
+    # Example to fetch reports, sample sheets and summaries:
     # rsync --dry-run -av -m --include="*/" --include="report_*" \
-    # --include="sample_sheet_*" --exclude="*" \
-    # <PromethION_PROJECT_DIR> .
+    # --include="sample_sheet_*" --include="sequencing_summary*.txt" \
+    # --exclude="*" <PromethION_PROJECT_DIR> .
     rsync_reports = Command('rsync')
     if dry_run:
         rsync_reports.add_args('--dry-run')
@@ -375,6 +375,7 @@ def fetch(project_dir, target_dir, dry_run=False, runner=None,
                            '--include=*/',
                            '--include=report_*',
                            '--include=sample_sheet_*',
+                           '--include=sequencing_summary*.txt',
                            '--exclude=*')
     if permissions:
         rsync_reports.add_args(f"--chmod={permissions}")
