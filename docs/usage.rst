@@ -121,3 +121,25 @@ Usage:
    bcf_nanopore report ANALYSIS_DIR
 
 Report metadata from ``ANALYSIS_DIR``.
+
+------------
+``metadata``
+------------
+
+Usage:
+
+::
+
+   bcf_nanopore metdata [--json] REPORT_FILE
+
+Extracts and prints JSON data extracted from ``REPORT_FILE``
+(which must either a HTML or JSON report from the PromethION
+basecaller.
+
+If the ``--json`` option is supplied then the command dumps
+the entire JSON data from the file as-is; otherwise it only
+extracts and prints the specific metadata items derived from
+the file in question.
+
+(This command is intended to help with manually locating and
+identifying useful metadata items within the report data.)
