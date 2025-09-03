@@ -22,6 +22,7 @@ from .settings import Settings
 from .utils import execute_command
 from .utils import fmt_value
 from .utils import fmt_yes_no
+from . import get_version
 
 # Configuration
 __settings = Settings()
@@ -427,6 +428,10 @@ def bcf_nanopore_main():
     # Main parser
     p = ArgumentParser()
     sp = p.add_subparsers(dest='command')
+
+    # Version
+    p.add_argument('--version', action='version',
+                   version=("%%(prog)s %s" % get_version()))
 
     # Config command
     config_cmd = sp.add_parser("config",
