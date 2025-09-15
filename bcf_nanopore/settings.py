@@ -84,5 +84,5 @@ class Settings(GenericSettings):
             settings_file = locate_settings_file(
                 "bcf_nanopore.ini",
                 paths=[os.getcwd(),
-                       get_config_dir()])
+                       get_config_dir(__file__)])
         return settings_file
