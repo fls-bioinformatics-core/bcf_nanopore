@@ -523,8 +523,8 @@ def bcf_nanopore_main():
                            dest="file_types", metavar="FILETYPES",
                            default="bam",
                            help="specify types of data files to copy "
-                           "as a comma-separated list (e.g. 'fastq,bams') "
-                           "(valid types are 'pod5', 'fastq', 'bams'; "
+                           "as a comma-separated list (e.g. 'fastq,bam') "
+                           "(valid types are 'pod5', 'fastq', 'bam'; "
                            "default: 'bam')")
     fetch_cmd.add_argument('--chmod', action="store",
                            dest="permissions", metavar="PERMISSIONS",
