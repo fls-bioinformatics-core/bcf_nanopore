@@ -356,8 +356,8 @@ def fetch(project_dir, target_dir, file_types=None, dry_run=False,
     file_types = [t.lower() for t in file_types]
     # Example rsync to only fetch BAM and index files:
     # rsync --dry-run -av -m --include="*/" \
-    # --include="bam_pass/*/*.bam" --include="bam_pass/*/*.bai" \
-    # --include="pass/*/*.bam" --include="pass/*/*.bai" \
+    # --include="bam_pass/**.bam" --include="bam_pass/**.bai" \
+    # --include="pass/**.bam" --include="pass/**.bai" \
     # --exclude="*" \
     # <PromethION_PROJECT_DIR> .
     rsync_data = Command('rsync')
@@ -368,19 +368,19 @@ def fetch(project_dir, target_dir, file_types=None, dry_run=False,
                         "--include=*/")
     if "pod5" in file_types:
         rsync_data.add_args(
-            "--include=pod5/*/*.pod5")
+            "--include=pod5/**.pod5")
     if "fastq" in file_types:
         rsync_data.add_args(
-            "--include=fastq_pass/*/*.fastq",
-            "--include=fastq_pass/*/*.fastq.gz",
-            "--include=pass/*/*.fastq",
-            "--include=pass/*/*.fastq.gz")
+            "--include=fastq_pass/**.fastq",
+            "--include=fastq_pass/**.fastq.gz",
+            "--include=pass/**.fastq",
+            "--include=pass/**.fastq.gz")
     if "bam" in file_types:
         rsync_data.add_args(
-            "--include=bam_pass/*/*.bam",
-            "--include=bam_pass/*/*.bai",
-            "--include=pass/*/*.bam",
-            "--include=pass/*/*.bai")
+            "--include=bam_pass/**.bam",
+            "--include=bam_pass/**.bai",
+            "--include=pass/**.bam",
+            "--include=pass/**.bai")
     rsync_data.add_args("--exclude=*")
     if permissions:
         rsync_data.add_args(f"--chmod={permissions}")
@@ -523,8 +523,8 @@ def bcf_nanopore_main():
                            dest="file_types", metavar="FILETYPES",
                            default="bam",
                            help="specify types of data files to copy "
-                           "as a comma-separated list (e.g. 'fastq,bams') "
-                           "(valid types are 'pod5', 'fastq', 'bams'; "
+                           "as a comma-separated list (e.g. 'fastq,bam') "
+                           "(valid types are 'pod5', 'fastq', 'bam'; "
                            "default: 'bam')")
     fetch_cmd.add_argument('--chmod', action="store",
                            dest="permissions", metavar="PERMISSIONS",
