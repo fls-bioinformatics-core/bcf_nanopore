@@ -11,6 +11,7 @@ PromethION data for BCF.
 Provides the following classes:
 
 * ProjectDir: handles a PromethION project directory
+* RunDir: handles a PromethION run directory (batches of samples)
 * FlowCell: handles a PromethION flow cell directory
 * BasecallsDir: handles a Promethion basecalls directory
 * HtmlReport: handles a MinKNOW HTML report
@@ -51,6 +52,50 @@ class ProjectDir:
     def __init__(self, path):
         self.path = os.path.abspath(path)
         self.name = os.path.basename(self.path)
+        # Scan the top-level directory for runs
+        self.runs = []
+        for d in Path(self.path).iterdir():
+            if d.is_dir():
+                print("...analysing subdirectory '%s'" % d)
+                run = RunDir(str(d))
+                if run.flow_cells or run.basecalls_dirs:
+                    print("...adding run '%s'" % run)
+                    self.runs.append(run)
+
+    @property
+    def flow_cells(self):
+        """
+        Return list of all flow cells in the project
+        """
+        flowcells = []
+        for run in self.runs:
+            flowcells.extend(run.flow_cells)
+        return flowcells
+
+    @property
+    def basecalls_dirs(self):
+        """
+        Return list of all basecalls directories in the project
+        """
+        basecalls_dirs = []
+        for run in self.runs:
+            basecalls_dirs.extend(run.basecalls_dirs)
+        return basecalls_dirs
+
+
+class RunDir:
+    """
+    Class representing a PromethION run directory
+
+    Arguments:
+      path (str): path to the run directory
+    """
+
+    def __init__(self, path):
+        self.path = os.path.abspath(path)
+        self.name = os.path.basename(self.path)
+        self.path = os.path.abspath(path)
+        self.name = os.path.basename(self.path)
         # Walk the directory structure looking for "pod5", "*_pass"
         # and "pass" directories
         # Use these to identify flow cell and basecalls directories
@@ -71,22 +116,16 @@ class ProjectDir:
                     break
         print("...located %d flow cell directories" % len(flow_cell_dirs))
         for d in flow_cell_dirs:
-            print("...analysing flow cell '%s'" % d)
-            # Match flow cell to parent pool
-            fc = FlowCell(d, project_dir=self.path)
+            print("...adding flow cell '%s'" % d)
+            fc = FlowCell(d, run=self.name)
             self.flow_cells.append(fc)
         self.flow_cells = sorted(self.flow_cells, key=lambda x: x.name)
         print("...located %d base calls directories" % len(basecalls_dirs))
         for d in basecalls_dirs:
-            print("...analysing base call dir '%s'" % d)
-            # Look for a matching pool
-            for fc in self.flow_cells:
-                if fc.pool in d.split(os.sep):
-                    bc = BasecallsDir(d, pool=fc.pool, run=fc.run)
-                    self.basecalls_dirs.append(bc)
-                    break
+            print("...adding base call dir '%s'" % d)
+            bc = BasecallsDir(d, run=self.name)
+            self.basecalls_dirs.append(bc)
         self.basecalls_dirs = sorted(self.basecalls_dirs, key=lambda x: x.name)
-
 
 class FlowCell:
     """
@@ -94,28 +133,13 @@ class FlowCell:
 
     Arguments:
       path (str): path to the flow cell directory
-      project_dir (str): optional, path to the parent
-        PromethION project directory
     """
 
-    def __init__(self, path, project_dir=None):
+    def __init__(self, path, run=None):
         # Absolute path
         self.path = os.path.abspath(path)
         self.name = os.path.basename(self.path)
-        # Assign parent pool and run
-        if not project_dir:
-            self.project_dir = None
-        else:
-            self.project_dir = os.path.abspath(project_dir)
-        pool_dir = os.path.dirname(self.path)
-        self.pool = os.path.basename(pool_dir)
-        run_dir = os.path.dirname(pool_dir)
-        # Check parent pool or run aren't same as project dir
-        if self.project_dir is not None and self.project_dir in (pool_dir, run_dir):
-            logger.warning("%s: missing run or pool directories?" % self.path)
-            self.run = None
-        else:
-            self.run = os.path.basename(run_dir)
+        self.run = run
         # Associated metadata
         self.metadata = BasecallsMetadata()
         # Name and ID for flow cell
@@ -189,7 +213,7 @@ class FlowCell:
         return None
 
     def __repr__(self):
-        return "%s/%s" % (self.pool, self.name)
+        return self.name
 
 
 class BasecallsDir:
@@ -198,18 +222,15 @@ class BasecallsDir:
 
     Arguments:
       path (str): path to the basecalls directory
-      pool (str): optional, pool name to associate the
-        basecalls directory with
       run (str): optional, run name to associate the
         basecalls directory
     """
 
-    def __init__(self, path, pool=None, run=None):
+    def __init__(self, path, run=None):
         self.path = os.path.abspath(path)
         self.name = os.path.basename(path)
         self.parent = os.path.basename(os.path.dirname(self.path))
-        # Assign parent pool and run
-        self.pool = pool
+        # Assign parent run
         self.run = run
         # Associated metadata
         self.metadata = BasecallsMetadata()
