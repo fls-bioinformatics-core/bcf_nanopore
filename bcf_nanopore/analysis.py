@@ -142,7 +142,6 @@ class ProjectAnalysisDir:
         for fc in project.flow_cells:
             fc_file.add_base_calls(
                 run=("-" if fc.run is None else fc.run),
-                pool_name=fc.pool,
                 sub_dir=os.path.relpath(fc.path, project.path),
                 flow_cell_id=fc.id,
                 reports=(",".join(fc.report_types)
@@ -159,7 +158,6 @@ class ProjectAnalysisDir:
         for bc in project.basecalls_dirs:
             fc_file.add_base_calls(
                 run=("-" if bc.run is None else bc.run),
-                pool_name=(bc.pool if bc.pool else bc.name),
                 sub_dir=os.path.relpath(bc.path, project.path),
                 flow_cell_id=fmt_value(bc.metadata.flow_cell_id),
                 reports=(",".join(bc.report_types)
@@ -195,7 +193,7 @@ class ProjectAnalysisDir:
             if not report:
                 continue
             target = os.path.join(reports_dir,
-                                  "%s_%s_%s" % (fc.pool,
+                                  "%s_%s_%s" % (fc.run,
                                                 fc.id,
                                                 os.path.basename(report)))
             shutil.copy(report, target)
@@ -205,7 +203,7 @@ class ProjectAnalysisDir:
                 continue
             target = os.path.join(reports_dir,
                                   "%s_%s_%s_%s" % (bc.parent,
-                                                   bc.pool,
+                                                   bc.run,
                                                    bc.metadata.flow_cell_id,
                                                    os.path.basename(report)))
             shutil.copy(report, target)
@@ -545,7 +543,6 @@ class FlowcellBasecallsInfo(TabFile):
 
     def __init__(self, filein=None):
         self._fields = ("Run",
-                        "PoolName",
                         "SubDir",
                         "FlowCellID",
                         "Reports",

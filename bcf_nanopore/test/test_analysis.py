@@ -165,7 +165,6 @@ class TestFlowcellBasecallsInfo(unittest.TestCase):
         # Add data
         basecalls_info.add_base_calls(
             run="Run1",
-            pool_name="WT1_WT2_K27CL1_K27CL2",
             sub_dir="WT1_WT2_K27CL1_K27CL2/20250616_0817_1F_PBC32212_40107e18",
             flow_cell_id="PBC32212",
             reports="html,json",
@@ -177,7 +176,6 @@ class TestFlowcellBasecallsInfo(unittest.TestCase):
             file_types="pod5,bam")
         self.assertEqual(len(basecalls_info), 1)
         self.assertEqual(basecalls_info[0]["Run"], "Run1")
-        self.assertEqual(basecalls_info[0]["PoolName"], "WT1_WT2_K27CL1_K27CL2")
         self.assertEqual(basecalls_info[0]["SubDir"], "WT1_WT2_K27CL1_K27CL2/20250616_0817_1F_PBC32212_40107e18")
         self.assertEqual(basecalls_info[0]["FlowCellID"], "PBC32212")
         self.assertEqual(basecalls_info[0]["Reports"], "html,json")
@@ -195,8 +193,8 @@ class TestFlowcellBasecallsInfo(unittest.TestCase):
         with open(basecalls_file, "rt") as fp:
             contents = fp.read()
             self.assertEqual(contents,
-                             """#Run	PoolName	SubDir	FlowCellID	Reports	Kit	Modifications	TrimBarcodes	MinknowVersion	BasecallingModel	FileTypes
-Run1	WT1_WT2_K27CL1_K27CL2	WT1_WT2_K27CL1_K27CL2/20250616_0817_1F_PBC32212_40107e18	PBC32212	html,json	SQK-PCB114-24	none	Off	25.03.7	dna_r10.4.1_e8.2_400bps_hac@v4.3.0	pod5,bam
+                             """#Run	SubDir	FlowCellID	Reports	Kit	Modifications	TrimBarcodes	MinknowVersion	BasecallingModel	FileTypes
+Run1	WT1_WT2_K27CL1_K27CL2/20250616_0817_1F_PBC32212_40107e18	PBC32212	html,json	SQK-PCB114-24	none	Off	25.03.7	dna_r10.4.1_e8.2_400bps_hac@v4.3.0	pod5,bam
 """)
 
     def test_flowcell_basecalls_info_read_from_file(self):
@@ -205,13 +203,12 @@ Run1	WT1_WT2_K27CL1_K27CL2	WT1_WT2_K27CL1_K27CL2/20250616_0817_1F_PBC32212_40107
         """
         basecalls_file = os.path.join(self.wd, "basecalls.tsv")
         with open(basecalls_file, "wt") as fp:
-            fp.write("""#Run	PoolName	SubDir	FlowCellID	Reports	Kit	Modifications	TrimBarcodes	MinknowVersion	BasecallingModel	FileTypes
-Run1	WT1_WT2_K27CL1_K27CL2	WT1_WT2_K27CL1_K27CL2/20250616_0817_1F_PBC32212_40107e18	PBC32212	html,json	SQK-PCB114-24	none	Off	25.03.7	dna_r10.4.1_e8.2_400bps_hac@v4.3.0	pod5,bam
+            fp.write("""#Run	SubDir	FlowCellID	Reports	Kit	Modifications	TrimBarcodes	MinknowVersion	BasecallingModel	FileTypes
+Run1	WT1_WT2_K27CL1_K27CL2/20250616_0817_1F_PBC32212_40107e18	PBC32212	html,json	SQK-PCB114-24	none	Off	25.03.7	dna_r10.4.1_e8.2_400bps_hac@v4.3.0	pod5,bam
 """)
         basecalls_info = FlowcellBasecallsInfo(basecalls_file)
         self.assertEqual(len(basecalls_info), 1)
         self.assertEqual(basecalls_info[0]["Run"], "Run1")
-        self.assertEqual(basecalls_info[0]["PoolName"], "WT1_WT2_K27CL1_K27CL2")
         self.assertEqual(basecalls_info[0]["SubDir"], "WT1_WT2_K27CL1_K27CL2/20250616_0817_1F_PBC32212_40107e18")
         self.assertEqual(basecalls_info[0]["FlowCellID"], "PBC32212")
         self.assertEqual(basecalls_info[0]["Reports"], "html,json")
@@ -227,13 +224,12 @@ Run1	WT1_WT2_K27CL1_K27CL2	WT1_WT2_K27CL1_K27CL2/20250616_0817_1F_PBC32212_40107
         """
         basecalls_file = os.path.join(self.wd, "basecalls.tsv")
         with open(basecalls_file, "wt") as fp:
-            fp.write("""#Run	PoolName	SubDir	FlowCellID	Reports	Kit	Modifications	TrimBarcodes
-Run1	WT1_WT2_K27CL1_K27CL2	WT1_WT2_K27CL1_K27CL2/20250616_0817_1F_PBC32212_40107e18	PBC32212	yes	SQK-PCB114-24	none	Off
+            fp.write("""#Run	SubDir	FlowCellID	Reports	Kit	Modifications	TrimBarcodes
+Run1	WT1_WT2_K27CL1_K27CL2/20250616_0817_1F_PBC32212_40107e18	PBC32212	yes	SQK-PCB114-24	none	Off
 """)
         basecalls_info = FlowcellBasecallsInfo(basecalls_file)
         self.assertEqual(len(basecalls_info), 1)
         self.assertEqual(basecalls_info[0]["Run"], "Run1")
-        self.assertEqual(basecalls_info[0]["PoolName"], "WT1_WT2_K27CL1_K27CL2")
         self.assertEqual(basecalls_info[0]["SubDir"], "WT1_WT2_K27CL1_K27CL2/20250616_0817_1F_PBC32212_40107e18")
         self.assertEqual(basecalls_info[0]["FlowCellID"], "PBC32212")
         self.assertEqual(basecalls_info[0]["Reports"], "yes")
