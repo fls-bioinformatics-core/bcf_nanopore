@@ -14,7 +14,7 @@ PromethION instrument.
 Overview
 --------
 
-Each run of the PromethION instrument involves sequencing a pool
+Each run of the PromethION instrument involves sequencing a batch
 of barcoded samples which have been loaded into one or more flow
 cells. Individual samples can be identified using the combination
 of a flow cell ID plus a barcode ID. The raw data from the run is
@@ -25,7 +25,7 @@ being collected, generating FASTQ and/or BAM files. It is also
 possible to (re)run the basecalling on previously collected POD5
 data.
 
-A project is made up of data from multiple runs.
+A project is made up of data from multiple runs (aka batches).
 
 -----------------
 Glossary of terms
@@ -36,8 +36,8 @@ to various conceptual elements of the data structure:
 
 * PROJECT: a set of runs relating to the same experiment, with
   samples run for one or more applications
-* RUN: a run of the PromethION instrument on a pool of samples
-* POOL: a set of samples run on the same flow cell within a run
+* RUN: a run of the PromethION instrument on a batch of samples
+* BATCH: synonymous with RUN
 * FLOWCELL: a physical flow cell used in a run, identified by
   a unique ID (e.g. "PAW15685")
 * BARCODE: a barcode sequence attached to a sample, identified
@@ -48,19 +48,13 @@ to various conceptual elements of the data structure:
 * BASECALLS DIRECTORY: a directory or folder containing base
   calls data
 
-This terminology differs slightly from that seen elsewhere in
-PromethION documentation:
-
-* A run in our terminology may be referred to as an "experiment"
-* A pool in our terminology may be referred to as a "sample"
-
 -----------------------------------
 PromethION sequencer output folders
 -----------------------------------
 
-************************
-Projects, runs and pools
-************************
+*****************
+Projects and runs
+*****************
 
 Within the local sequencing facility, a single top-level data
 folder will conventionally hold the outputs from one or more run
@@ -73,42 +67,49 @@ have the following general structure:
 
 ::
 
-   <PROJECT>/[.../][<RUN>/]<POOL>/<FLOWCELL>/bam_pass/<BARCODE>/...
+   <PROJECT>/<RUN>/[.../]<FLOWCELL>/bam_pass/<BARCODE>/...
+
+where ``[...]`` indicates additional arbitrary folder levels present between the
+RUN and FLOWCELL levels (these intermediate folders don't have any special
+significance in this model.)
 
 For example:
 
 ::
 
-   PromethION_Project_002_PerGynt/PG21-30_12062024/PG21-22/20240612_0123_1A_PAW12345_678ab90c/bam_pass/barcode01/...
+    PromethION_Project_002_PerGynt/PG21-22/20240612_0123_1A_PAW12345_678ab90c/bam_pass/barcode01/...
 
-where:
+is deconstructed into:
 
 * PROJECT = "PromethION_Project_002_PerGynt"
-* RUN = "PG21-30_12062024"
-* POOL = "PG21-22"
+* RUN = "PG21-22"
 * FLOWCELL = "20240612_0123_1A_PAW12345_678ab90c"
 * BARCODE = "barcode01"
 
-Variations on this structure include:
+Another example with an intermediate folder:
 
-* Missing RUN folder level may be absent (e.g. ``PromethION_Project_002_PerGynt/PG21-22/20240612_0123_1A_PAW12345_678ab90c/bam_pass/barcode01/...``);
-* Additional arbitrary folder levels present between the PROJECT
-  and RUN levels.
-  
-Within each run folder (or under the top-level project folder,
-if no run folders are present) there may then be one or more
-further subfolders which correspond to pools of samples which
-have been run on the same flow cell. These pool subfolders will
-have names like e.g. "PG1-2".
+::
 
-While the concepts of runs and pools reflect the physical processes
-of running the experiments, they are may not necessarily be
-reflected in the final data folder structure.
+   PromethION_Project_002_PerGynt/PG21-30_12062024/PG21-22/20240612_0123_1A_PAW12345_678ab90c/bam_pass/barcode01/...
+
+is deconstructed into:
+
+* PROJECT = "PromethION_Project_002_PerGynt"
+* RUN = "PG21-30_12062024"
+* FLOWCELL = "20240612_0123_1A_PAW12345_678ab90c"
+* BARCODE = "barcode01"
+
+While the intermediate folders may represent additional information
+for the sequencing facility (e.g. pools of samples run together), they
+are not significant in this model.
 
 Ultimately the two "core units of outputs" are:
 
 * Flow cell folders
 * Basecalling folders
+
+Note that a run may contain one or more flow cell folders, and none or
+more basecalling folders.
 
 The structure and contents of these two types of output folder are
 explained in more detail in the following sections.
