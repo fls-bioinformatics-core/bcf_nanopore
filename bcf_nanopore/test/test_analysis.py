@@ -27,7 +27,8 @@ class TestProjectAnalysisDir(unittest.TestCase):
         ProjectAnalysisDir: create new analysis directory
         """
         data_dir = MockPromethionDataDir("PromethION_Project_001_PerGynt")
-        data_dir.add_flow_cell("20240513_0829_1A_PAW15419_465bb23f", run="PG1-4_20240513", pool="PG1-2")
+        data_dir.add_flow_cell("20240513_0829_1A_PAW15419_465bb23f",
+                               relpath=Path("PG1-4_20240513").joinpath("PG1-2"))
         data_dir.add_basecalls_dir(str(Path("PG1-4_20240513").joinpath("Rebasecalling","PG1-2")),
                                    flow_cell_name="20240513_0829_1A_PAW15419_465bb23f")
         project_dir = data_dir.create(self.wd)
@@ -61,7 +62,8 @@ class TestProjectAnalysisDir(unittest.TestCase):
         ProjectAnalysisDir: create new analysis directory with samples
         """
         data_dir = MockPromethionDataDir("PromethION_Project_001_PerGynt")
-        data_dir.add_flow_cell("20240513_0829_1A_PAW15419_465bb23f", run="PG1-4_20240513", pool="PG1-2")
+        data_dir.add_flow_cell("20240513_0829_1A_PAW15419_465bb23f",
+                               relpath=Path("PG1-4_20240513").joinpath("PG1-2"))
         data_dir.add_basecalls_dir(str(Path("PG1-4_20240513").joinpath("Rebasecalling","PG1-2")),
                                    flow_cell_name="20240513_0829_1A_PAW15419_465bb23f")
         project_dir = data_dir.create(self.wd)

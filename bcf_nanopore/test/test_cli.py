@@ -30,7 +30,8 @@ class TestSetupCommand(unittest.TestCase):
         setup: create new analysis directory
         """
         data_dir = MockPromethionDataDir("PromethION_Project_001_PerGynt")
-        data_dir.add_flow_cell("20240513_0829_1A_PAW15419_465bb23f", run="PG1-4_20240513", pool="PG1-2")
+        data_dir.add_flow_cell("20240513_0829_1A_PAW15419_465bb23f",
+                               relpath=Path("PG1-4_20240513").joinpath("PG1-2"))
         data_dir.add_basecalls_dir(str(Path("PG1-4_20240513").joinpath("Rebasecalling","PG1-2")),
                                    flow_cell_name="20240513_0829_1A_PAW15419_465bb23f")
         project_dir = data_dir.create(self.wd)
@@ -60,7 +61,8 @@ class TestSetupCommand(unittest.TestCase):
         setup: create new analysis directory with samples CSV file
         """
         data_dir = MockPromethionDataDir("PromethION_Project_001_PerGynt")
-        data_dir.add_flow_cell("20240513_0829_1A_PAW15419_465bb23f", run="PG1-4_20240513", pool="PG1-2")
+        data_dir.add_flow_cell("20240513_0829_1A_PAW15419_465bb23f",
+                               relpath=Path("PG1-4_20240513").joinpath("PG1-2"))
         data_dir.add_basecalls_dir(str(Path("PG1-4_20240513").joinpath("Rebasecalling","PG1-2")),
                                    flow_cell_name="20240513_0829_1A_PAW15419_465bb23f")
         project_dir = data_dir.create(self.wd)
@@ -97,7 +99,8 @@ PG4,NB06,
         setup: create new analysis directory (set permissions)
         """
         data_dir = MockPromethionDataDir("PromethION_Project_001_PerGynt")
-        data_dir.add_flow_cell("20240513_0829_1A_PAW15419_465bb23f", run="PG1-4_20240513", pool="PG1-2")
+        data_dir.add_flow_cell("20240513_0829_1A_PAW15419_465bb23f",
+                               relpath=Path("PG1-4_20240513").joinpath("PG1-2"))
         data_dir.add_basecalls_dir(str(Path("PG1-4_20240513").joinpath("Rebasecalling","PG1-2")),
                                    flow_cell_name="20240513_0829_1A_PAW15419_465bb23f")
         project_dir = data_dir.create(self.wd)
@@ -144,7 +147,8 @@ PG4,NB06,
         self.assertTrue(new_group is not None)
         # Create mock PromethION project
         data_dir = MockPromethionDataDir("PromethION_Project_001_PerGynt")
-        data_dir.add_flow_cell("20240513_0829_1A_PAW15419_465bb23f", run="PG1-4_20240513", pool="PG1-2")
+        data_dir.add_flow_cell("20240513_0829_1A_PAW15419_465bb23f",
+                               relpath=Path("PG1-4_20240513").joinpath("PG1-2"))
         data_dir.add_basecalls_dir(str(Path("PG1-4_20240513").joinpath("Rebasecalling","PG1-2")),
                                    flow_cell_name="20240513_0829_1A_PAW15419_465bb23f")
         project_dir = data_dir.create(self.wd)
@@ -186,7 +190,8 @@ class TestFetchCommand(unittest.TestCase):
         """
         # Make source data
         data_dir = MockPromethionDataDir("PromethION_Project_001_PerGynt")
-        data_dir.add_flow_cell("20240513_0829_1A_PAW15419_465bb23f", run="PG1-4_20240513", pool="PG1-2")
+        data_dir.add_flow_cell("20240513_0829_1A_PAW15419_465bb23f",
+                               relpath=Path("PG1-4_20240513").joinpath("PG1-2"))
         data_dir.add_basecalls_dir(str(Path("PG1-4_20240513").joinpath("Rebasecalling","PG1-2")),
                                    flow_cell_name="20240513_0829_1A_PAW15419_465bb23f")
         source_dir = os.path.join(self.wd, "source")
@@ -203,7 +208,8 @@ class TestFetchCommand(unittest.TestCase):
         """
         # Make source data
         data_dir = MockPromethionDataDir("PromethION_Project_001_PerGynt")
-        data_dir.add_flow_cell("20240513_0829_1A_PAW15419_465bb23f", run="PG1-4_20240513", pool="PG1-2")
+        data_dir.add_flow_cell("20240513_0829_1A_PAW15419_465bb23f",
+                               relpath=Path("PG1-4_20240513").joinpath("PG1-2"))
         data_dir.add_basecalls_dir(str(Path("PG1-4_20240513").joinpath("Rebasecalling","PG1-2")),
                                    flow_cell_name="20240513_0829_1A_PAW15419_465bb23f")
         source_dir = os.path.join(self.wd, "source")
@@ -220,7 +226,8 @@ class TestFetchCommand(unittest.TestCase):
         """
         # Make source data
         data_dir = MockPromethionDataDir("PromethION_Project_001_PerGynt")
-        data_dir.add_flow_cell("20240513_0829_1A_PAW15419_465bb23f", run="PG1-4_20240513", pool="PG1-2")
+        data_dir.add_flow_cell("20240513_0829_1A_PAW15419_465bb23f",
+                               relpath=Path("PG1-4_20240513").joinpath("PG1-2"))
         data_dir.add_basecalls_dir(str(Path("PG1-4_20240513").joinpath("Rebasecalling","PG1-2")),
                                    flow_cell_name="20240513_0829_1A_PAW15419_465bb23f")
         source_dir = os.path.join(self.wd, "source")
@@ -237,7 +244,8 @@ class TestFetchCommand(unittest.TestCase):
         """
         # Make source data
         data_dir = MockPromethionDataDir("PromethION_Project_001_PerGynt")
-        data_dir.add_flow_cell("20240513_0829_1A_PAW15419_465bb23f", run="PG1-4_20240513", pool="PG1-2")
+        data_dir.add_flow_cell("20240513_0829_1A_PAW15419_465bb23f",
+                               relpath=Path("PG1-4_20240513").joinpath("PG1-2"))
         data_dir.add_basecalls_dir(str(Path("PG1-4_20240513").joinpath("Rebasecalling","PG1-2")),
                                    flow_cell_name="20240513_0829_1A_PAW15419_465bb23f")
         source_dir = os.path.join(self.wd, "source")
@@ -270,7 +278,8 @@ class TestFetchCommand(unittest.TestCase):
         self.assertTrue(new_group is not None)
         # Make source data
         data_dir = MockPromethionDataDir("PromethION_Project_001_PerGynt")
-        data_dir.add_flow_cell("20240513_0829_1A_PAW15419_465bb23f", run="PG1-4_20240513", pool="PG1-2")
+        data_dir.add_flow_cell("20240513_0829_1A_PAW15419_465bb23f",
+                               relpath=Path("PG1-4_20240513").joinpath("PG1-2"))
         data_dir.add_basecalls_dir(str(Path("PG1-4_20240513").joinpath("Rebasecalling","PG1-2")),
                                    flow_cell_name="20240513_0829_1A_PAW15419_465bb23f")
         source_dir = os.path.join(self.wd, "source")
