@@ -120,16 +120,17 @@ class MockPromethionDataDir:
         self._flow_cells = list()
         self._basecalls_dirs = list()
 
-    def add_flow_cell(self, name, run=None, pool=None):
+    def add_flow_cell(self, name, relpath=None):
         """
         Define a flow cell within the mock data
 
         Arguments:
             name (str): name of the flow cell
-            run (str): optional, name of the parent run
-            pool (str): optional, name of the parent pool
+            relpath (str): optional, path to the flow cell
+              parent directory relative to the project
+              directory
         """
-        self._flow_cells.append(MockFlowcellDir(name, run=run, pool=pool))
+        self._flow_cells.append(MockFlowcellDir(name, relpath=relpath))
 
     def add_basecalls_dir(self, relpath, flow_cell_name=None):
         """
@@ -167,11 +168,15 @@ class MockPromethionDataDir:
 class MockFlowcellDir:
     """
     Utility class for faking flow cell data directories
+
+    Arguments:
+        name (str): name of the flow cell
+        relpath (str): relative path to the flow cell directory
+            from the top level directory
     """
-    def __init__(self, name, run=None, pool=None):
+    def __init__(self, name, relpath=None):
         self.name = str(name)
-        self.run = str(run) if run else run
-        self.pool = str(pool) if pool else pool
+        self.relpath = relpath
 
     def create(self, top_dir):
         """
@@ -181,12 +186,11 @@ class MockFlowcellDir:
             top_dir (Path): directory to create the
               mock flow cell directory under
         """
-        fc_path = Path(top_dir)
-        if self.run:
-            fc_path = fc_path.joinpath(self.run)
-        if self.pool:
-            fc_path = fc_path.joinpath(self.pool)
-        fc_path = fc_path.joinpath(self.name)
+        if self.relpath:
+            fc_path = Path(top_dir).joinpath(self.relpath,
+                                             self.name)
+        else:
+            fc_path = Path(top_dir).joinpath(self.name)
         fc_path.mkdir(parents=True)
         print(f"...made {fc_path}")
         # Make subdirs
