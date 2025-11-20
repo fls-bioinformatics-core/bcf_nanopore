@@ -71,3 +71,9 @@ Documentation
 -------------
 
 Documentation can be found `here <docs/overview.rst>`_.
+
+Contributing
+------------
+
+See `CONTRIBUTING.md <CONTRIBUTING.md>`_ for guidelines on how to
+contribute to this project.
