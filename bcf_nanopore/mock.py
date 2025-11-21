@@ -353,15 +353,51 @@ class MockProjectAnalysisDir:
     Utility class for creating directories which mimic PromethION
     project analysis directories
 
+    Create a MockPromethionAnalysisDir instance, add runs to it
+    using the add_run() method, then create the mock directory
+    structure using the create() method.
+
+    Example usage:
+
+    >>> project = MockPromethionAnalysisDir("MyProject")
+    >>> project.add_run("Run1", samples={"Sample1": ("barcode01","FC12345")})
+    >>> project_dir = project.create("/path/to/top/dir", data_dir="/path/to/data/dir",
+    ...                             user="jdoe", principal_investigator="J. Doe",
+    ...                             application="Methylation study", organism="E. coli",
+    ...                             project_id="PROMETHION#001")
+
     Arguments:
         name (str): name of the PromethION project analysis
           directory
     """
     def __init__(self, name):
         self.name = str(name)
+        self.runs = {}
+
+    def add_run(self, run, samples=None):
+        """
+        Add a mock run to the analysis project
+
+        If supplied then 'samples' is a dictionary mapping
+        sample names to (barcode,flowcell) tuples, for
+        example:
+
+        ::
+
+            samples = {
+                "Sample1": ("barcode01","FC12345"),
+                "Sample2": ("barcode02","FC12345")
+            }
+
+        Arguments:
+          run (str): name of the run to add
+          samples (dict): optional, dictionary mapping
+            sample names to (barcode,flowcell) tuples
+        """
+        self.runs[run] = samples
 
     def create(self, top_dir, data_dir=None , user=None, principal_investigator=None,
-               application=None, organism=None, run_id=None):
+               application=None, organism=None, project_id=None):
         """
         Create mock PromethION analysis project directory
 
@@ -375,7 +411,7 @@ class MockProjectAnalysisDir:
             principal investigator
           application (str): optional, application
           organism (str): optional, organism
-          run_id (str): optional, run ID string
+          project_id (str): optional, project ID string
         """
         # Make top level directory
         top_dir = Path(top_dir).absolute().joinpath(self.name)
@@ -394,7 +430,7 @@ class MockProjectAnalysisDir:
             'PI': principal_investigator,
             'application': application,
             'organism': organism,
-            'id': run_id
+            'id': project_id
         }
         for k in metadata_values:
             value = metadata_values[k]
@@ -405,16 +441,27 @@ class MockProjectAnalysisDir:
             project_info['data_dir'] = str(data_dir)
         project_info['platform'] = "promethion"
         project_info.save(filen=str(top_dir.joinpath("project.info")))
-        # Add in samples file
-        samples =  SamplesInfo()
-        for name, flowcell, barcode in (("PG1", "PAW14589", "NB03"),
-                                        ("PG2", "PAW14589", "NB04"),):
-            samples.add_sample(name, flowcell, barcode)
-        samples.save(fileout=str(top_dir.joinpath("samples.tsv")))
-        # Add in flowcells data file
-        if data_dir:
-            flowcells = FlowcellBasecallsInfo()
-            flowcells.save(fileout=str(top_dir.joinpath("basecalling.tsv")))
+        # Add in run subdirectories
+        for ix, run in enumerate(self.runs.keys()):
+            run_dir = top_dir.joinpath(f"{ix+1:03d}_{run}")
+            run_dir.mkdir()
+            print(f"...made run '{run}' ({run_dir})")
+            # Add artefacts to run directory
+            # Placeholder README file
+            with open(run_dir.joinpath("README"), "wt") as fp:
+                fp.write("Placeholder README file\n")
+            # Placeholder flowcell_basecalls.tsv file
+            with open(run_dir.joinpath("flowcell_basecalls.tsv"), "wt") as fp:
+                fp.write("Placeholder flowcell_basecalls.tsv file\n")
+            # Samples file
+            with open(run_dir.joinpath("samples.tsv"), "wt") as fp:
+                fp.write("#Sample\tBarcode\tFlowcell\n")
+                if self.runs[run]:
+                    for sample in self.runs[run]:
+                        barcode, flowcell = self.runs[run][sample]
+                        fp.write(f"{sample}\t{barcode}\t{flowcell}\n")
+            with open(run_dir.joinpath("samples.tsv"), "rt") as fp:
+                print(fp.read())
         return str(top_dir)
 
 def create_barcode_dirs(top_dir, number_of_barcodes=24):

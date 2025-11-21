@@ -59,8 +59,11 @@ class ProjectDir:
                 print("...analysing subdirectory '%s'" % d)
                 run = RunDir(str(d))
                 if run.flow_cells or run.basecalls_dirs:
-                    print("...adding run '%s'" % run)
+                    print("...adding run '%s'" % run.name)
                     self.runs.append(run)
+        # Sort runs by modification time (oldest first)
+        self.runs = sorted(self.runs,
+                           key=lambda x: os.path.getmtime(Path(self.path).joinpath(x.name)))
 
     @property
     def flow_cells(self):
