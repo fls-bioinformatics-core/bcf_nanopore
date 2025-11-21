@@ -12,9 +12,33 @@ from pathlib import Path
 from bcf_nanopore.analysis import ProjectAnalysisDir
 from bcf_nanopore.mock import MockPromethionDataDir
 from bcf_nanopore.mock import MockProjectAnalysisDir
+from bcf_nanopore.cli import info as cli_info
 from bcf_nanopore.cli import setup as cli_setup
 from bcf_nanopore.cli import fetch as cli_fetch
 from bcf_nanopore.cli import report as cli_report
+
+
+class TestInfoCommand(unittest.TestCase):
+
+    def setUp(self):
+        self.wd = tempfile.mkdtemp()
+
+    def tearDown(self):
+        if Path(self.wd).exists():
+            shutil.rmtree(self.wd)
+
+    def test_info(self):
+        """
+        info: display project information
+        """
+
+        data_dir = MockPromethionDataDir("PromethION_Project_001_PerGynt")
+        data_dir.add_flow_cell("20240513_0829_1A_PAW15419_465bb23f",
+                               relpath=Path("PG1-4_20240513").joinpath("PG1-2"))
+        data_dir.add_basecalls_dir(str(Path("PG1-4_20240513").joinpath("Rebasecalling","PG1-2")),
+                                   flow_cell_name="20240513_0829_1A_PAW15419_465bb23f")
+        project_dir = data_dir.create(self.wd)
+        cli_info(project_dir)
 
 class TestSetupCommand(unittest.TestCase):
 
