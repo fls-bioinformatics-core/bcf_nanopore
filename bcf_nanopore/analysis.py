@@ -227,6 +227,9 @@ The following files have been automatically generated:
                     "locations).")
             # Add run to list of run_dirs
             self.run_dirs[run.name] = os.path.basename(run_dir)
+        # Update the 'runs' field in the project info
+        self.info['runs'] = ",".join(self.runs)
+        self.info.save(filen=self.project_info_file)
         # Get the earliest date stamp from flow cell names
         try:
             datestamps = set()

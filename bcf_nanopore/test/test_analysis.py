@@ -51,6 +51,7 @@ class TestProjectAnalysisDir(unittest.TestCase):
         self.assertEqual(analysis_dir.info.PI, "Henrik Ibsen")
         self.assertEqual(analysis_dir.info.application, "Methylation study")
         self.assertEqual(analysis_dir.info.organism, "Human")
+        self.assertEqual(analysis_dir.info.runs, "PG1-4_20240513")
         self.assertEqual(analysis_dir.runs, ["PG1-4_20240513"])
         self.assertTrue(Path(analysis_dir_path).joinpath("README").exists())
         self.assertTrue(Path(analysis_dir_path).joinpath("project.info").exists())
@@ -95,6 +96,7 @@ class TestProjectAnalysisDir(unittest.TestCase):
         self.assertEqual(analysis_dir.info.PI, "Henrik Ibsen")
         self.assertEqual(analysis_dir.info.application, "Methylation study")
         self.assertEqual(analysis_dir.info.organism, "Human")
+        self.assertEqual(analysis_dir.info.runs, "PG1-2_20240513,PG3-4_20240529")
         self.assertEqual(analysis_dir.runs, ["PG1-2_20240513", "PG3-4_20240529"])
         self.assertTrue(Path(analysis_dir_path).joinpath("README").exists())
         self.assertTrue(Path(analysis_dir_path).joinpath("project.info").exists())
@@ -136,6 +138,7 @@ class TestProjectAnalysisDir(unittest.TestCase):
         self.assertEqual(analysis_dir.info.PI, "Henrik Ibsen")
         self.assertEqual(analysis_dir.info.application, "Methylation study")
         self.assertEqual(analysis_dir.info.organism, "Human")
+        self.assertEqual(analysis_dir.info.runs, "PG1-2_20240513")
         self.assertEqual(analysis_dir.runs, ["PG1-2_20240513"])
 
     def test_project_analysis_dir_report(self):
