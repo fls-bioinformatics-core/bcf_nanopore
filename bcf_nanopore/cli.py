@@ -263,8 +263,7 @@ def setup(project_dir, user, PI, application=None, organism=None,
                         user=user,
                         PI=PI,
                         application=application,
-                        organism=organism,
-                        samples=samples)
+                        organism=organism)
     # Set permissions and group
     if permissions:
         set_permissions(permissions, analysis_dir.path)
