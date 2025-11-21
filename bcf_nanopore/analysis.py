@@ -22,6 +22,7 @@ import shutil
 import logging
 from pathlib import Path
 from auto_process_ngs.metadata import MetadataDict
+from auto_process_ngs.utils import get_numbered_subdir
 from bcftbx.TabFile import TabFile
 from bcftbx.utils import extract_prefix
 from bcftbx.utils import extract_index
@@ -36,7 +37,7 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 RE_PROJECT_DIR_NAME = re.compile("^PromethION_Project_([0-9]+)_(.+)$")
-
+RE_RUN_DIR_NAME = re.compile("^([0-9]{3})_(.+)$")
 
 class ProjectAnalysisDir:
     """
@@ -51,9 +52,20 @@ class ProjectAnalysisDir:
     PROJECT_analysis
       |
       +-- README
-          project.info
-          basecalling.tsv
-          samples.tsv
+      |   project.info
+      |
+      +-- 01-Run_name
+      |     |
+      |     +-- flowcell_basecalls.tsv
+      |         report...
+      |
+      +-- 02-Run_name
+      |     |
+      |     ...
+      |
+      +-- ScriptCode
+      |
+      +-- logs
     
     An analysis directory can be created for a PromethION
     project using the ``create`` method.
@@ -75,17 +87,15 @@ class ProjectAnalysisDir:
         else:
             logger.warning("%s: no 'project.info' file found" %
                            self.path)
-        # Sample sheet (per sample metadata)
-        self.samples_file = os.path.join(self.path, "samples.tsv")
-        if os.path.exists(self.samples_file):
-            self.samples_info = SamplesInfo(self.samples_file)
-        else:
-            logger.warning("%s: no 'samples.tsv' file found" %
-                           self.path)
-            self.samples_info = SamplesInfo()
+        # Dictionary of run_dirs and their directories
+        self.run_dirs = {}
+        if self.exists():
+            for d in os.listdir(self.path):
+                if os.path.isdir(os.path.join(self.path, d)) and RE_RUN_DIR_NAME.match(d):
+                    run_name = RE_RUN_DIR_NAME.match(d).group(2)
+                    self.run_dirs[run_name] = d
 
-    def create(self, project_dir, user, PI, application, organism,
-               sample_sheet=None, samples=[]):
+    def create(self, project_dir, user, PI, application, organism):
         """
         Creates a new PromethION project analysis directory
 
@@ -102,8 +112,6 @@ class ProjectAnalysisDir:
           PI (str): name of PI (principal investigator)
           application (str): application type
           organism (str): associated organism(s)
-          samples (list): optional, list of tuples
-            of the form (SAMPLE, BARCODE, FLOWCELL)
         """
         if self.exists():
             raise OSError("%s: already exists" % self.path)
@@ -123,55 +131,102 @@ class ProjectAnalysisDir:
         self.info['id'] = self._make_project_id(self.info['name'])
         self.info['platform'] = "promethion"
         self.info.save(filen=self.project_info_file)
-        # Samples
-        # Copy in data from external sample sheet
-        # Sample sheet should be a CSV format file with an
-        # initial header line (which is ignored) followed by
-        # lines with either 2 or 3 fields
-        if samples:
-            for sample in samples:
-                sample_name, barcode, flowcell = sample
-                self.samples_info.add_sample(sample_name,
-                                             barcode,
-                                             flowcell)
-            self.samples_info.save(fileout=self.samples_file)
-        # Collate flow cell and base calls information into TSV
+        # Load source project directory
         project = ProjectDir(project_dir)
-        basecalling_info_file = os.path.join(self.path, "basecalling.tsv")
-        fc_file = FlowcellBasecallsInfo()
-        for fc in project.flow_cells:
-            fc_file.add_base_calls(
-                run=("-" if fc.run is None else fc.run),
-                sub_dir=os.path.relpath(fc.path, project.path),
-                flow_cell_id=fc.id,
-                reports=(",".join(fc.report_types)
-                         if fc.report_types else "none"),
-                kit=fmt_value(fc.metadata.kit),
-                modifications=("none"
-                               if fc.metadata.modified_basecalling == "Off"
-                               else fmt_value(fc.metadata.modifications)),
-                trim_barcodes=fmt_value(fc.metadata.trim_barcodes),
-                minknow_version=fc.metadata.software_versions["minknow"],
-                basecalling_model=fmt_value(fc.metadata.basecalling_model),
-                file_types=(",".join(fc.file_types)
-                            if fc.file_types else "none"))
-        for bc in project.basecalls_dirs:
-            fc_file.add_base_calls(
-                run=("-" if bc.run is None else bc.run),
-                sub_dir=os.path.relpath(bc.path, project.path),
-                flow_cell_id=fmt_value(bc.metadata.flow_cell_id),
-                reports=(",".join(bc.report_types)
-                         if bc.report_types else "none"),
-                kit=fmt_value(bc.metadata.kit),
-                modifications=("none"
-                               if bc.metadata.modified_basecalling == "Off"
-                               else fmt_value(bc.metadata.modifications)),
-                trim_barcodes=fmt_value(bc.metadata.trim_barcodes),
-                minknow_version=bc.metadata.software_versions["minknow"],
-                basecalling_model=fmt_value(bc.metadata.basecalling_model),
-                file_types=(",".join(bc.file_types)
-                            if bc.file_types else "none"))
-        fc_file.save(basecalling_info_file)
+        # Handle run_dirs
+        for run in sorted(project.runs, key=lambda r: r.name):
+            # Create a subdirectory for the run
+            print(f"-- run '{run.name}'")
+            run_dir = get_numbered_subdir(run.name, self.path, full_path=True)
+            print(f"   creating directory: '{run_dir}'")
+            os.makedirs(run_dir)
+            print(f"   populating run directory...")
+            # Create a TSV file with flow cell and base calls info
+            flow_cell_basecalls_file = os.path.join(run_dir,
+                                                    "flowcell_basecalls.tsv")
+            fc_file = FlowcellBasecallsInfo()
+            # Add information for flow cells in the run
+            for fc in run.flow_cells:
+                fc_file.add_base_calls(
+                    run=run.name,
+                    sub_dir=os.path.relpath(fc.path, project.path),
+                    flow_cell_id=fc.id,
+                    reports=(",".join(fc.report_types)
+                             if fc.report_types else "none"),
+                    kit=fmt_value(fc.metadata.kit),
+                    modifications=("none"
+                                   if fc.metadata.modified_basecalling == "Off"
+                                   else fmt_value(fc.metadata.modifications)),
+                    trim_barcodes=fmt_value(fc.metadata.trim_barcodes),
+                    minknow_version=fc.metadata.software_versions["minknow"],
+                    basecalling_model=fmt_value(fc.metadata.basecalling_model),
+                    file_types=(",".join(fc.file_types)
+                                if fc.file_types else "none"))
+            # Add information for basecalls dirs in the run
+            for bc in run.basecalls_dirs:
+                fc_file.add_base_calls(
+                    run=run.name,
+                    sub_dir=os.path.relpath(bc.path, project.path),
+                    flow_cell_id=fmt_value(bc.metadata.flow_cell_id),
+                    reports=(",".join(bc.report_types)
+                             if bc.report_types else "none"),
+                    kit=fmt_value(bc.metadata.kit),
+                    modifications=("none"
+                                   if bc.metadata.modified_basecalling == "Off"
+                                   else fmt_value(bc.metadata.modifications)),
+                    trim_barcodes=fmt_value(bc.metadata.trim_barcodes),
+                    minknow_version=bc.metadata.software_versions["minknow"],
+                    basecalling_model=fmt_value(bc.metadata.basecalling_model),
+                    file_types=(",".join(bc.file_types)
+                                if bc.file_types else "none"))
+            # Save flow cell/base calls info file
+            fc_file.save(flow_cell_basecalls_file)
+            # Copy in flow cell base calling reports
+            for fc in run.flow_cells:
+                report = fc.html_report
+                if not report:
+                    continue
+                target = os.path.join(run_dir,
+                                      "%s_%s_%s" % (fc.run,
+                                                    fc.id,
+                                                    os.path.basename(report)))
+                shutil.copy(report, target)
+            # Copy in other base calling reports
+            for bc in project.basecalls_dirs:
+                report = bc.html_report
+                if not report:
+                    continue
+                target = os.path.join(run_dir,
+                                      "%s_%s_%s_%s" % (bc.parent,
+                                                       bc.run,
+                                                       bc.metadata.flow_cell_id,
+                                                       os.path.basename(report)))
+                shutil.copy(report, target)
+            # Create a template samples file
+            samples_file = os.path.join(run_dir, "samples.tsv")
+            with open(samples_file, "wt") as fp:
+                fp.write("#Sample\tBarcode\tFlowcell\n")
+            # Create a README file for the run
+            read_me_file = os.path.join(run_dir, "README")
+            with open(read_me_file, "wt") as read_me:
+                read_me.write(
+                    f"""This is the analysis directory for run '{run.name}' of project '{self.info.name}'.
+
+The following files have been automatically generated:
+
+- 'flowcell_basecalls.tsv': TSV file listing information about flow cells and
+  basecalls directories
+""")
+                if os.path.exists(os.path.join(run_dir, "samples.tsv")):
+                    read_me.write(
+                        "- 'samples.tsv': TSV file matching sample names to flow cell "
+                        "and barcode IDs\n")
+                read_me.write(
+                    f"- copies of HTML reports from the basecalling runs found in "
+                    "the primary data directory (renamed to identify the associated "
+                    "locations).")
+            # Add run to list of run_dirs
+            self.run_dirs[run.name] = os.path.basename(run_dir)
         # Get the earliest date stamp from flow cell names
         try:
             datestamps = set()
@@ -185,54 +240,34 @@ class ProjectAnalysisDir:
         # Make subdirectories
         for subdir in ("logs", "ScriptCode"):
             Path(self.path).joinpath(subdir).mkdir()
-        # Copy in reports
-        reports_dir = os.path.join(self.path, "reports")
-        os.makedirs(reports_dir)
-        for fc in project.flow_cells:
-            report = fc.html_report
-            if not report:
-                continue
-            target = os.path.join(reports_dir,
-                                  "%s_%s_%s" % (fc.run,
-                                                fc.id,
-                                                os.path.basename(report)))
-            shutil.copy(report, target)
-        for bc in project.basecalls_dirs:
-            report = bc.html_report
-            if not report:
-                continue
-            target = os.path.join(reports_dir,
-                                  "%s_%s_%s_%s" % (bc.parent,
-                                                   bc.run,
-                                                   bc.metadata.flow_cell_id,
-                                                   os.path.basename(report)))
-            shutil.copy(report, target)
         # Create a README file
         read_me_file = os.path.join(self.path, "README")
         with open(read_me_file, 'wt') as read_me:
             read_me.write(
                 f"""This is the analysis directory for {os.path.basename(self.info.data_dir)}
 
-The following files have been automatically generated:
+The following files and directories have been automatically generated:
 
 - '{os.path.basename(self.project_info_file)}': top-level information about the project
-- '{os.path.basename(basecalling_info_file)}': TSV file with information about
-  the flow cell and base calling directories (extracted from the primary
-  data directory)
+- Subdirectories for each run in the project, named with a leading
+  number to indicate order of processing (e.g. '001_{project.runs[0].name}'):
+- 'logs': directory for log files;
+- 'ScriptCode': directory for custom scripts and code.
 """)
-            if os.path.exists(self.samples_file):
-                read_me.write(
-                    f"- '{os.path.basename(self.samples_file)}': TSV file matching sample names "
-                    "to flow cell and barcode IDs\n")
-            read_me.write(f"""
-The 'reports' subdirectory contains copies of the HTML reports that were
-found in the primary data directory (renamed to identify the associated
-locations).""")
         # Report information
         print(self.report(mode="summary",
                           fields="name,id,primary_data,analysis_dir,"
-                          "user,pi,application,organism,nsamples,"
-                          "sample_names"))
+                          "user,pi,application,organism"))
+
+    @property
+    def runs(self):
+        """
+        Return a list of run names for the project
+
+        Returns:
+            list: list of run names
+        """
+        return sorted(self.run_dirs.keys(), key=lambda x: self.run_dirs[x])
 
     def exists(self):
         """
@@ -315,11 +350,18 @@ locations).""")
                 value = self.info.organism
             elif field == "nsamples" or field == "#samples":
                 name = "#samples"
-                value = len(self.samples_info)
+                value = 0
+                for run in self.runs:
+                    value =+ len(SamplesInfo(os.path.join(self.path, self.run_dirs[run], "samples.tsv")))
                 def fmt_func(n): return '?' if n == 0 else str(n)
             elif field == 'sample_names' or field == 'samples':
                 name = "samples"
-                value = ",".join([s["Sample"] for s in self.samples_info])
+                sample_names = []
+                for run in self.runs:
+                    sample_names.extend([s["Sample"] for s in SamplesInfo(os.path.join(self.path,
+                                                                                       self.run_dirs[run],
+                                                                                      "samples.tsv"))])
+                value = ",".join(sample_names)
                 def fmt_func(s): return '?' if s == "" else s
             elif field == "primary_data":
                 name = "Primary data dir"
