@@ -134,7 +134,7 @@ class ProjectAnalysisDir:
         # Load source project directory
         project = ProjectDir(project_dir)
         # Handle run_dirs
-        for run in sorted(project.runs, key=lambda r: r.name):
+        for run in project.runs:
             # Create a subdirectory for the run
             print(f"-- run '{run.name}'")
             run_dir = get_numbered_subdir(run.name, self.path, full_path=True)
