@@ -68,7 +68,6 @@ def info(project_dir):
     project = ProjectDir(os.path.abspath(project_dir))
     # Make a metadata file
     print('\t'.join(["#Run",
-                     "PoolName",
                      "SubDir",
                      "FlowCellID",
                      "Reports",
@@ -78,83 +77,76 @@ def info(project_dir):
                      "MinKNOWVersion",
                      "BasecallingModel",
                      "FileTypes"]))
-    for fc in project.flow_cells:
-        run = ("-" if fc.run is None else fc.run)
-        kit = fmt_value(fc.metadata.kit)
-        modifications = ("none" if fc.metadata.modified_basecalling == "Off"
-                         else fmt_value(fc.metadata.modifications))
-        trim_barcodes = fmt_value(fc.metadata.trim_barcodes)
-        try:
-            minknow_version = fc.metadata.software_versions["minknow"]
-        except (TypeError, KeyError):
-            minknow_version = "?"
-        reports = fc.report_types
-        if reports:
-            reports = ",".join(reports)
-        else:
-            reports = "none"
-        file_types = fc.file_types
-        if file_types:
-            file_types = ",".join(file_types)
-        else:
-            file_types = "none"
-        basecalling_model = fc.metadata.basecalling_model
-        if basecalling_model is None:
-            basecalling_model = fc.metadata.basecalling_config
-        basecalling_model = fmt_value(basecalling_model)
-        print('\t'.join([str(s) for s in (run,
-                                          fc.pool,
-                                          os.path.relpath(fc.path,
-                                                          project.path),
-                                          fc.id,
-                                          reports,
-                                          kit,
-                                          modifications,
-                                          trim_barcodes,
-                                          minknow_version,
-                                          basecalling_model,
-                                          file_types)]))
-    for bc in project.basecalls_dirs:
-        flow_cell_id = fmt_value(bc.metadata.flow_cell_id)
-        run = ("-" if bc.run is None else bc.run)
-        if bc.pool:
-            pool = bc.pool
-        else:
-            pool = bc.name
-        kit = fmt_value(bc.metadata.kit)
-        modifications = ("none" if bc.metadata.modified_basecalling == "Off"
-                         else fmt_value(bc.metadata.modifications))
-        trim_barcodes = fmt_value(bc.metadata.trim_barcodes)
-        try:
-            minknow_version = bc.metadata.software_versions["minknow"]
-        except (TypeError, KeyError):
-            minknow_version = "?"
-        reports = bc.report_types
-        if reports:
-            reports = ",".join(reports)
-        else:
-            reports = "none"
-        file_types = bc.file_types
-        if file_types:
-            file_types = ",".join(file_types)
-        else:
-            file_types = "none"
-        basecalling_model = bc.metadata.basecalling_model
-        if basecalling_model is None:
-            basecalling_model = bc.metadata.basecalling_config
-        basecalling_model = fmt_value(basecalling_model)
-        print('\t'.join([str(s) for s in (run,
-                                          pool,
-                                          os.path.relpath(bc.path,
-                                                          project.path),
-                                          flow_cell_id,
-                                          reports,
-                                          kit,
-                                          modifications,
-                                          trim_barcodes,
-                                          minknow_version,
-                                          basecalling_model,
-                                          file_types)]))
+    for run in project.runs:
+        for fc in run.flow_cells:
+            kit = fmt_value(fc.metadata.kit)
+            modifications = ("none" if fc.metadata.modified_basecalling == "Off"
+                             else fmt_value(fc.metadata.modifications))
+            trim_barcodes = fmt_value(fc.metadata.trim_barcodes)
+            try:
+                minknow_version = fc.metadata.software_versions["minknow"]
+            except (TypeError, KeyError):
+                minknow_version = "?"
+            reports = fc.report_types
+            if reports:
+                reports = ",".join(reports)
+            else:
+                reports = "none"
+            file_types = fc.file_types
+            if file_types:
+                file_types = ",".join(file_types)
+            else:
+                file_types = "none"
+            basecalling_model = fc.metadata.basecalling_model
+            if basecalling_model is None:
+                basecalling_model = fc.metadata.basecalling_config
+            basecalling_model = fmt_value(basecalling_model)
+            print('\t'.join([str(s) for s in (run.name,
+                                              os.path.relpath(fc.path,
+                                                              project.path),
+                                              fc.id,
+                                              reports,
+                                              kit,
+                                              modifications,
+                                              trim_barcodes,
+                                              minknow_version,
+                                              basecalling_model,
+                                              file_types)]))
+        for bc in run.basecalls_dirs:
+            flow_cell_id = fmt_value(bc.metadata.flow_cell_id)
+            kit = fmt_value(bc.metadata.kit)
+            modifications = ("none" if bc.metadata.modified_basecalling == "Off"
+                             else fmt_value(bc.metadata.modifications))
+            trim_barcodes = fmt_value(bc.metadata.trim_barcodes)
+            try:
+                minknow_version = bc.metadata.software_versions["minknow"]
+            except (TypeError, KeyError):
+                minknow_version = "?"
+            reports = bc.report_types
+            if reports:
+                reports = ",".join(reports)
+            else:
+                reports = "none"
+            file_types = bc.file_types
+            if file_types:
+                file_types = ",".join(file_types)
+            else:
+                file_types = "none"
+            basecalling_model = bc.metadata.basecalling_model
+            if basecalling_model is None:
+                basecalling_model = bc.metadata.basecalling_config
+            basecalling_model = fmt_value(basecalling_model)
+            print('\t'.join([str(s) for s in (run.name,
+                                              os.path.relpath(bc.path,
+                                                              project.path),
+                                              flow_cell_id,
+                                              reports,
+                                              kit,
+                                              modifications,
+                                              trim_barcodes,
+                                              minknow_version,
+                                              basecalling_model,
+                                              file_types)]))
 
 
 def metadata(metadata_file, dump_json=False):
