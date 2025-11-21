@@ -227,16 +227,9 @@ The following files have been automatically generated:
                     "locations).")
             # Add run to list of run_dirs
             self.run_dirs[run.name] = os.path.basename(run_dir)
-        # Get the earliest date stamp from flow cell names
-        try:
-            datestamps = set()
-            for fc in project.flow_cells:
-                datestamps.add(fc.datestamp)
-            datestamps = sorted(list(datestamps))
-            self.info['datestamp'] = datestamps[0]
-            self.info.save(filen=self.project_info_file)
-        except Exception as ex:
-            print(f"Failed to set datestamp: {ex}")
+        # Update the 'runs' field in the project info
+        self.info['runs'] = ",".join(self.runs)
+        self.info.save(filen=self.project_info_file)
         # Make subdirectories
         for subdir in ("logs", "ScriptCode"):
             Path(self.path).joinpath(subdir).mkdir()
@@ -286,7 +279,6 @@ The following files and directories have been automatically generated:
 
         - name (project name)
         - id (project ID)
-        - datestamp (project datestamp)
         - platform (platform name)
         - user (associated users)
         - pi (associated PIs)
@@ -330,9 +322,6 @@ The following files and directories have been automatically generated:
             elif field == "id":
                 name = "Project ID"
                 value = self.info.id
-            elif field == "datestamp":
-                name = "Datestamp"
-                value = self.info.datestamp
             elif field == "platform":
                 name = "Platform"
                 value = self.info.platform
@@ -444,24 +433,24 @@ class ProjectInfo(MetadataDict):
                               attributes={
                                   'name': 'Project name',
                                   'id': 'Project ID',
-                                  'datestamp': 'Datestamp',
                                   'platform': 'Platform',
                                   'user': 'User',
                                   'PI': 'PI',
                                   'application': 'Application',
                                   'organism': 'Organism',
+                                  'runs': 'Runs',
                                   'data_dir': 'Data directory',
                                   'comments': 'Comments',
                               },
                               order=(
                                   'name',
                                   'id',
-                                  'datestamp',
                                   'platform',
                                   'user',
                                   'PI',
                                   'application',
                                   'organism',
+                                  'runs',
                                   'data_dir',
                                   'comments',
                               ),

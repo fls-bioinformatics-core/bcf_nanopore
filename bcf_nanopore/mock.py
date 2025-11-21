@@ -430,7 +430,8 @@ class MockProjectAnalysisDir:
             'PI': principal_investigator,
             'application': application,
             'organism': organism,
-            'id': project_id
+            'id': project_id,
+            'runs': ",".join(list(self.runs.keys()))
         }
         for k in metadata_values:
             value = metadata_values[k]
