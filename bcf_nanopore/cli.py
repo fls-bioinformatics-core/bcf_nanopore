@@ -195,20 +195,12 @@ def metadata(metadata_file, dump_json=False):
             print("Basecalling config   : %s" % data.basecalling_config)
 
 
-def setup(project_dir, user, PI, application=None, organism=None,
-          samples_csv=None, top_dir=None, permissions=None, group=None):
+def setup(project_dir, user, PI, application=None, organism=None, top_dir=None,
+          permissions=None, group=None):
     """
     Set up a new analysis directory for a Promethion project
 
     The analysis directory will be called "<PROJECT>_analysis".
-
-    Information about the samples can be supplied via a CSV
-    file with the format:
-
-    ::
-
-        Header line
-        SAMPLE,BARCODE[,FLOWCELL]
 
     Arguments:
       project_dir (str): path to PromethION project
@@ -216,7 +208,6 @@ def setup(project_dir, user, PI, application=None, organism=None,
       PI (str): principal investigator(s)
       application (str): experimental application(s)
       organism (str): associated origanism(s)
-      samples_csv (str): path to CSV file with sample information
       top_dir (str): directory to make analysis directory
         under (defaults to current directory)
       permissions (str): update file permissions on the
@@ -226,32 +217,6 @@ def setup(project_dir, user, PI, application=None, organism=None,
     """
     # Read source project data
     project_name = os.path.basename(os.path.normpath(project_dir))
-    # Fetch sample information
-    samples = []
-    if samples_csv:
-        # Samples data should be a CSV format file with an
-        # initial header line (which is ignored) followed by
-        # lines with either 2 or 3 fields
-        prev_flowcell = None
-        ignore_line = True
-        with open(samples_csv, "rt") as fp:
-            for line in fp:
-                if ignore_line:
-                    # Ignore first line
-                    ignore_line = False
-                    continue
-                try:
-                    # Three fields: sample, barcode, flowcell ID
-                    sample, barcode, flowcell = line.strip().split(',')
-                except ValueError:
-                    # Two fields: sample, barcode
-                    # Assumes same flow cell as previous line
-                    sample, barcode = line.strip().split(',')
-                if flowcell:
-                    prev_flowcell = flowcell
-                else:
-                    flowcell = prev_flowcell
-                samples.append((sample, barcode, flowcell))
     # Create analysis dir
     if top_dir is None:
         top_dir = os.getcwd()
@@ -469,9 +434,6 @@ def bcf_nanopore_main():
                            help="applications(s) associated with project")
     setup_cmd.add_argument('-o', '--organism', action='store',
                            help="organism(s) associated with project")
-    setup_cmd.add_argument('-s', '--samples_csv', action='store',
-                           help="CSV file with 'sample,barcode[,flowcell]' "
-                           "information")
     setup_cmd.add_argument('--chmod', action="store",
                            dest="permissions", metavar="PERMISSIONS",
                            default=default_permissions,
@@ -557,8 +519,8 @@ def bcf_nanopore_main():
     elif args.command == "setup":
         setup(args.project_dir, user=args.user, PI=args.pi,
               application=args.application, organism=args.organism,
-              samples_csv=args.samples_csv, top_dir=args.parent_dir,
-              permissions=args.permissions, group=args.group)
+              top_dir=args.parent_dir, permissions=args.permissions,
+              group=args.group)
     elif args.command == "metadata":
         metadata(args.file, dump_json=args.json)
     elif args.command == "report":

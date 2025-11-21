@@ -74,24 +74,6 @@ The following command line options are compulsory:
 This information is added to the metadata file when the analysis
 directory is created.
 
-Optionally a CSV file which list the samples along with their
-associated flow cells and barcodes can also be supplied via the
-``--samples_csv`` option. The file can have two fields (sample
-name and barcode) or three (sample name, barcode and flow cell ID).
-
-For example:
-
-::
-
-   #Sample,Barcode,Flowcell
-   SMPL_A1,BP03,PBC31213
-   SMPL_A2,BP04,PBC31213
-   SMPL_B1,BP01,PBC31213
-   SMPL_B2,BP02,PBC31213
-   
-If supplied then this information is also added to the analysis
-directory metadata.
-
 ---------
 ``fetch``
 ---------
