@@ -62,7 +62,20 @@ Usage:
 Creates an analysis directory under ``DEST`` for the PromethION
 project ``PROJECT``.
 
-The new analysis directory will be called ``<PROJECT_NAME>_analysis``.
+The new analysis directory will be called ``<PROJECT_NAME>_analysis``,
+and will contain a top-level metadata file ``project.info`` along with
+subdirectories for each run found in the source data.
+
+Each run subdirectory name will be prefixed with a number (to indicate
+the order in which the runs were found), and will contain the following
+following files:
+
+* ``flowcell_basecalls.info``: information about each of the flow cell
+  and basecalling directories found in the run
+* ``sample.info``: a placeholder file for information sample names and
+  the associated barcodes and flow cell IDs (this must be filled in
+  manually once the analysis directory has been created)
+* HTML report files from the basecalling (if found in the source data)
 
 The following command line options are compulsory:
 
@@ -71,8 +84,8 @@ The following command line options are compulsory:
 * ``--application APPLICATION``: application
 * ``--organism ORGANISM``: organism
 
-This information is added to the metadata file when the analysis
-directory is created.
+and this information is used to populate the top-level metadata file when
+the analysis directory is created.
 
 ---------
 ``fetch``
