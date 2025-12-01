@@ -248,7 +248,8 @@ The following files and directories have been automatically generated:
 - 'ScriptCode': directory for custom scripts and code.
 """)
         # Report information
-        print(self.report(mode="summary",
+        print(self.report(mode="project",
+                          format="summary",
                           fields="name,id,primary_data,analysis_dir,"
                           "user,pi,application,organism"))
 
@@ -268,17 +269,26 @@ The following files and directories have been automatically generated:
         """
         return os.path.exists(self.path)
 
-    def report(self, mode, fields):
+    def report(self, mode, format, fields):
         """
         Report information on the project analysis directory
 
-        Reporting mode can be either "summary" (key-value pairs,
-        one per line) or "tsv" (one line of tab-delimited values).
+        Reporting mode can be either "project" (summarises
+        runs) or "runs" (explicit output for each run in the
+        project).
+
+        Format can be either "summary" (key-value pairs, one
+        per line) or "tsv" (tab-separated values on one line
+        in "project" mode, or one line per run in "runs" mode).
 
         Available fields are:
 
         - name (project name)
         - id (project ID)
+        - run (name of run)
+        - nruns (number of runs)
+        - #runs (alias for 'nruns')
+        - runs (comma-separated list of run names)
         - platform (platform name)
         - user (associated users)
         - pi (associated PIs)
@@ -291,10 +301,15 @@ The following files and directories have been automatically generated:
         - comments (associated comments)
         - null (empty value)
 
+        Note that some fields may not be available
+        on the reporting mode (e.g. 'run' is not available
+        in 'project' mode).
+
         A blank field name is the same as 'null'.
 
         Arguments:
-            mode (str): reporting mode
+            mode (str): reporting mode ("project" or "runs")
+            format (str): reporting format ("summary" or "tsv")
             fields (str): comma separated list of field names
 
         Returns:
@@ -304,8 +319,13 @@ The following files and directories have been automatically generated:
             'summary': '\n',
             'tsv': '\t'
         }
-        if mode not in ("summary", "tsv"):
+        if mode not in ("project", "runs"):
             raise Exception("%s: unknown reporting mode" % mode)
+        elif mode == "runs":
+            raise NotImplementedError("'runs' reporting mode not "
+                                      "implemented")
+        if format not in ("summary", "tsv"):
+            raise Exception("%s: unknown reporting format" % format)
         # Collect data to report
         fields = fields.split(',')
         names = []
@@ -322,6 +342,12 @@ The following files and directories have been automatically generated:
             elif field == "id":
                 name = "Project ID"
                 value = self.info.id
+            elif field == "runs":
+                name = "Runs"
+                value = ",".join(self.runs)
+            elif field == "nruns" or field == "#runs":
+                name = "#runs"
+                value = len(self.runs)
             elif field == "platform":
                 name = "Platform"
                 value = self.info.platform
@@ -341,8 +367,10 @@ The following files and directories have been automatically generated:
                 name = "#samples"
                 value = 0
                 for run in self.runs:
-                    value =+ len(SamplesInfo(os.path.join(self.path, self.run_dirs[run], "samples.tsv")))
-                def fmt_func(n): return '?' if n == 0 else str(n)
+                    samples_file = os.path.join(self.path, self.run_dirs[run], "samples.tsv")
+                    if os.path.exists(samples_file):
+                        value += len(SamplesInfo(samples_file))
+                def fmt_func(s): return '?' if s == "" else s
             elif field == 'sample_names' or field == 'samples':
                 name = "samples"
                 sample_names = []
@@ -368,18 +396,18 @@ The following files and directories have been automatically generated:
             values.append(fmt_func(value))
         # Generate output
         output = []
-        if mode == "summary":
+        if format == "summary":
             # Add title in summary mode
             output.extend([self.info.name, '=' * len(self.info.name)])
         for name, value in zip(names, values):
-            if mode == "summary":
+            if format == "summary":
                 if name:
                     output.append("%-16s: %s" % (name, value))
                 else:
                     output.append('')
-            elif mode == "tsv":
+            elif format == "tsv":
                 output.append(str(value))
-        return delimiter[mode].join(output)
+        return delimiter[format].join(output)
 
     @staticmethod
     def _make_project_id(name):
