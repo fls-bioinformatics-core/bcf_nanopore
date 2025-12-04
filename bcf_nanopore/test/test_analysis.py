@@ -141,9 +141,9 @@ class TestProjectAnalysisDir(unittest.TestCase):
         self.assertEqual(analysis_dir.info.runs, "PG1-2_20240513")
         self.assertEqual(analysis_dir.runs, ["PG1-2_20240513"])
 
-    def test_project_analysis_dir_report_single_run_in_project_mode_tsv(self):
+    def test_project_analysis_dir_single_run_report_project_summary(self):
         """
-        ProjectAnalysisDir: report analysis project (single run in 'project' mode, 'tsv' format)
+        ProjectAnalysisDir: report summary for analysis project (single run)
         """
         data_dir = "/mnt/data/PromethION_Project_001_PerGynt"
         analysis_dir = MockProjectAnalysisDir("PromethION_Project_001_PerGynt_analysis")
@@ -159,13 +159,22 @@ class TestProjectAnalysisDir(unittest.TestCase):
             data_dir=data_dir,
             project_id="PROMETHION#001")
         analysis_dir = ProjectAnalysisDir(analysis_dir_path)
-        self.assertEqual(
-            analysis_dir.report("project", "tsv", "name,#runs,#samples,user,pi"),
-            "PromethION_Project_001_PerGynt\t1\t2\tPer Gynt\tHenrik Ibsen")
+        self.assertEqual(analysis_dir.report_project_summary(),
+                         "PromethION_Project_001_PerGynt\n"
+                         "==============================\n"
+                         "\n"
+                         "Project name    : PromethION_Project_001_PerGynt\n"
+                         "Project ID      : PROMETHION#001\n"
+                         "User            : Per Gynt\n"
+                         "PI              : Henrik Ibsen\n"
+                         "Application     : Methylation study\n"
+                         "Organism        : Human\n"
+                         "\n"
+                         "- PG1-2_20240513\t2")
 
-    def test_project_analysis_dir_report_single_run_in_project_mode_summary(self):
+    def test_project_analysis_dir_single_run_report_project_runs(self):
         """
-        ProjectAnalysisDir: report analysis project (single run in 'project' mode, 'summary' format)
+        ProjectAnalysisDir: report runs for analysis project (single run)
         """
         data_dir = "/mnt/data/PromethION_Project_001_PerGynt"
         analysis_dir = MockProjectAnalysisDir("PromethION_Project_001_PerGynt_analysis")
@@ -182,19 +191,47 @@ class TestProjectAnalysisDir(unittest.TestCase):
             project_id="PROMETHION#001")
         analysis_dir = ProjectAnalysisDir(analysis_dir_path)
         self.assertEqual(
-            analysis_dir.report("project", "summary", "name,runs,#runs,#samples,user,pi"),
-            "PromethION_Project_001_PerGynt\n"
-            "==============================\n"
-            "Project name    : PromethION_Project_001_PerGynt\n"
-            "Runs            : PG1-2_20240513\n"
-            "#runs           : 1\n"
-            "#samples        : 2\n"
-            "User            : Per Gynt\n"
-            "PI              : Henrik Ibsen")
+            analysis_dir.report_project_runs("name,run,#samples,user,pi"),
+            "PromethION_Project_001_PerGynt\tPG1-2_20240513\t2\tPer Gynt\tHenrik Ibsen")
 
-    def test_project_analysis_dir_report_multiple_runs_project_mode_tsv(self):
+    def test_project_analysis_dir_multiple_runs_report_project_summary(self):
         """
-        ProjectAnalysisDir: report analysis project (multiple runs in 'project' mode, 'tsv' format)
+        ProjectAnalysisDir: report summary for analysis project (multiple runs)
+        """
+        data_dir = "/mnt/data/PromethION_Project_001_PerGynt"
+        analysis_dir = MockProjectAnalysisDir("PromethION_Project_001_PerGynt_analysis")
+        analysis_dir.add_run("PG1-2_20240513",
+                             samples={ "PG1": ("NB03", "PAW14589"),
+                                       "PG2": ("NB04", "PAW14589")})
+        analysis_dir.add_run("PG3-4_20240529",
+                             samples={ "PG3": ("NB07", "PAW15894"),
+                                       "PG4": ("NB08", "PAW15894")})
+        analysis_dir_path = analysis_dir.create(
+            self.wd,
+            user="Per Gynt",
+            principal_investigator="Henrik Ibsen",
+            application="Methylation study",
+            organism="Human",
+            data_dir=data_dir,
+            project_id="PROMETHION#001")
+        analysis_dir = ProjectAnalysisDir(analysis_dir_path)
+        self.assertEqual(analysis_dir.report_project_summary(),
+                         "PromethION_Project_001_PerGynt\n"
+                         "==============================\n"
+                         "\n"
+                         "Project name    : PromethION_Project_001_PerGynt\n"
+                         "Project ID      : PROMETHION#001\n"
+                         "User            : Per Gynt\n"
+                         "PI              : Henrik Ibsen\n"
+                         "Application     : Methylation study\n"
+                         "Organism        : Human\n"
+                         "\n"
+                         "- PG1-2_20240513	2\n"
+                         "- PG3-4_20240529	2")
+
+    def test_project_analysis_dir_multiple_runs_report_project_runs(self):
+        """
+        ProjectAnalysisDir: report runs for analysis project (multiple runs)
         """
         data_dir = "/mnt/data/PromethION_Project_001_PerGynt"
         analysis_dir = MockProjectAnalysisDir("PromethION_Project_001_PerGynt_analysis")
@@ -214,40 +251,9 @@ class TestProjectAnalysisDir(unittest.TestCase):
             project_id="PROMETHION#001")
         analysis_dir = ProjectAnalysisDir(analysis_dir_path)
         self.assertEqual(
-            analysis_dir.report("project", "tsv", "name,#runs,#samples,user,pi"),
-            "PromethION_Project_001_PerGynt\t2\t4\tPer Gynt\tHenrik Ibsen")
-
-    def test_project_analysis_dir_report_multiple_runs_project_mode_summary(self):
-        """
-        ProjectAnalysisDir: report analysis project (multiple runs in 'project' mode, 'summary' format)
-        """
-        data_dir = "/mnt/data/PromethION_Project_001_PerGynt"
-        analysis_dir = MockProjectAnalysisDir("PromethION_Project_001_PerGynt_analysis")
-        analysis_dir.add_run("PG1-2_20240513",
-                             samples={ "PG1": ("NB03", "PAW14589"),
-                                       "PG2": ("NB04", "PAW14589")})
-        analysis_dir.add_run("PG3-4_20240529",
-                             samples={ "PG3": ("NB07", "PAW15894"),
-                                       "PG4": ("NB08", "PAW15894")})
-        analysis_dir_path = analysis_dir.create(
-            self.wd,
-            user="Per Gynt",
-            principal_investigator="Henrik Ibsen",
-            application="Methylation study",
-            organism="Human",
-            data_dir=data_dir,
-            project_id="PROMETHION#001")
-        analysis_dir = ProjectAnalysisDir(analysis_dir_path)
-        self.assertEqual(
-            analysis_dir.report("project", "summary", "name,runs,#runs,#samples,user,pi"),
-            "PromethION_Project_001_PerGynt\n"
-            "==============================\n"
-            "Project name    : PromethION_Project_001_PerGynt\n"
-            "Runs            : PG1-2_20240513,PG3-4_20240529\n"
-            "#runs           : 2\n"
-            "#samples        : 4\n"
-            "User            : Per Gynt\n"
-            "PI              : Henrik Ibsen")
+            analysis_dir.report_project_runs("name,run,#samples,user,pi"),
+            "PromethION_Project_001_PerGynt\tPG1-2_20240513\t2\tPer Gynt\tHenrik Ibsen\n"
+            "PromethION_Project_001_PerGynt\tPG3-4_20240529\t2\tPer Gynt\tHenrik Ibsen")
 
 
 class TestFlowcellBasecallsInfo(unittest.TestCase):

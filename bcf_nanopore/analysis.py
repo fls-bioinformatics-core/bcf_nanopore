@@ -248,10 +248,7 @@ The following files and directories have been automatically generated:
 - 'ScriptCode': directory for custom scripts and code.
 """)
         # Report information
-        print(self.report(mode="project",
-                          format="summary",
-                          fields="name,id,primary_data,analysis_dir,"
-                          "user,pi,application,organism"))
+        print(self.report_project_summary())
 
     @property
     def runs(self):
@@ -269,7 +266,7 @@ The following files and directories have been automatically generated:
         """
         return os.path.exists(self.path)
 
-    def report(self, mode, format, fields):
+    def report(self, mode, fields=None):
         """
         Report information on the project analysis directory
 
@@ -277,9 +274,88 @@ The following files and directories have been automatically generated:
         runs) or "runs" (explicit output for each run in the
         project).
 
-        Format can be either "summary" (key-value pairs, one
-        per line) or "tsv" (tab-separated values on one line
-        in "project" mode, or one line per run in "runs" mode).
+        Format can be either "summary" (a summary of the project)
+        or "runs" (tab-separated values on one line in "project"
+        mode, or one line per run in "runs" mode).
+
+        Available fields are those that can be fetched using
+        the 'get_value' method.
+
+        Note that some fields may not be available
+        on the reporting mode (e.g. 'run' is not available
+        in 'project' mode).
+
+        A blank field name is the same as 'null'.
+
+        Arguments:
+            mode (str): reporting mode ("summary" or "runs")
+            fields (str): optional, comma separated list of field
+              names to report in "runs" mode
+
+        Returns:
+          String: the report text.
+        """
+        if mode == "summary":
+            return self.report_project_summary()
+        elif mode == "runs":
+            if fields is None:
+                raise Exception(f"'fields' must be specified for 'runs' mode")
+            return self.report_project_runs(fields=fields)
+        else:
+            raise Exception(f"{mode}: not a valid report mode")
+
+    def report_project_summary(self):
+        """
+        Reports a summary report of the project
+
+        The report consists of a title line, a block of
+        key-value pairs of project-level metadata, and
+        a block reporting run-specific metadata (one run
+        per line) for each run.
+        """
+        field_names = {
+            "name": "Project name",
+            "id": "Project ID",
+            "user": "User",
+            "pi": "PI",
+            "application": "Application",
+            "organism": "Organism"
+        }
+        output = []
+        # Title
+        output = [self.info.name, "="*len(self.info.name), ""]
+        # Project-level metadata
+        for field in ["name", "id", "user", "pi", "application", "organism"]:
+            output.append("%-16s: %s" % (field_names[field], self.get_value(field)))
+        # Runs
+        if self.runs:
+            output.append("")
+            for run in self.runs:
+                line = []
+                for field in ["run", "nsamples"]:
+                    line.append(self.get_value(field, run))
+                output.append("- %s" % "\t".join([str(x) for x in line]))
+        return "\n".join(output)
+
+    def report_project_runs(self, fields):
+        """
+        Reports runs in a project
+
+        Reports each run in a project as a tab-separated
+        set of values (one run per line).
+        """
+        fields = [f.strip().lower() for f in fields.split(',')]
+        output = []
+        for run in sorted(self.runs):
+            line = []
+            for f in fields:
+                line.append(self.get_value(f, run))
+            output.append("\t".join([str(x) for x in line]))
+        return "\n".join(output)
+
+    def get_value(self, field, run=None):
+        """
+        Get value of a project information field
 
         Available fields are:
 
@@ -301,113 +377,78 @@ The following files and directories have been automatically generated:
         - comments (associated comments)
         - null (empty value)
 
-        Note that some fields may not be available
-        on the reporting mode (e.g. 'run' is not available
-        in 'project' mode).
-
-        A blank field name is the same as 'null'.
-
         Arguments:
-            mode (str): reporting mode ("project" or "runs")
-            format (str): reporting format ("summary" or "tsv")
-            fields (str): comma separated list of field names
+          field (str): name of the field to retrieve
+          run (str): optional, specifies run to get value
+            associated with field (for run-specific fields)
 
         Returns:
-          String: the report text.
+          str: value associated with the field
         """
-        delimiter = {
-            'summary': '\n',
-            'tsv': '\t'
-        }
-        if mode not in ("project", "runs"):
-            raise Exception("%s: unknown reporting mode" % mode)
-        elif mode == "runs":
-            raise NotImplementedError("'runs' reporting mode not "
-                                      "implemented")
-        if format not in ("summary", "tsv"):
-            raise Exception("%s: unknown reporting format" % format)
-        # Collect data to report
-        fields = fields.split(',')
-        names = []
-        values = []
-        for f in fields:
-            field = f.strip().lower()
-            fmt_func = fmt_value
-            if field == "" or field == "null":
-                name = None
-                value = ''
-            elif field == "name":
-                name = "Project name"
-                value = self.info.name
-            elif field == "id":
-                name = "Project ID"
-                value = self.info.id
-            elif field == "runs":
-                name = "Runs"
-                value = ",".join(self.runs)
-            elif field == "nruns" or field == "#runs":
-                name = "#runs"
-                value = len(self.runs)
-            elif field == "platform":
-                name = "Platform"
-                value = self.info.platform
-            elif field == "user":
-                name = "User"
-                value = self.info.user
-            elif field == "pi":
-                name = "PI"
-                value = self.info.PI
-            elif field == "application":
-                name = "Application"
-                value = self.info.application
-            elif field == "organism":
-                name = "Organism"
-                value = self.info.organism
-            elif field == "nsamples" or field == "#samples":
-                name = "#samples"
-                value = 0
-                for run in self.runs:
-                    samples_file = os.path.join(self.path, self.run_dirs[run], "samples.tsv")
-                    if os.path.exists(samples_file):
-                        value += len(SamplesInfo(samples_file))
-                def fmt_func(s): return '?' if s == "" else s
-            elif field == 'sample_names' or field == 'samples':
-                name = "samples"
-                sample_names = []
-                for run in self.runs:
-                    sample_names.extend([s["Sample"] for s in SamplesInfo(os.path.join(self.path,
-                                                                                       self.run_dirs[run],
-                                                                                      "samples.tsv"))])
-                value = ",".join(sample_names)
-                def fmt_func(s): return '?' if s == "" else s
-            elif field == "primary_data":
-                name = "Primary data dir"
-                value = self.info.data_dir
-            elif field == "analysis_dir":
-                name = "Analysis dir"
-                value = self.path
-            elif field == "comments":
-                name = "Comments"
-                value = self.info.comments
-                def fmt_func(s): return '' if s is None else str(s)
+        field = field.strip().lower()
+        fmt_func = fmt_value
+        if field == "" or field == "null":
+            value = ''
+        elif field == "name":
+            value = self.info.name
+        elif field == "id":
+            value = self.info.id
+        elif field == "run":
+            if run is None:
+                raise KeyError("'run' field requires a run name")
+            value = run
+        elif field == "runs":
+            value = ",".join(self.runs)
+        elif field == "nruns" or field == "#runs":
+            value = len(self.runs)
+        elif field == "platform":
+            value = self.info.platform
+        elif field == "user":
+            value = self.info.user
+        elif field == "pi":
+            value = self.info.PI
+        elif field == "application":
+            value = self.info.application
+        elif field == "organism":
+            value = self.info.organism
+        elif field == "nsamples" or field == "#samples":
+            if run is None:
+                runs = self.runs
+            elif run in self.runs:
+                runs = [run]
             else:
-                raise KeyError("%s: unrecognised field" % f)
-            names.append(name)
-            values.append(fmt_func(value))
-        # Generate output
-        output = []
-        if format == "summary":
-            # Add title in summary mode
-            output.extend([self.info.name, '=' * len(self.info.name)])
-        for name, value in zip(names, values):
-            if format == "summary":
-                if name:
-                    output.append("%-16s: %s" % (name, value))
-                else:
-                    output.append('')
-            elif format == "tsv":
-                output.append(str(value))
-        return delimiter[format].join(output)
+                raise KeyError("%s: unrecognised run name" % run)
+            # Get total number of samples across all runs
+            value = 0
+            for run in runs:
+                samples_file = os.path.join(self.path, self.run_dirs[run], "samples.tsv")
+                if os.path.exists(samples_file):
+                    value += len(SamplesInfo(samples_file))
+            def fmt_func(s): return '?' if s == "" else s
+        elif field == 'sample_names' or field == 'samples':
+            if run is None:
+                runs = self.runs
+            elif run in self.runs:
+                runs = [run]
+            else:
+                raise KeyError("%s: unrecognised run name" % run)
+            sample_names = []
+            for run in runs:
+                sample_names.extend([s["Sample"] for s in SamplesInfo(os.path.join(self.path,
+                                                                                   self.run_dirs[run],
+                                                                                  "samples.tsv"))])
+            value = ",".join(sample_names)
+            def fmt_func(s): return '?' if s == "" else s
+        elif field == "primary_data":
+            value = self.info.data_dir
+        elif field == "analysis_dir":
+            value = self.path
+        elif field == "comments":
+            value = self.info.comments
+            def fmt_func(s): return '' if s is None else str(s)
+        else:
+            raise KeyError("%s: unrecognised field" % field)
+        return fmt_func(value)
 
     @staticmethod
     def _make_project_id(name):
