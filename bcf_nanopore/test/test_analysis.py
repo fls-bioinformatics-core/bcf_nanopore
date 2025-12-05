@@ -268,6 +268,57 @@ class TestProjectAnalysisDir(unittest.TestCase):
             "PromethION_Project_001_PerGynt\tPG1-2_20240513\t2\tPer Gynt\tHenrik Ibsen\n"
             "PromethION_Project_001_PerGynt\tPG3-4_20240529\t2\tPer Gynt\tHenrik Ibsen")
 
+    def test_project_analysis_dir_no_samples_report_project_summary(self):
+        """
+        ProjectAnalysisDir: report summary for analysis project (no samples)
+        """
+        data_dir = "/mnt/data/PromethION_Project_001_PerGynt"
+        analysis_dir = MockProjectAnalysisDir("PromethION_Project_001_PerGynt_analysis")
+        analysis_dir.add_run("PG1-2_20240513")
+        analysis_dir_path = analysis_dir.create(
+            self.wd,
+            user="Per Gynt",
+            principal_investigator="Henrik Ibsen",
+            application="Methylation study",
+            organism="Human",
+            data_dir=data_dir,
+            project_id="PROMETHION#001")
+        analysis_dir = ProjectAnalysisDir(analysis_dir_path)
+        self.assertEqual(analysis_dir.report_project_summary(),
+                         "PromethION_Project_001_PerGynt\n"
+                         "==============================\n"
+                         "\n"
+                         "Project name    : PromethION_Project_001_PerGynt\n"
+                         "Project ID      : PROMETHION#001\n"
+                         "User            : Per Gynt\n"
+                         "PI              : Henrik Ibsen\n"
+                         "Application     : Methylation study\n"
+                         "Organism        : Human\n"
+                         f"Analysis dir    : {analysis_dir_path}\n"
+                         "\n"
+                         "This project has 1 run:\n"
+                         "\n"
+                         "- PG1-2_20240513:\tno samples")
+
+    def test_project_analysis_dir_no_samples_run_report_project_runs(self):
+        """
+        ProjectAnalysisDir: report runs for analysis project (no samples)
+        """
+        data_dir = "/mnt/data/PromethION_Project_001_PerGynt"
+        analysis_dir = MockProjectAnalysisDir("PromethION_Project_001_PerGynt_analysis")
+        analysis_dir.add_run("PG1-2_20240513")
+        analysis_dir_path = analysis_dir.create(
+            self.wd,
+            user="Per Gynt",
+            principal_investigator="Henrik Ibsen",
+            application="Methylation study",
+            organism="Human",
+            data_dir=data_dir,
+            project_id="PROMETHION#001")
+        analysis_dir = ProjectAnalysisDir(analysis_dir_path)
+        self.assertEqual(
+            analysis_dir.report_project_runs("name,run,#samples,user,pi"),
+            "PromethION_Project_001_PerGynt\tPG1-2_20240513\t0\tPer Gynt\tHenrik Ibsen")
 
 class TestFlowcellBasecallsInfo(unittest.TestCase):
 

@@ -335,10 +335,16 @@ The following files and directories have been automatically generated:
                            "This project has %s run%s:" % (len(self.runs), "s" if len(self.runs) != 1 else ""),
                            ""])
             for run in self.runs:
-                samples = self.get_value("samples", run).split(",")
+                samples = self.get_value("samples", run)
+                if samples:
+                    # Convert to a list
+                    samples = samples.split(",")
+                else:
+                    samples = []
+                nsamples = len(samples)
                 line = ["%s:" % run,
-                        "%s sample%s%s" % (len(samples),
-                                           "s" if len(samples) != 1 else "",
+                        "%s sample%s%s" % (nsamples if nsamples else "no",
+                                           "s" if nsamples != 1 else "",
                                            " (%s)" % ", ".join(samples) if samples else "")]
                 output.append("- %s" % "\t".join([str(x) for x in line]))
         return "\n".join(output)
@@ -452,7 +458,6 @@ The following files and directories have been automatically generated:
                                                                                    self.run_dirs[run],
                                                                                   "samples.tsv"))])
             value = ",".join(sample_names)
-            def fmt_func(s): return '?' if s == "" else s
         elif field == "primary_data":
             value = self.info.data_dir
         elif field == "analysis_dir":
