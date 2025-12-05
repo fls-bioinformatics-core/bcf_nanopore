@@ -451,8 +451,8 @@ class MockProjectAnalysisDir:
             # Placeholder README file
             with open(run_dir.joinpath("README"), "wt") as fp:
                 fp.write("Placeholder README file\n")
-            # flowcells_basecalls.tsv file
-            with open(run_dir.joinpath("flowcells_basecalls.tsv"), "wt") as fp:
+            # flowcell_basecalls.tsv file
+            with open(run_dir.joinpath("flowcell_basecalls.tsv"), "wt") as fp:
                 fp.write("#%s\n" % "\t".join(["Run", "SubDir", "FlowCellID",
                                               "Reports", "Kit", "Modifications",
                                               "TrimBarcodes", "MinknowVersion",
