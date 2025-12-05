@@ -31,19 +31,11 @@ __settings = Settings()
 FILE_TYPES = [ "POD5", "FASTQ", "BAM" ]
 FILE_TYPES_LOWER = [t.lower() for t in FILE_TYPES]
 
-# Reporting templates
-REPORTING_TEMPLATES = {
-    # Default: for spreadsheet
-    'default': "name,id,NULL,NULL,user,pi,application,organism,NULL,"
-    "nsamples,samples,NULL,NULL,NULL",
-    # BCF: for downstream spreadsheet
-    'bcf': "datestamp,NULL,user,id,#samples,NULL,organism,application,PI,analysis_dir,NULL,primary_data",
-    # Summary: for reporting run for downstream analysis
-    'summary': "name,id,datestamp,platform,analysis_dir,NULL,"
-    "user,pi,application,organism,primary_data,comments",
-}
+# Reporting templates from configuration
+REPORTING_TEMPLATES = {}
 for t in [t for t in __settings.reporting_templates]:
     REPORTING_TEMPLATES[t] = __settings.reporting_templates[t]
+
 
 def config():
     """
@@ -253,8 +245,9 @@ def report(path, mode="summary", fields=None, template=None, out_file=None):
     elif mode == "runs":
         # Set fields
         if fields is None:
-            if template is None:
-                template = "default"
+            # Default fields
+            fields = "name,id,NULL,NULL,user,pi,application,organism,NULL,#samples,samples"
+        if template:
             try:
                 fields = REPORTING_TEMPLATES[template]
             except KeyError:
