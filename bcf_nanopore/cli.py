@@ -450,11 +450,11 @@ def bcf_nanopore_main():
                                "analysis directory")
     report_cmd.add_argument('analysis_dir',
                             help="PromethION analysis directory")
-    mutex = p.add_mutually_exclusive_group()
+    mutex = report_cmd.add_mutually_exclusive_group()
     mutex.add_argument('--summary',
                        action='store_true',
                        dest='summary',
-                       default=True,
+                       default=False,
                        help="print summary report suitable for informaticians "
                        "(default mode)")
     mutex.add_argument('--runs',action='store_true',dest='runs',
@@ -539,7 +539,11 @@ def bcf_nanopore_main():
     elif args.command == "metadata":
         metadata(args.file, dump_json=args.json)
     elif args.command == "report":
-        report(args.analysis_dir, mode=args.mode, fields=args.fields,
+        if args.runs:
+            mode = "runs"
+        else:
+            mode = "summary"
+        report(args.analysis_dir, mode=mode, fields=args.fields,
                template=args.template, out_file=args.out_file)
     elif args.command == "fetch":
         fetch(args.project_dir, args.dest,
