@@ -444,3 +444,33 @@ PromethION_Project_001_PerGynt	PROMETHION#001			Per Gynt	Henrik Ibsen	Methylatio
         self.assertTrue(out_file.exists())
         with open(out_file, "rt") as fp:
             self.assertEqual(fp.read(), expected_report)
+
+    def test_report_project_in_runs_mode_bcf_fields(self):
+        """
+        report: generate report of runs ('bcf' template fields)
+        """
+        data_dir = "/mnt/data/PromethION_Project_001_PerGynt"
+        analysis_dir = MockProjectAnalysisDir("PromethION_Project_001_PerGynt_analysis")
+        analysis_dir.add_run("PG1-2_20240513",
+                             samples={ "PG1": ("NB03", "PAW14589"),
+                                       "PG2": ("NB04", "PAW14589")})
+        analysis_dir.add_run("PG3-4_20240529",
+                             samples={ "PG3": ("NB07", "PAW15894"),
+                                       "PG4": ("NB08", "PAW15894")})
+        analysis_dir_path = analysis_dir.create(
+            self.wd,
+            user="Per Gynt",
+            principal_investigator="Henrik Ibsen",
+            application="Methylation study",
+            organism="Human",
+            data_dir=data_dir,
+            project_id="PROMETHION#001")
+        fields = "run_datestamp,NULL,user,id,run,#samples,NULL,organism,application,PI,analysis_dir,NULL,primary_data"
+        out_file = Path(self.wd).joinpath("report.txt")
+        cli_report(analysis_dir_path, mode="runs", fields=fields, out_file=out_file)
+        expected_report = f"""20240513		Per Gynt	PROMETHION#001	PG1-2_20240513	2		Human	Methylation study	Henrik Ibsen	{analysis_dir_path}		{data_dir}
+20240513		Per Gynt	PROMETHION#001	PG3-4_20240529	2		Human	Methylation study	Henrik Ibsen	{analysis_dir_path}		{data_dir}
+"""
+        self.assertTrue(out_file.exists())
+        with open(out_file, "rt") as fp:
+            self.assertEqual(fp.read(), expected_report)
