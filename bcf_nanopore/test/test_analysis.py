@@ -64,6 +64,9 @@ class TestProjectAnalysisDir(unittest.TestCase):
         for f in ["README", "flowcell_basecalls.tsv", "samples.tsv"]:
             self.assertTrue(run_dir.joinpath(f).exists(),
                             f"Expected file {f} not found in run directory")
+        # Check datestamps
+        self.assertEqual(analysis_dir.datestamp(), "20240513")
+        self.assertEqual(analysis_dir.datestamp("PG1-4_20240513"), "20240513")
 
     def test_project_analysis_dir_create_multiple_runs(self):
         """
@@ -111,6 +114,10 @@ class TestProjectAnalysisDir(unittest.TestCase):
                 self.assertTrue(run_dir.joinpath(f).exists(),
                                 f"Expected file {f} not found in run directory "
                                 f"'{run}'")
+        # Check datestamps
+        self.assertEqual(analysis_dir.datestamp(), "20240513")
+        self.assertEqual(analysis_dir.datestamp("PG1-2_20240513"), "20240513")
+        self.assertEqual(analysis_dir.datestamp("PG3-4_20240529"), "20240529")
 
     def test_project_analysis_dir_load_existing(self):
         """

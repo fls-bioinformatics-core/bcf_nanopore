@@ -27,6 +27,7 @@ from bcftbx.TabFile import TabFile
 from bcftbx.utils import extract_prefix
 from bcftbx.utils import extract_index
 from .nanopore.promethion import ProjectDir
+from .nanopore.promethion import get_flow_cell_datestamp
 from .utils import MetadataTabFile
 from .utils import convert_field_name
 from .utils import fmt_value
@@ -454,6 +455,47 @@ The following files and directories have been automatically generated:
         else:
             raise KeyError("%s: unrecognised field" % field)
         return fmt_func(value)
+
+    def datestamp(self, run=None):
+        """
+        Fetch a datestamp for project or run
+
+        If no datestamp can be located, return None (datestamps
+        are derived from flow cell output directories, with the
+        earliest datestamp for the project or run being returned).
+
+        Arguments:
+            run (str): optional, specifies run to get datestamp for
+
+        Returns:
+            str: earliest associated datestamp extracted from
+            flow cell directories within project or run
+        """
+        datestamps = set()
+        if run:
+            if run not in self.runs:
+                raise KeyError("%s: unrecognised run name" % run)
+            runs = [run]
+        else:
+            runs = self.runs
+        for run in runs:
+            # For each run, locate the 'flowcell_basecalls.tsv'
+            # metadata file
+            tsv_file = os.path.join(self.path,
+                                    self.run_dirs[run],
+                                    "flowcell_basecalls.tsv")
+            if os.path.exists(tsv_file):
+                # Extract datastamp from each flow cell subdirectory
+                flowcell_data = TabFile(tsv_file, first_line_is_header=True)
+                for data in flowcell_data:
+                    datestamp = get_flow_cell_datestamp(os.path.basename(data['SubDir']))
+                    if datestamp:
+                        # Only add non-empty values
+                        datestamps.add(datestamp)
+        try:
+            return sorted(list(datestamps))[0]
+        except IndexError:
+            return None
 
     @staticmethod
     def _make_project_id(name):
