@@ -451,9 +451,25 @@ class MockProjectAnalysisDir:
             # Placeholder README file
             with open(run_dir.joinpath("README"), "wt") as fp:
                 fp.write("Placeholder README file\n")
-            # Placeholder flowcell_basecalls.tsv file
-            with open(run_dir.joinpath("flowcell_basecalls.tsv"), "wt") as fp:
-                fp.write("Placeholder flowcell_basecalls.tsv file\n")
+            # flowcells_basecalls.tsv file
+            with open(run_dir.joinpath("flowcells_basecalls.tsv"), "wt") as fp:
+                fp.write("#%s\n" % "\t".join(["Run", "SubDir", "FlowCellID",
+                                              "Reports", "Kit", "Modifications",
+                                              "TrimBarcodes", "MinknowVersion",
+                                              "BasecallingModel", "FileTypes"]))
+                if self.runs[run]:
+                    flowcells = set()
+                    for sample in self.runs[run]:
+                        barcode, flowcell = self.runs[run][sample]
+                        if flowcell in flowcells:
+                            continue
+                        flowcells.add(flowcell)
+                        subdir = f"20250616_0716_1F_{flowcell}_30105f28"
+                        fp.write("%s\n" % "\t".join([run, subdir, flowcell,
+                                                     "html", "SQK-PCB114-24", "none",
+                                                     "Off", "25.03.7",
+                                                     "dna_r10.4.1_e8.2_400bps_hac@v4.3.0",
+                                                     "pod5,bam,fastq"]))
             # Samples file
             with open(run_dir.joinpath("samples.tsv"), "wt") as fp:
                 fp.write("#Sample\tBarcode\tFlowcell\n")
