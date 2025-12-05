@@ -234,29 +234,38 @@ def report(path, mode="summary", fields=None, template=None, out_file=None):
 
     Arguments:
       path (str): path to PromethION project analysis dir
-      mode (str): either "summary" or "tsv" (default: summary)
-      fields (str): optional, list of fields to report (overrides
-        "template")
+      mode (str): either "summary" or "runs" (default: summary)
+      fields (str): optional, list of fields to report in "runs"
+        mode (when it overrides "template", if supplied);
+        otherwise it is ignored
       template (str): optional, name of a pre-defined template
-        (i.e. set of fields) to use from configuration
+        (i.e. set of fields) to use from configuration in
+        "runs" mode (will be overridden by "fields", if
+        supplied); otherwise it is ignored
       out_file (str): optional, file to write the report to
         (default is to write to stdout)
     """
     # Read in data
     analysis_dir = ProjectAnalysisDir(path)
-    # Set fields
-    if fields is None:
-        if template is None:
-            template = "default"
-        try:
-            fields = REPORTING_TEMPLATES[template]
-        except KeyError:
-            raise Exception("%s: undefined template" % template)
-    # Report
-    report_text = analysis_dir.report(mode, fields)
+    # Summary mode
+    if mode == "summary":
+        report_text = analysis_dir.report_project_summary()
+    elif mode == "runs":
+        # Set fields
+        if fields is None:
+            if template is None:
+                template = "default"
+            try:
+                fields = REPORTING_TEMPLATES[template]
+            except KeyError:
+                raise Exception("%s: undefined template" % template)
+        # Report
+        report_text = analysis_dir.report_project_runs(fields)
+    else:
+        raise Exception("%s: unknown reporting mode" % mode)
     if out_file:
         # File extension for report file
-        ext = "tsv" if mode == "tsv" else "txt"
+        ext = "tsv" if mode == "runs" else "txt"
         # Temporary copy
         temp_dir = tempfile.mkdtemp()
         temp_file = os.path.join(temp_dir,
@@ -448,16 +457,37 @@ def bcf_nanopore_main():
                                "analysis directory")
     report_cmd.add_argument('analysis_dir',
                             help="PromethION analysis directory")
-    report_cmd.add_argument('-m', '--mode',
-                            choices=['summary', 'tsv'], default='summary',
-                            help="specify reporting mode")
-    report_cmd.add_argument('-t', '--template',
-                            choices=[t for t in REPORTING_TEMPLATES],
-                            help="specify template used to set fields "
-                            "for reporting")
+    mutex = p.add_mutually_exclusive_group()
+    mutex.add_argument('--summary',
+                       action='store_true',
+                       dest='summary',
+                       default=True,
+                       help="print summary report suitable for informaticians "
+                       "(default mode)")
+    mutex.add_argument('--runs',action='store_true',dest='runs',
+                       default=False,
+                       help="print tab-delimited line (one per run) "
+                       "suitable for injection into a spreadsheet")
     report_cmd.add_argument('-f', '--fields',
-                            help="specify fields to report (comma-separated "
-                            "list; overrides template from '-t')")
+                            action='store',
+                            dest='fields',
+                            default=None,
+                            help="fields to report in --runs mode (overrides "
+                            "fields specified by --template)")
+    report_cmd.add_argument('-t', '--template',
+                            action='store',
+                            dest='template',
+                            default=None,
+                            help="name of template with fields to report in "
+                            "--runs mode (templates should be defined in the "
+                            "config file)")
+    report_cmd.add_argument('--file',
+                            action='store',
+                            dest='out_file',
+                            default=None,
+                            help="write report to OUT_FILE; destination can be "
+                            "a local file, or a remote file specified as "
+                            "[[USER@]HOST:]PATH (default is to write to stdout)")
     report_cmd.add_argument('-o', '--out_file',
                             help="write summary to specified file rather "
                             "than stdout")
