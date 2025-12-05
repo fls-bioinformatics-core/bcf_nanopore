@@ -169,8 +169,11 @@ class TestProjectAnalysisDir(unittest.TestCase):
                          "PI              : Henrik Ibsen\n"
                          "Application     : Methylation study\n"
                          "Organism        : Human\n"
+                         f"Analysis dir    : {analysis_dir_path}\n"
                          "\n"
-                         "- PG1-2_20240513\t2")
+                         "This project has 1 run:\n"
+                         "\n"
+                         "- PG1-2_20240513:\t2 samples (PG1, PG2)")
 
     def test_project_analysis_dir_single_run_report_project_runs(self):
         """
@@ -225,9 +228,12 @@ class TestProjectAnalysisDir(unittest.TestCase):
                          "PI              : Henrik Ibsen\n"
                          "Application     : Methylation study\n"
                          "Organism        : Human\n"
+                         f"Analysis dir    : {analysis_dir_path}\n"
                          "\n"
-                         "- PG1-2_20240513	2\n"
-                         "- PG3-4_20240529	2")
+                         "This project has 2 runs:\n"
+                         "\n"
+                         "- PG1-2_20240513:	2 samples (PG1, PG2)\n"
+                         "- PG3-4_20240529:	2 samples (PG3, PG4)")
 
     def test_project_analysis_dir_multiple_runs_report_project_runs(self):
         """

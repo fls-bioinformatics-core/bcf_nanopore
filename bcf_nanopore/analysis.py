@@ -319,21 +319,26 @@ The following files and directories have been automatically generated:
             "user": "User",
             "pi": "PI",
             "application": "Application",
-            "organism": "Organism"
+            "organism": "Organism",
+            "analysis_dir": "Analysis dir"
         }
         output = []
         # Title
         output = [self.info.name, "="*len(self.info.name), ""]
         # Project-level metadata
-        for field in ["name", "id", "user", "pi", "application", "organism"]:
+        for field in ["name", "id", "user", "pi", "application", "organism", "analysis_dir"]:
             output.append("%-16s: %s" % (field_names[field], self.get_value(field)))
         # Runs
         if self.runs:
-            output.append("")
+            output.extend(["",
+                           "This project has %s run%s:" % (len(self.runs), "s" if len(self.runs) != 1 else ""),
+                           ""])
             for run in self.runs:
-                line = []
-                for field in ["run", "nsamples"]:
-                    line.append(self.get_value(field, run))
+                samples = self.get_value("samples", run).split(",")
+                line = ["%s:" % run,
+                        "%s sample%s%s" % (len(samples),
+                                           "s" if len(samples) != 1 else "",
+                                           " (%s)" % ", ".join(samples) if samples else "")]
                 output.append("- %s" % "\t".join([str(x) for x in line]))
         return "\n".join(output)
 
