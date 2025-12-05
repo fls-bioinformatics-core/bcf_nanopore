@@ -246,7 +246,7 @@ def report(path, mode="summary", fields=None, template=None, out_file=None):
         # Set fields
         if fields is None:
             # Default fields
-            fields = "name,id,NULL,NULL,user,pi,application,organism,NULL,#samples,samples"
+            fields = "name,id,run,NULL,NULL,user,pi,application,organism,NULL,#samples,samples"
         if template:
             try:
                 fields = REPORTING_TEMPLATES[template]

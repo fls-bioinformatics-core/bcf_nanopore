@@ -438,8 +438,8 @@ This project has 2 runs:
             project_id="PROMETHION#001")
         out_file = Path(self.wd).joinpath("report.txt")
         cli_report(analysis_dir_path, mode="runs", out_file=out_file)
-        expected_report = """PromethION_Project_001_PerGynt	PROMETHION#001			Per Gynt	Henrik Ibsen	Methylation study	Human		2	PG1,PG2
-PromethION_Project_001_PerGynt	PROMETHION#001			Per Gynt	Henrik Ibsen	Methylation study	Human		2	PG3,PG4
+        expected_report = """PromethION_Project_001_PerGynt	PROMETHION#001	PG1-2_20240513			Per Gynt	Henrik Ibsen	Methylation study	Human		2	PG1,PG2
+PromethION_Project_001_PerGynt	PROMETHION#001	PG3-4_20240529			Per Gynt	Henrik Ibsen	Methylation study	Human		2	PG3,PG4
 """
         self.assertTrue(out_file.exists())
         with open(out_file, "rt") as fp:
