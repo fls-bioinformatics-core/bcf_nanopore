@@ -367,13 +367,15 @@ The following files and directories have been automatically generated:
 
         - name (project name)
         - id (project ID)
-        - run (name of run)
+        - datestamp (earliest associated flow cell datestamp)
         - nruns (number of runs)
         - #runs (alias for 'nruns')
         - runs (comma-separated list of run names)
         - platform (platform name)
         - user (associated users)
         - pi (associated PIs)
+        - run (name of run)
+        - run_datestamp (datestamp of run)
         - nsamples (number of samples)
         - #samples (alias for 'nsamples')
         - samples (comma-separated list of sample names)
@@ -399,9 +401,15 @@ The following files and directories have been automatically generated:
             value = self.info.name
         elif field == "id":
             value = self.info.id
+        elif field == "datestamp":
+            value = self.datestamp()
+        elif field == "run_datestamp":
+            if run is None:
+                raise KeyError(f"'{field}' field requires a run name")
+            value = self.datestamp(run)
         elif field == "run":
             if run is None:
-                raise KeyError("'run' field requires a run name")
+                raise KeyError(f"'{field}' field requires a run name")
             value = run
         elif field == "runs":
             value = ",".join(self.runs)
