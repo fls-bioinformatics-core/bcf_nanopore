@@ -359,7 +359,7 @@ class MockProjectAnalysisDir:
 
     Example usage:
 
-    >>> project = MockPromethionAnalysisDir("MyProject")
+    >>> project = MockProjectAnalysisDir("MyProject")
     >>> project.add_run("Run1", samples={"Sample1": ("barcode01","FC12345")})
     >>> project_dir = project.create("/path/to/top/dir", data_dir="/path/to/data/dir",
     ...                             user="jdoe", principal_investigator="J. Doe",
@@ -464,7 +464,7 @@ class MockProjectAnalysisDir:
                         if flowcell in flowcells:
                             continue
                         flowcells.add(flowcell)
-                        subdir = f"20250616_0716_1F_{flowcell}_30105f28"
+                        subdir = f"20240513_0716_1F_{flowcell}_30105f28"
                         fp.write("%s\n" % "\t".join([run, subdir, flowcell,
                                                      "html", "SQK-PCB114-24", "none",
                                                      "Off", "25.03.7",
