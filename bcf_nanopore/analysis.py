@@ -347,6 +347,9 @@ The following files and directories have been automatically generated:
                                            "s" if nsamples != 1 else "",
                                            " (%s)" % ", ".join(samples) if samples else "")]
                 output.append("- %s" % "\t".join([str(x) for x in line]))
+        else:
+            output.extend(["",
+                           "No runs detected for this project?"])
         return "\n".join(output)
 
     def report_project_runs(self, fields):
