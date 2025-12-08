@@ -126,9 +126,13 @@ Usage:
 
 ::
 
-   bcf_nanopore report ANALYSIS_DIR
+   bcf_nanopore report [--summary|--runs] [-t TEMPLATE] ANALYSIS_DIR
 
-Report metadata from ``ANALYSIS_DIR``.
+Generate report for ``ANALYSIS_DIR``: by default this is a summary of
+the project and its runs (``--summary`` mode), alternatively specifying
+the ``--runs`` mode produces a tab-delimited report for each run in the
+project, with the fields reported for each run being defined by the
+``TEMPLATE``.
 
 ------------
 ``metadata``
