@@ -481,9 +481,6 @@ def bcf_nanopore_main():
                             help="write report to OUT_FILE; destination can be "
                             "a local file, or a remote file specified as "
                             "[[USER@]HOST:]PATH (default is to write to stdout)")
-    report_cmd.add_argument('-o', '--out_file',
-                            help="write summary to specified file rather "
-                            "than stdout")
 
     # Fetch command
     default_runner = __settings.runners.rsync
