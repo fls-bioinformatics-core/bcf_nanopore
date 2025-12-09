@@ -262,7 +262,7 @@ def report(path, mode="summary", fields=None, template=None, out_file=None):
         # Temporary copy
         temp_dir = tempfile.mkdtemp()
         temp_file = os.path.join(temp_dir,
-                                 f"{analysis_dir.info.id}.{ext}")
+                                 f"{analysis_dir.info.id.lower()}.{ext}")
         with open(temp_file, "wt") as fp:
             fp.write(report_text + '\n')
         # Copy to final location
