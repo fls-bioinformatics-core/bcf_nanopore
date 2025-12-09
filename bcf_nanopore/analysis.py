@@ -394,6 +394,20 @@ The following files and directories have been automatically generated:
         - comments (associated comments)
         - null (empty value)
 
+        Composite fields can be specified using the syntax
+
+        [DELIMITER]:FIELD1+FIELD2...
+
+        where the DELIMITER is used to separate values from
+        the specified FIELDs.
+
+        For example:
+
+        [_]:name+run
+
+        will produce values of the form
+        'PromethION_Project_001_PerGynt_PG1-2_20240513'
+
         Arguments:
           field (str): name of the field to retrieve
           run (str): optional, specifies run to get value
@@ -402,7 +416,25 @@ The following files and directories have been automatically generated:
         Returns:
           str: value associated with the field
         """
+        delimiter = " "
         field = field.strip().lower()
+        if field.startswith("["):
+            # Handle custom delimiter for composite field
+            field_ = field.split(":")
+            if len(field_) > 1 and field_[-2].endswith("]"):
+                delimiter = ':'.join(field_[:-1])[1:-1]
+            else:
+                raise ValueError("Bad delimiter specification")
+            field = field_[-1]
+        if "+" in field:
+            # Composite field
+            # Recover value for individual fields
+            value = []
+            for field in field.split("+"):
+                value.append(self.get_value(field, run))
+            # Return composite value
+            return delimiter.join([str(x) for x in value])
+        # Single field specified
         fmt_func = fmt_value
         if field == "" or field == "null":
             value = ''

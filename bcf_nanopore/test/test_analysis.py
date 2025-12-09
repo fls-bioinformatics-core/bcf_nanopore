@@ -320,6 +320,63 @@ class TestProjectAnalysisDir(unittest.TestCase):
             analysis_dir.report_project_runs("name,run,#samples,user,pi"),
             "PromethION_Project_001_PerGynt\tPG1-2_20240513\t0\tPer Gynt\tHenrik Ibsen")
 
+    def test_project_analysis_dir_report_project_runs_composite_fields(self):
+        """
+        ProjectAnalysisDir: report runs for analysis project (composite fields)
+        """
+        data_dir = "/mnt/data/PromethION_Project_001_PerGynt"
+        analysis_dir = MockProjectAnalysisDir("PromethION_Project_001_PerGynt_analysis")
+        analysis_dir.add_run("PG1-2_20240513",
+                             samples={ "PG1": ("NB03", "PAW14589"),
+                                       "PG2": ("NB04", "PAW14589")})
+        analysis_dir.add_run("PG3-4_20240529",
+                             samples={ "PG3": ("NB07", "PAW15894"),
+                                       "PG4": ("NB08", "PAW15894")})
+        analysis_dir_path = analysis_dir.create(
+            self.wd,
+            user="Per Gynt",
+            principal_investigator="Henrik Ibsen",
+            application="Methylation study",
+            organism="Human",
+            data_dir=data_dir,
+            project_id="PROMETHION#001")
+        analysis_dir = ProjectAnalysisDir(analysis_dir_path)
+        self.assertEqual(
+            analysis_dir.report_project_runs("[_]:name+run,#samples+sample_names,[/]:pi+user"),
+            "PromethION_Project_001_PerGynt_PG1-2_20240513\t2 PG1,PG2\tHenrik Ibsen/Per Gynt\n"
+            "PromethION_Project_001_PerGynt_PG3-4_20240529\t2 PG3,PG4\tHenrik Ibsen/Per Gynt")
+
+    def test_project_analysis_dir_report_project_runs_bad_composite_fields(self):
+        """
+        ProjectAnalysisDir: report runs for analysis project (composite fields)
+        """
+        data_dir = "/mnt/data/PromethION_Project_001_PerGynt"
+        analysis_dir = MockProjectAnalysisDir("PromethION_Project_001_PerGynt_analysis")
+        analysis_dir.add_run("PG1-2_20240513",
+                             samples={ "PG1": ("NB03", "PAW14589"),
+                                       "PG2": ("NB04", "PAW14589")})
+        analysis_dir.add_run("PG3-4_20240529",
+                             samples={ "PG3": ("NB07", "PAW15894"),
+                                       "PG4": ("NB08", "PAW15894")})
+        analysis_dir_path = analysis_dir.create(
+            self.wd,
+            user="Per Gynt",
+            principal_investigator="Henrik Ibsen",
+            application="Methylation study",
+            organism="Human",
+            data_dir=data_dir,
+            project_id="PROMETHION#001")
+        analysis_dir = ProjectAnalysisDir(analysis_dir_path)
+        self.assertRaises(ValueError,
+                          analysis_dir.report_project_runs,
+                          "[_:name+run,#samples")
+        self.assertRaises(ValueError,
+                          analysis_dir.report_project_runs,
+                          "[_]name+run,#samples")
+        self.assertRaises(KeyError,
+                          analysis_dir.report_project_runs,
+                          "_]:name+run,#samples")
+
 class TestFlowcellBasecallsInfo(unittest.TestCase):
 
     def setUp(self):

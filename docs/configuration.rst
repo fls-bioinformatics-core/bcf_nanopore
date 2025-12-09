@@ -74,3 +74,18 @@ the reporting context some fields may have different values
 (for example, ``#samples`` can be either the total number of
 samples across all runs in a project-wide report, or the
 number of samples in a specific run in a per-run report).
+
+Composite fields can also be specified using the syntax:
+
+::
+
+    FIELD1+FIELD2...
+
+e.g. ``name+run``, or
+
+::
+
+    [DELIMITER]:FIELD1+FIELD2...
+
+e.g. ``[_]:name+run``.
+
