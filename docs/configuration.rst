@@ -55,6 +55,11 @@ Available fields:
 - ``platform``: platform name
 - ``user``: associated users
 - ``pi``: associated PIs
+- ``run``: run name within project
+- ``run_datestamp``: datestamp for individual run
+- ``nruns``: number of runs
+- ``#runs``: alias for ``nruns``
+- ``runs``: comma-separated list of run names
 - ``nsamples``: number of samples
 - ``#samples``: alias for ``nsamples``
 - ``samples``: comma-separated list of sample names
@@ -64,4 +69,23 @@ Available fields:
 - ``comments``: associated comments
 - ``null``: empty value
 
-NB a blank field name is the same as ``null``.
+NB a blank field name is the same as ``null``; depending on
+the reporting context some fields may have different values
+(for example, ``#samples`` can be either the total number of
+samples across all runs in a project-wide report, or the
+number of samples in a specific run in a per-run report).
+
+Composite fields can also be specified using the syntax:
+
+::
+
+    FIELD1+FIELD2...
+
+e.g. ``name+run``, or
+
+::
+
+    [DELIMITER]:FIELD1+FIELD2...
+
+e.g. ``[_]:name+run``.
+

@@ -31,19 +31,11 @@ __settings = Settings()
 FILE_TYPES = [ "POD5", "FASTQ", "BAM" ]
 FILE_TYPES_LOWER = [t.lower() for t in FILE_TYPES]
 
-# Reporting templates
-REPORTING_TEMPLATES = {
-    # Default: for spreadsheet
-    'default': "name,id,NULL,NULL,user,pi,application,organism,NULL,"
-    "nsamples,samples,NULL,NULL,NULL",
-    # BCF: for downstream spreadsheet
-    'bcf': "datestamp,NULL,user,id,#samples,NULL,organism,application,PI,analysis_dir,NULL,primary_data",
-    # Summary: for reporting run for downstream analysis
-    'summary': "name,id,datestamp,platform,analysis_dir,NULL,"
-    "user,pi,application,organism,primary_data,comments",
-}
+# Reporting templates from configuration
+REPORTING_TEMPLATES = {}
 for t in [t for t in __settings.reporting_templates]:
     REPORTING_TEMPLATES[t] = __settings.reporting_templates[t]
+
 
 def config():
     """
@@ -228,39 +220,52 @@ def setup(project_dir, user, PI, application=None, organism=None, top_dir=None,
         set_group(group, analysis_dir.path)
 
 
-def report(path, mode="summary", fields=None, template=None, out_file=None):
+def report(path, mode="summary", fields=None, template=None, out_file=None,
+           most_recent=None):
     """
     Report on Promethion project analysis directory
 
     Arguments:
       path (str): path to PromethION project analysis dir
-      mode (str): either "summary" or "tsv" (default: summary)
-      fields (str): optional, list of fields to report (overrides
-        "template")
+      mode (str): either "summary" or "runs" (default: summary)
+      fields (str): optional, list of fields to report in "runs"
+        mode (when it overrides "template", if supplied);
+        otherwise it is ignored
       template (str): optional, name of a pre-defined template
-        (i.e. set of fields) to use from configuration
+        (i.e. set of fields) to use from configuration in
+        "runs" mode (will be overridden by "fields", if
+        supplied); otherwise it is ignored
       out_file (str): optional, file to write the report to
         (default is to write to stdout)
+      most_recent (int): optional, only report this number of most
+        recent runs (default is report all runs)
     """
     # Read in data
     analysis_dir = ProjectAnalysisDir(path)
-    # Set fields
-    if fields is None:
-        if template is None:
-            template = "default"
-        try:
-            fields = REPORTING_TEMPLATES[template]
-        except KeyError:
-            raise Exception("%s: undefined template" % template)
-    # Report
-    report_text = analysis_dir.report(mode, fields)
+    # Summary mode
+    if mode == "summary":
+        report_text = analysis_dir.report_project_summary(most_recent=most_recent)
+    elif mode == "runs":
+        # Set fields
+        if fields is None:
+            # Default fields
+            fields = "name,id,run,NULL,NULL,user,pi,application,organism,NULL,#samples,samples"
+        if template:
+            try:
+                fields = REPORTING_TEMPLATES[template]
+            except KeyError:
+                raise Exception("%s: undefined template" % template)
+        # Report
+        report_text = analysis_dir.report_project_runs(fields, most_recent=most_recent)
+    else:
+        raise Exception("%s: unknown reporting mode" % mode)
     if out_file:
         # File extension for report file
-        ext = "tsv" if mode == "tsv" else "txt"
+        ext = "tsv" if mode == "runs" else "txt"
         # Temporary copy
         temp_dir = tempfile.mkdtemp()
         temp_file = os.path.join(temp_dir,
-                                 f"{analysis_dir.info.id}.{ext}")
+                                 f"{analysis_dir.info.id.lower()}.{ext}")
         with open(temp_file, "wt") as fp:
             fp.write(report_text + '\n')
         # Copy to final location
@@ -448,19 +453,44 @@ def bcf_nanopore_main():
                                "analysis directory")
     report_cmd.add_argument('analysis_dir',
                             help="PromethION analysis directory")
-    report_cmd.add_argument('-m', '--mode',
-                            choices=['summary', 'tsv'], default='summary',
-                            help="specify reporting mode")
-    report_cmd.add_argument('-t', '--template',
-                            choices=[t for t in REPORTING_TEMPLATES],
-                            help="specify template used to set fields "
-                            "for reporting")
+    mutex = report_cmd.add_mutually_exclusive_group()
+    mutex.add_argument('--summary',
+                       action='store_true',
+                       dest='summary',
+                       default=False,
+                       help="print summary report suitable for informaticians "
+                       "(default mode)")
+    mutex.add_argument('--runs',action='store_true',dest='runs',
+                       default=False,
+                       help="print tab-delimited line (one per run) "
+                       "suitable for injection into a spreadsheet")
     report_cmd.add_argument('-f', '--fields',
-                            help="specify fields to report (comma-separated "
-                            "list; overrides template from '-t')")
-    report_cmd.add_argument('-o', '--out_file',
-                            help="write summary to specified file rather "
-                            "than stdout")
+                            action='store',
+                            dest='fields',
+                            default=None,
+                            help="fields to report in --runs mode (overrides "
+                            "fields specified by --template)")
+    report_cmd.add_argument('-t', '--template',
+                            action='store',
+                            dest='template',
+                            default=None,
+                            help="name of template with fields to report in "
+                            "--runs mode (templates should be defined in the "
+                            "config file)")
+    report_cmd.add_argument('--file',
+                            action='store',
+                            dest='out_file',
+                            default=None,
+                            help="write report to OUT_FILE; destination can be "
+                            "a local file, or a remote file specified as "
+                            "[[USER@]HOST:]PATH (default is to write to stdout)")
+    report_cmd.add_argument('-r', '--most_recent',
+                            metavar="N",
+                            action='store',
+                            dest='most_recent',
+                            default=None,
+                            type=int,
+                            help="only report N most recent runs")
 
     # Fetch command
     default_runner = __settings.runners.rsync
@@ -516,8 +546,13 @@ def bcf_nanopore_main():
     elif args.command == "metadata":
         metadata(args.file, dump_json=args.json)
     elif args.command == "report":
-        report(args.analysis_dir, mode=args.mode, fields=args.fields,
-               template=args.template, out_file=args.out_file)
+        if args.runs:
+            mode = "runs"
+        else:
+            mode = "summary"
+        report(args.analysis_dir, mode=mode, fields=args.fields,
+               template=args.template, out_file=args.out_file,
+               most_recent=args.most_recent)
     elif args.command == "fetch":
         fetch(args.project_dir, args.dest,
               file_types=[x for x in str(args.file_types).split(",")],

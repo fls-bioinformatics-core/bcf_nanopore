@@ -332,15 +332,18 @@ class TestReportCommand(unittest.TestCase):
         if Path(self.wd).exists():
             shutil.rmtree(self.wd)
 
-    def test_report_default_summary_mode(self):
+    def test_report_project_in_default_mode(self):
         """
-        report: default template in 'summary' mode
+        report: default report for a project (summary mode)
         """
         data_dir = "/mnt/data/PromethION_Project_001_PerGynt"
         analysis_dir = MockProjectAnalysisDir("PromethION_Project_001_PerGynt_analysis")
         analysis_dir.add_run("PG1-2_20240513",
                              samples={ "PG1": ("NB03", "PAW14589"),
                                        "PG2": ("NB04", "PAW14589")})
+        analysis_dir.add_run("PG3-4_20240529",
+                             samples={ "PG3": ("NB07", "PAW15894"),
+                                       "PG4": ("NB08", "PAW15894")})
         analysis_dir_path = analysis_dir.create(
             self.wd,
             user="Per Gynt",
@@ -351,36 +354,38 @@ class TestReportCommand(unittest.TestCase):
             project_id="PROMETHION#001")
         out_file = Path(self.wd).joinpath("report.txt")
         cli_report(analysis_dir_path, out_file=out_file)
-        expected_report = """PromethION_Project_001_PerGynt
+        expected_report = f"""PromethION_Project_001_PerGynt
 ==============================
+
 Project name    : PromethION_Project_001_PerGynt
 Project ID      : PROMETHION#001
-
-
 User            : Per Gynt
 PI              : Henrik Ibsen
 Application     : Methylation study
 Organism        : Human
+Analysis dir    : {analysis_dir_path}
 
-#samples        : 2
-samples         : PG1,PG2
+This project has 2 runs:
 
-
-
+- PG1-2_20240513:	2 samples (PG1, PG2)
+- PG3-4_20240529:	2 samples (PG3, PG4)
 """
         self.assertTrue(out_file.exists())
         with open(out_file, "rt") as fp:
             self.assertEqual(fp.read(), expected_report)
 
-    def test_report_default_tsv_mode(self):
+    def test_report_project_in_summary_mode(self):
         """
-        report: default template in 'tsv' mode
+        report: generate a summary of a project
         """
         data_dir = "/mnt/data/PromethION_Project_001_PerGynt"
         analysis_dir = MockProjectAnalysisDir("PromethION_Project_001_PerGynt_analysis")
         analysis_dir.add_run("PG1-2_20240513",
                              samples={ "PG1": ("NB03", "PAW14589"),
                                        "PG2": ("NB04", "PAW14589")})
+        analysis_dir.add_run("PG3-4_20240529",
+                             samples={ "PG3": ("NB07", "PAW15894"),
+                                       "PG4": ("NB08", "PAW15894")})
         analysis_dir_path = analysis_dir.create(
             self.wd,
             user="Per Gynt",
@@ -389,12 +394,82 @@ samples         : PG1,PG2
             organism="Human",
             data_dir=data_dir,
             project_id="PROMETHION#001")
+        out_file = Path(self.wd).joinpath("report.txt")
+        cli_report(analysis_dir_path, mode="summary", out_file=out_file)
+        expected_report = f"""PromethION_Project_001_PerGynt
+==============================
+
+Project name    : PromethION_Project_001_PerGynt
+Project ID      : PROMETHION#001
+User            : Per Gynt
+PI              : Henrik Ibsen
+Application     : Methylation study
+Organism        : Human
+Analysis dir    : {analysis_dir_path}
+
+This project has 2 runs:
+
+- PG1-2_20240513:	2 samples (PG1, PG2)
+- PG3-4_20240529:	2 samples (PG3, PG4)
+"""
+        self.assertTrue(out_file.exists())
+        with open(out_file, "rt") as fp:
+            self.assertEqual(fp.read(), expected_report)
+
+    def test_report_project_in_runs_mode_default_fields(self):
+        """
+        report: generate report of runs (default fields)
+        """
+        data_dir = "/mnt/data/PromethION_Project_001_PerGynt"
+        analysis_dir = MockProjectAnalysisDir("PromethION_Project_001_PerGynt_analysis")
         analysis_dir.add_run("PG1-2_20240513",
                              samples={ "PG1": ("NB03", "PAW14589"),
                                        "PG2": ("NB04", "PAW14589")})
+        analysis_dir.add_run("PG3-4_20240529",
+                             samples={ "PG3": ("NB07", "PAW15894"),
+                                       "PG4": ("NB08", "PAW15894")})
+        analysis_dir_path = analysis_dir.create(
+            self.wd,
+            user="Per Gynt",
+            principal_investigator="Henrik Ibsen",
+            application="Methylation study",
+            organism="Human",
+            data_dir=data_dir,
+            project_id="PROMETHION#001")
         out_file = Path(self.wd).joinpath("report.txt")
-        cli_report(analysis_dir_path, mode="tsv", out_file=out_file)
-        expected_report = """PromethION_Project_001_PerGynt	PROMETHION#001			Per Gynt	Henrik Ibsen	Methylation study	Human		2	PG1,PG2			
+        cli_report(analysis_dir_path, mode="runs", out_file=out_file)
+        expected_report = """PromethION_Project_001_PerGynt	PROMETHION#001	PG1-2_20240513			Per Gynt	Henrik Ibsen	Methylation study	Human		2	PG1,PG2
+PromethION_Project_001_PerGynt	PROMETHION#001	PG3-4_20240529			Per Gynt	Henrik Ibsen	Methylation study	Human		2	PG3,PG4
+"""
+        self.assertTrue(out_file.exists())
+        with open(out_file, "rt") as fp:
+            self.assertEqual(fp.read(), expected_report)
+
+    def test_report_project_in_runs_mode_bcf_fields(self):
+        """
+        report: generate report of runs ('bcf' template fields)
+        """
+        data_dir = "/mnt/data/PromethION_Project_001_PerGynt"
+        analysis_dir = MockProjectAnalysisDir("PromethION_Project_001_PerGynt_analysis")
+        analysis_dir.add_run("PG1-2_20240513",
+                             samples={ "PG1": ("NB03", "PAW14589"),
+                                       "PG2": ("NB04", "PAW14589")})
+        analysis_dir.add_run("PG3-4_20240529",
+                             samples={ "PG3": ("NB07", "PAW15894"),
+                                       "PG4": ("NB08", "PAW15894")})
+        analysis_dir_path = analysis_dir.create(
+            self.wd,
+            user="Per Gynt",
+            principal_investigator="Henrik Ibsen",
+            application="Methylation study",
+            organism="Human",
+            data_dir=data_dir,
+            project_id="PROMETHION#001")
+        fields = "run_datestamp,NULL,user,id,run,#samples,NULL,organism,application,PI,analysis_dir,NULL,primary_data"
+        out_file = Path(self.wd).joinpath("report.txt")
+        cli_report(analysis_dir_path, mode="runs", fields=fields, out_file=out_file)
+        expected_report = f"""20240513		Per Gynt	PROMETHION#001	PG1-2_20240513	2		Human	Methylation study	Henrik Ibsen	{analysis_dir_path}		{data_dir}
+20240513		Per Gynt	PROMETHION#001	PG3-4_20240529	2		Human	Methylation study	Henrik Ibsen	{analysis_dir_path}		{data_dir}
 """
         self.assertTrue(out_file.exists())
         with open(out_file, "rt") as fp:

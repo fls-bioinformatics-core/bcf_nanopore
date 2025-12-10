@@ -359,7 +359,7 @@ class MockProjectAnalysisDir:
 
     Example usage:
 
-    >>> project = MockPromethionAnalysisDir("MyProject")
+    >>> project = MockProjectAnalysisDir("MyProject")
     >>> project.add_run("Run1", samples={"Sample1": ("barcode01","FC12345")})
     >>> project_dir = project.create("/path/to/top/dir", data_dir="/path/to/data/dir",
     ...                             user="jdoe", principal_investigator="J. Doe",
@@ -451,9 +451,25 @@ class MockProjectAnalysisDir:
             # Placeholder README file
             with open(run_dir.joinpath("README"), "wt") as fp:
                 fp.write("Placeholder README file\n")
-            # Placeholder flowcell_basecalls.tsv file
+            # flowcell_basecalls.tsv file
             with open(run_dir.joinpath("flowcell_basecalls.tsv"), "wt") as fp:
-                fp.write("Placeholder flowcell_basecalls.tsv file\n")
+                fp.write("#%s\n" % "\t".join(["Run", "SubDir", "FlowCellID",
+                                              "Reports", "Kit", "Modifications",
+                                              "TrimBarcodes", "MinknowVersion",
+                                              "BasecallingModel", "FileTypes"]))
+                if self.runs[run]:
+                    flowcells = set()
+                    for sample in self.runs[run]:
+                        barcode, flowcell = self.runs[run][sample]
+                        if flowcell in flowcells:
+                            continue
+                        flowcells.add(flowcell)
+                        subdir = f"20240513_0716_1F_{flowcell}_30105f28"
+                        fp.write("%s\n" % "\t".join([run, subdir, flowcell,
+                                                     "html", "SQK-PCB114-24", "none",
+                                                     "Off", "25.03.7",
+                                                     "dna_r10.4.1_e8.2_400bps_hac@v4.3.0",
+                                                     "pod5,bam,fastq"]))
             # Samples file
             with open(run_dir.joinpath("samples.tsv"), "wt") as fp:
                 fp.write("#Sample\tBarcode\tFlowcell\n")

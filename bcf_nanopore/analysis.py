@@ -27,6 +27,7 @@ from bcftbx.TabFile import TabFile
 from bcftbx.utils import extract_prefix
 from bcftbx.utils import extract_index
 from .nanopore.promethion import ProjectDir
+from .nanopore.promethion import get_flow_cell_datestamp
 from .utils import MetadataTabFile
 from .utils import convert_field_name
 from .utils import fmt_value
@@ -248,9 +249,7 @@ The following files and directories have been automatically generated:
 - 'ScriptCode': directory for custom scripts and code.
 """)
         # Report information
-        print(self.report(mode="summary",
-                          fields="name,id,primary_data,analysis_dir,"
-                          "user,pi,application,organism"))
+        print(self.report_project_summary())
 
     @property
     def runs(self):
@@ -268,20 +267,164 @@ The following files and directories have been automatically generated:
         """
         return os.path.exists(self.path)
 
-    def report(self, mode, fields):
+    def report(self, mode, fields=None, most_recent=None):
         """
         Report information on the project analysis directory
 
-        Reporting mode can be either "summary" (key-value pairs,
-        one per line) or "tsv" (one line of tab-delimited values).
+        Reporting mode can be either "project" (summarises
+        runs) or "runs" (explicit output for each run in the
+        project).
+
+        Format can be either "summary" (a summary of the project)
+        or "runs" (tab-separated values on one line in "project"
+        mode, or one line per run in "runs" mode).
+
+        Available fields are those that can be fetched using
+        the 'get_value' method.
+
+        Note that some fields may not be available
+        on the reporting mode (e.g. 'run' is not available
+        in 'project' mode).
+
+        A blank field name is the same as 'null'.
+
+        Arguments:
+            mode (str): reporting mode ("summary" or "runs")
+            fields (str): optional, comma separated list of field
+              names to report in "runs" mode
+            most_recent (int): optional, number of most recent
+              runs to report
+
+        Returns:
+          String: the report text.
+        """
+        if mode == "summary":
+            return self.report_project_summary(most_recent=most_recent)
+        elif mode == "runs":
+            if fields is None:
+                raise Exception(f"'fields' must be specified for 'runs' mode")
+            return self.report_project_runs(fields=fields, most_recent=most_recent)
+        else:
+            raise Exception(f"{mode}: not a valid report mode")
+
+    def report_project_summary(self, most_recent=None):
+        """
+        Reports a summary report of the project
+
+        The report consists of a title line, a block of
+        key-value pairs of project-level metadata, and
+        a block reporting run-specific metadata (one run
+        per line) for each run.
+
+        Arguments:
+            most_recent (int): optional, number of most recent
+            runs to report
+        """
+        field_names = {
+            "name": "Project name",
+            "id": "Project ID",
+            "user": "User",
+            "pi": "PI",
+            "application": "Application",
+            "organism": "Organism",
+            "analysis_dir": "Analysis dir"
+        }
+        output = []
+        # Title
+        output = [self.info.name, "="*len(self.info.name), ""]
+        # Project-level metadata
+        for field in ["name", "id", "user", "pi", "application", "organism", "analysis_dir"]:
+            output.append("%-16s: %s" % (field_names[field], self.get_value(field)))
+        # Runs
+        if self.runs:
+            runs = self.runs
+            if most_recent:
+                # Report specified number of runs
+                if most_recent < len(self.runs):
+                    runs = sorted(self.runs, key=lambda x: self.datestamp(x))[-most_recent:]
+                else:
+                    # Fewer total runs than requested, report everything
+                    most_recent = None
+            if not most_recent:
+                output.extend(["",
+                               "This project has %s run%s:" % (len(runs),
+                                                               "s" if len(runs) != 1 else ""),
+                               ""])
+            else:
+                output.extend(["",
+                               "This project has %s new run%s:" % (len(runs),
+                                                                   "s" if len(runs) != 1 else ""),
+                               ""])
+            for run in runs:
+                samples = self.get_value("samples", run)
+                if samples:
+                    # Convert to a list
+                    samples = samples.split(",")
+                else:
+                    samples = []
+                nsamples = len(samples)
+                line = ["%s:" % run,
+                        "%s sample%s%s" % (nsamples if nsamples else "no",
+                                           "s" if nsamples != 1 else "",
+                                           " (%s)" % ", ".join(samples) if samples else "")]
+                output.append("- %s" % "\t".join([str(x) for x in line]))
+            if most_recent and most_recent < len(self.runs):
+                output.extend(["",
+                               "%s in addition to %s previous run%s" %
+                               ("This is" if most_recent == 1 else "These are",
+                                len(self.runs) - most_recent,
+                                "s" if len(self.runs) - most_recent != 1 else "")])
+        else:
+            output.extend(["",
+                           "No runs detected for this project?"])
+        return "\n".join(output)
+
+    def report_project_runs(self, fields, most_recent=None):
+        """
+        Reports runs in a project
+
+        Reports each run in a project as a tab-separated
+        set of values (one run per line).
+
+        Arguments:
+            fields (str): optional, comma separated list of fields
+            most_recent (int): optional, number of most recent
+            runs to report
+        """
+        fields = [f.strip().lower() for f in fields.split(',')]
+        output = []
+        if not most_recent:
+            # Report all runs
+            runs = self.runs
+        else:
+            # Report specified number of runs
+            runs = sorted(self.runs, key=lambda x: self.datestamp(x))
+            if most_recent <= len(runs):
+                runs = runs[-most_recent:]
+        for run in runs:
+            line = []
+            for f in fields:
+                line.append(self.get_value(f, run))
+            output.append("\t".join([str(x) for x in line]))
+        return "\n".join(output)
+
+    def get_value(self, field, run=None):
+        """
+        Get value of a project information field
 
         Available fields are:
 
         - name (project name)
         - id (project ID)
+        - datestamp (earliest associated flow cell datestamp)
+        - nruns (number of runs)
+        - #runs (alias for 'nruns')
+        - runs (comma-separated list of run names)
         - platform (platform name)
         - user (associated users)
         - pi (associated PIs)
+        - run (name of run)
+        - run_datestamp (datestamp of run)
         - nsamples (number of samples)
         - #samples (alias for 'nsamples')
         - samples (comma-separated list of sample names)
@@ -291,95 +434,156 @@ The following files and directories have been automatically generated:
         - comments (associated comments)
         - null (empty value)
 
-        A blank field name is the same as 'null'.
+        Composite fields can be specified using the syntax
+
+        [DELIMITER]:FIELD1+FIELD2...
+
+        where the DELIMITER is used to separate values from
+        the specified FIELDs.
+
+        For example:
+
+        [_]:name+run
+
+        will produce values of the form
+        'PromethION_Project_001_PerGynt_PG1-2_20240513'
 
         Arguments:
-            mode (str): reporting mode
-            fields (str): comma separated list of field names
+          field (str): name of the field to retrieve
+          run (str): optional, specifies run to get value
+            associated with field (for run-specific fields)
 
         Returns:
-          String: the report text.
+          str: value associated with the field
         """
-        delimiter = {
-            'summary': '\n',
-            'tsv': '\t'
-        }
-        if mode not in ("summary", "tsv"):
-            raise Exception("%s: unknown reporting mode" % mode)
-        # Collect data to report
-        fields = fields.split(',')
-        names = []
-        values = []
-        for f in fields:
-            field = f.strip().lower()
-            fmt_func = fmt_value
-            if field == "" or field == "null":
-                name = None
-                value = ''
-            elif field == "name":
-                name = "Project name"
-                value = self.info.name
-            elif field == "id":
-                name = "Project ID"
-                value = self.info.id
-            elif field == "platform":
-                name = "Platform"
-                value = self.info.platform
-            elif field == "user":
-                name = "User"
-                value = self.info.user
-            elif field == "pi":
-                name = "PI"
-                value = self.info.PI
-            elif field == "application":
-                name = "Application"
-                value = self.info.application
-            elif field == "organism":
-                name = "Organism"
-                value = self.info.organism
-            elif field == "nsamples" or field == "#samples":
-                name = "#samples"
-                value = 0
-                for run in self.runs:
-                    value =+ len(SamplesInfo(os.path.join(self.path, self.run_dirs[run], "samples.tsv")))
-                def fmt_func(n): return '?' if n == 0 else str(n)
-            elif field == 'sample_names' or field == 'samples':
-                name = "samples"
-                sample_names = []
-                for run in self.runs:
-                    sample_names.extend([s["Sample"] for s in SamplesInfo(os.path.join(self.path,
-                                                                                       self.run_dirs[run],
-                                                                                      "samples.tsv"))])
-                value = ",".join(sample_names)
-                def fmt_func(s): return '?' if s == "" else s
-            elif field == "primary_data":
-                name = "Primary data dir"
-                value = self.info.data_dir
-            elif field == "analysis_dir":
-                name = "Analysis dir"
-                value = self.path
-            elif field == "comments":
-                name = "Comments"
-                value = self.info.comments
-                def fmt_func(s): return '' if s is None else str(s)
+        delimiter = " "
+        field = field.strip().lower()
+        if field.startswith("["):
+            # Handle custom delimiter for composite field
+            field_ = field.split(":")
+            if len(field_) > 1 and field_[-2].endswith("]"):
+                delimiter = ':'.join(field_[:-1])[1:-1]
             else:
-                raise KeyError("%s: unrecognised field" % f)
-            names.append(name)
-            values.append(fmt_func(value))
-        # Generate output
-        output = []
-        if mode == "summary":
-            # Add title in summary mode
-            output.extend([self.info.name, '=' * len(self.info.name)])
-        for name, value in zip(names, values):
-            if mode == "summary":
-                if name:
-                    output.append("%-16s: %s" % (name, value))
-                else:
-                    output.append('')
-            elif mode == "tsv":
-                output.append(str(value))
-        return delimiter[mode].join(output)
+                raise ValueError("Bad delimiter specification")
+            field = field_[-1]
+        if "+" in field:
+            # Composite field
+            # Recover value for individual fields
+            value = []
+            for field in field.split("+"):
+                value.append(self.get_value(field, run))
+            # Return composite value
+            return delimiter.join([str(x) for x in value])
+        # Single field specified
+        fmt_func = fmt_value
+        if field == "" or field == "null":
+            value = ''
+        elif field == "name":
+            value = self.info.name
+        elif field == "id":
+            value = self.info.id
+        elif field == "datestamp":
+            value = self.datestamp()
+        elif field == "run_datestamp":
+            if run is None:
+                raise KeyError(f"'{field}' field requires a run name")
+            value = self.datestamp(run)
+        elif field == "run":
+            if run is None:
+                raise KeyError(f"'{field}' field requires a run name")
+            value = run
+        elif field == "runs":
+            value = ",".join(self.runs)
+        elif field == "nruns" or field == "#runs":
+            value = len(self.runs)
+        elif field == "platform":
+            value = self.info.platform
+        elif field == "user":
+            value = self.info.user
+        elif field == "pi":
+            value = self.info.PI
+        elif field == "application":
+            value = self.info.application
+        elif field == "organism":
+            value = self.info.organism
+        elif field == "nsamples" or field == "#samples":
+            if run is None:
+                runs = self.runs
+            elif run in self.runs:
+                runs = [run]
+            else:
+                raise KeyError("%s: unrecognised run name" % run)
+            # Get total number of samples across all runs
+            value = 0
+            for run in runs:
+                samples_file = os.path.join(self.path, self.run_dirs[run], "samples.tsv")
+                if os.path.exists(samples_file):
+                    value += len(SamplesInfo(samples_file))
+            def fmt_func(s): return '?' if s == "" else s
+        elif field == 'sample_names' or field == 'samples':
+            if run is None:
+                runs = self.runs
+            elif run in self.runs:
+                runs = [run]
+            else:
+                raise KeyError("%s: unrecognised run name" % run)
+            sample_names = []
+            for run in runs:
+                sample_names.extend([s["Sample"] for s in SamplesInfo(os.path.join(self.path,
+                                                                                   self.run_dirs[run],
+                                                                                  "samples.tsv"))])
+            value = ",".join(sample_names)
+        elif field == "primary_data":
+            value = self.info.data_dir
+        elif field == "analysis_dir":
+            value = self.path
+        elif field == "comments":
+            value = self.info.comments
+            def fmt_func(s): return '' if s is None else str(s)
+        else:
+            raise KeyError("%s: unrecognised field" % field)
+        return fmt_func(value)
+
+    def datestamp(self, run=None):
+        """
+        Fetch a datestamp for project or run
+
+        If no datestamp can be located, return None (datestamps
+        are derived from flow cell output directories, with the
+        earliest datestamp for the project or run being returned).
+
+        Arguments:
+            run (str): optional, specifies run to get datestamp for
+
+        Returns:
+            str: earliest associated datestamp extracted from
+            flow cell directories within project or run
+        """
+        datestamps = set()
+        if run:
+            if run not in self.runs:
+                raise KeyError("%s: unrecognised run name" % run)
+            runs = [run]
+        else:
+            runs = self.runs
+        for run in runs:
+            # For each run, locate the 'flowcell_basecalls.tsv'
+            # metadata file
+            tsv_file = os.path.join(self.path,
+                                    self.run_dirs[run],
+                                    "flowcell_basecalls.tsv")
+            if os.path.exists(tsv_file):
+                # Extract datastamp from each flow cell subdirectory
+                flowcell_data = TabFile(tsv_file, first_line_is_header=True)
+                for data in flowcell_data:
+                    datestamp = get_flow_cell_datestamp(os.path.basename(data['SubDir']))
+                    if datestamp:
+                        # Only add non-empty values
+                        datestamps.add(datestamp)
+        try:
+            return sorted(list(datestamps))[0]
+        except IndexError:
+            return None
 
     @staticmethod
     def _make_project_id(name):
