@@ -220,7 +220,8 @@ def setup(project_dir, user, PI, application=None, organism=None, top_dir=None,
         set_group(group, analysis_dir.path)
 
 
-def report(path, mode="summary", fields=None, template=None, out_file=None):
+def report(path, mode="summary", fields=None, template=None, out_file=None,
+           most_recent=None):
     """
     Report on Promethion project analysis directory
 
@@ -236,12 +237,14 @@ def report(path, mode="summary", fields=None, template=None, out_file=None):
         supplied); otherwise it is ignored
       out_file (str): optional, file to write the report to
         (default is to write to stdout)
+      most_recent (int): optional, only report this number of most
+        recent runs (default is report all runs)
     """
     # Read in data
     analysis_dir = ProjectAnalysisDir(path)
     # Summary mode
     if mode == "summary":
-        report_text = analysis_dir.report_project_summary()
+        report_text = analysis_dir.report_project_summary(most_recent=most_recent)
     elif mode == "runs":
         # Set fields
         if fields is None:
@@ -253,7 +256,7 @@ def report(path, mode="summary", fields=None, template=None, out_file=None):
             except KeyError:
                 raise Exception("%s: undefined template" % template)
         # Report
-        report_text = analysis_dir.report_project_runs(fields)
+        report_text = analysis_dir.report_project_runs(fields, most_recent=most_recent)
     else:
         raise Exception("%s: unknown reporting mode" % mode)
     if out_file:
@@ -481,6 +484,13 @@ def bcf_nanopore_main():
                             help="write report to OUT_FILE; destination can be "
                             "a local file, or a remote file specified as "
                             "[[USER@]HOST:]PATH (default is to write to stdout)")
+    report_cmd.add_argument('-r', '--most_recent',
+                            metavar="N",
+                            action='store',
+                            dest='most_recent',
+                            default=None,
+                            type=int,
+                            help="only report N most recent runs")
 
     # Fetch command
     default_runner = __settings.runners.rsync
@@ -541,7 +551,8 @@ def bcf_nanopore_main():
         else:
             mode = "summary"
         report(args.analysis_dir, mode=mode, fields=args.fields,
-               template=args.template, out_file=args.out_file)
+               template=args.template, out_file=args.out_file,
+               most_recent=args.most_recent)
     elif args.command == "fetch":
         fetch(args.project_dir, args.dest,
               file_types=[x for x in str(args.file_types).split(",")],
