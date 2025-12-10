@@ -267,7 +267,7 @@ The following files and directories have been automatically generated:
         """
         return os.path.exists(self.path)
 
-    def report(self, mode, fields=None):
+    def report(self, mode, fields=None, most_recent=None):
         """
         Report information on the project analysis directory
 
@@ -292,20 +292,22 @@ The following files and directories have been automatically generated:
             mode (str): reporting mode ("summary" or "runs")
             fields (str): optional, comma separated list of field
               names to report in "runs" mode
+            most_recent (int): optional, number of most recent
+              runs to report
 
         Returns:
           String: the report text.
         """
         if mode == "summary":
-            return self.report_project_summary()
+            return self.report_project_summary(most_recent=most_recent)
         elif mode == "runs":
             if fields is None:
                 raise Exception(f"'fields' must be specified for 'runs' mode")
-            return self.report_project_runs(fields=fields)
+            return self.report_project_runs(fields=fields, most_recent=most_recent)
         else:
             raise Exception(f"{mode}: not a valid report mode")
 
-    def report_project_summary(self):
+    def report_project_summary(self, most_recent=None):
         """
         Reports a summary report of the project
 
@@ -313,6 +315,10 @@ The following files and directories have been automatically generated:
         key-value pairs of project-level metadata, and
         a block reporting run-specific metadata (one run
         per line) for each run.
+
+        Arguments:
+            most_recent (int): optional, number of most recent
+            runs to report
         """
         field_names = {
             "name": "Project name",
@@ -331,10 +337,25 @@ The following files and directories have been automatically generated:
             output.append("%-16s: %s" % (field_names[field], self.get_value(field)))
         # Runs
         if self.runs:
-            output.extend(["",
-                           "This project has %s run%s:" % (len(self.runs), "s" if len(self.runs) != 1 else ""),
-                           ""])
-            for run in self.runs:
+            runs = self.runs
+            if most_recent:
+                # Report specified number of runs
+                if most_recent < len(self.runs):
+                    runs = sorted(self.runs, key=lambda x: self.datestamp(x))[-most_recent:]
+                else:
+                    # Fewer total runs than requested, report everything
+                    most_recent = None
+            if not most_recent:
+                output.extend(["",
+                               "This project has %s run%s:" % (len(runs),
+                                                               "s" if len(runs) != 1 else ""),
+                               ""])
+            else:
+                output.extend(["",
+                               "This project has %s new run%s:" % (len(runs),
+                                                                   "s" if len(runs) != 1 else ""),
+                               ""])
+            for run in runs:
                 samples = self.get_value("samples", run)
                 if samples:
                     # Convert to a list
@@ -347,21 +368,40 @@ The following files and directories have been automatically generated:
                                            "s" if nsamples != 1 else "",
                                            " (%s)" % ", ".join(samples) if samples else "")]
                 output.append("- %s" % "\t".join([str(x) for x in line]))
+            if most_recent and most_recent < len(self.runs):
+                output.extend(["",
+                               "%s in addition to %s previous run%s" %
+                               ("This is" if most_recent == 1 else "These are",
+                                len(self.runs) - most_recent,
+                                "s" if len(self.runs) - most_recent != 1 else "")])
         else:
             output.extend(["",
                            "No runs detected for this project?"])
         return "\n".join(output)
 
-    def report_project_runs(self, fields):
+    def report_project_runs(self, fields, most_recent=None):
         """
         Reports runs in a project
 
         Reports each run in a project as a tab-separated
         set of values (one run per line).
+
+        Arguments:
+            fields (str): optional, comma separated list of fields
+            most_recent (int): optional, number of most recent
+            runs to report
         """
         fields = [f.strip().lower() for f in fields.split(',')]
         output = []
-        for run in sorted(self.runs):
+        if not most_recent:
+            # Report all runs
+            runs = self.runs
+        else:
+            # Report specified number of runs
+            runs = sorted(self.runs, key=lambda x: self.datestamp(x))
+            if most_recent <= len(runs):
+                runs = runs[-most_recent:]
+        for run in runs:
             line = []
             for f in fields:
                 line.append(self.get_value(f, run))

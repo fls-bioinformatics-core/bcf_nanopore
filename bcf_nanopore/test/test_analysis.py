@@ -242,6 +242,48 @@ class TestProjectAnalysisDir(unittest.TestCase):
                          "- PG1-2_20240513:	2 samples (PG1, PG2)\n"
                          "- PG3-4_20240529:	2 samples (PG3, PG4)")
 
+    def test_project_analysis_dir_multiple_runs_report_project_summary_most_recent(self):
+        """
+        ProjectAnalysisDir: report summary for analysis project (multiple runs)
+        """
+        data_dir = "/mnt/data/PromethION_Project_001_PerGynt"
+        analysis_dir = MockProjectAnalysisDir("PromethION_Project_001_PerGynt_analysis")
+        analysis_dir.add_run("PG1-2_20240513",
+                             samples={ "PG1": ("NB03", "PAW14589"),
+                                       "PG2": ("NB04", "PAW14589")})
+        analysis_dir.add_run("PG3-4_20240529",
+                             samples={ "PG3": ("NB07", "PAW15894"),
+                                       "PG4": ("NB08", "PAW15894")})
+        analysis_dir.add_run("PG5-6_20240602",
+                             samples={ "PG5": ("NB11", "PAW16072"),
+                                       "PG6": ("NB12", "PAW16072")})
+        analysis_dir_path = analysis_dir.create(
+            self.wd,
+            user="Per Gynt",
+            principal_investigator="Henrik Ibsen",
+            application="Methylation study",
+            organism="Human",
+            data_dir=data_dir,
+            project_id="PROMETHION#001")
+        analysis_dir = ProjectAnalysisDir(analysis_dir_path)
+        self.assertEqual(analysis_dir.report_project_summary(most_recent=1),
+                         "PromethION_Project_001_PerGynt\n"
+                         "==============================\n"
+                         "\n"
+                         "Project name    : PromethION_Project_001_PerGynt\n"
+                         "Project ID      : PROMETHION#001\n"
+                         "User            : Per Gynt\n"
+                         "PI              : Henrik Ibsen\n"
+                         "Application     : Methylation study\n"
+                         "Organism        : Human\n"
+                         f"Analysis dir    : {analysis_dir_path}\n"
+                         "\n"
+                         "This project has 1 new run:\n"
+                         "\n"
+                         "- PG5-6_20240602:	2 samples (PG5, PG6)\n"
+                         "\n"
+                         "This is in addition to 2 previous runs")
+
     def test_project_analysis_dir_multiple_runs_report_project_runs(self):
         """
         ProjectAnalysisDir: report runs for analysis project (multiple runs)
@@ -267,6 +309,34 @@ class TestProjectAnalysisDir(unittest.TestCase):
             analysis_dir.report_project_runs("name,run,#samples,user,pi"),
             "PromethION_Project_001_PerGynt\tPG1-2_20240513\t2\tPer Gynt\tHenrik Ibsen\n"
             "PromethION_Project_001_PerGynt\tPG3-4_20240529\t2\tPer Gynt\tHenrik Ibsen")
+
+    def test_project_analysis_dir_multiple_runs_report_project_runs_most_recent(self):
+        """
+        ProjectAnalysisDir: report most recent runs for analysis project
+        """
+        data_dir = "/mnt/data/PromethION_Project_001_PerGynt"
+        analysis_dir = MockProjectAnalysisDir("PromethION_Project_001_PerGynt_analysis")
+        analysis_dir.add_run("PG1-2_20240513",
+                             samples={ "PG1": ("NB03", "PAW14589"),
+                                       "PG2": ("NB04", "PAW14589")})
+        analysis_dir.add_run("PG3-4_20240529",
+                             samples={ "PG3": ("NB07", "PAW15894"),
+                                       "PG4": ("NB08", "PAW15894")})
+        analysis_dir.add_run("PG5-6_20240602",
+                             samples={ "PG5": ("NB11", "PAW16072"),
+                                       "PG6": ("NB12", "PAW16072")})
+        analysis_dir_path = analysis_dir.create(
+            self.wd,
+            user="Per Gynt",
+            principal_investigator="Henrik Ibsen",
+            application="Methylation study",
+            organism="Human",
+            data_dir=data_dir,
+            project_id="PROMETHION#001")
+        analysis_dir = ProjectAnalysisDir(analysis_dir_path)
+        self.assertEqual(
+            analysis_dir.report_project_runs("name,run,#samples,user,pi", most_recent=1),
+            "PromethION_Project_001_PerGynt\tPG5-6_20240602\t2\tPer Gynt\tHenrik Ibsen")
 
     def test_project_analysis_dir_no_samples_report_project_summary(self):
         """
