@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 RE_PROJECT_DIR_NAME = re.compile("^PromethION_Project_([0-9]+)_(.+)$")
-RE_RUN_DIR_NAME = re.compile("^([0-9]{3})_(.+)$")
+RE_RUN_DIR_NAME = re.compile("^([0-9]{3}|[0-9]{2})[_-](.+)$")
 
 class ProjectAnalysisDir:
     """
@@ -55,12 +55,12 @@ class ProjectAnalysisDir:
       +-- README
       |   project.info
       |
-      +-- 01-Run_name
+      +-- 001_Run_name
       |     |
       |     +-- flowcell_basecalls.tsv
       |         report...
       |
-      +-- 02-Run_name
+      +-- 002_Run_name
       |     |
       |     ...
       |
