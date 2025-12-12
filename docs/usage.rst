@@ -87,6 +87,22 @@ The following command line options are compulsory:
 and this information is used to populate the top-level metadata file when
 the analysis directory is created.
 
+Use the ``update`` command to add any new runs that are subsequently added
+to the source project data directory.
+
+----------
+``update``
+----------
+
+Usage:
+
+::
+
+   bcf_nanopore update <ANALYSIS_DIR> <PROJECT> ...
+
+Updates the existing analysis directory under ``<ANALYSIS_DIR>`` with
+any new runs from the PromethION project ``PROJECT``..
+
 ---------
 ``fetch``
 ---------

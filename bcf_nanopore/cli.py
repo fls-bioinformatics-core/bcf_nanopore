@@ -220,6 +220,31 @@ def setup(project_dir, user, PI, application=None, organism=None, top_dir=None,
         set_group(group, analysis_dir.path)
 
 
+def update(path, project_dir, permissions=None, group=None):
+    """
+    Update an existing analysis directory with new runs
+
+    The analysis directory will be called "<PROJECT>_analysis".
+
+    Arguments:
+      path (str): path to PromethION project analysis dir
+      project_dir (str): path to PromethION project
+      permissions (str): update file permissions on the
+        analysis directory using the supplied mode (e.g. 'g+w')
+      group (str): update the filesystem group associated
+        with the analysis directory to the supplied group name
+    """
+    # Read in data from the analysis directory
+    analysis_dir = ProjectAnalysisDir(path)
+    # Do the update
+    analysis_dir.update(project_dir)
+    # Set permissions and group
+    if permissions:
+        set_permissions(permissions, analysis_dir.path)
+    if group:
+        set_group(group, analysis_dir.path)
+
+
 def report(path, mode="summary", fields=None, template=None, out_file=None,
            most_recent=None):
     """
@@ -447,6 +472,30 @@ def bcf_nanopore_main():
                            (f"'{default_group}'" if default_group
                             else "don't set group",))
 
+    # Update command
+    update_cmd = sp.add_parser("update",
+                              help="Update an analysis directory for a "
+                              "Promethion project with new runs")
+    update_cmd.add_argument('analysis_dir',
+                            help="PromethION analysis directory")
+    update_cmd.add_argument('project_dir',
+                            help="top level PromethION project directory")
+    update_cmd.add_argument('--chmod', action="store",
+                            dest="permissions", metavar="PERMISSIONS",
+                            default=default_permissions,
+                            help="specify permissions for the analysis "
+                            "directory. PERMISSIONS should be a string "
+                            "recognised by the 'chmod' command (e.g. "
+                            "'o-rwX') (default: %s)" %
+                            (f"'{default_permissions}'" if default_permissions
+                             else "don't set permissions",))
+    update_cmd.add_argument('--group', action='store',
+                            default=default_group,
+                            help="specify the name of group for the "
+                            "analysis directory (default: %s)" %
+                            (f"'{default_group}'" if default_group
+                             else "don't set group",))
+
     # Report command
     report_cmd = sp.add_parser("report",
                                help="report metadata from a PromethION "
@@ -543,6 +592,9 @@ def bcf_nanopore_main():
               application=args.application, organism=args.organism,
               top_dir=args.parent_dir, permissions=args.permissions,
               group=args.group)
+    elif args.command == "update":
+        update(args.analysis_dir, args.project_dir,
+               permissions=args.permissions, group=args.group)
     elif args.command == "metadata":
         metadata(args.file, dump_json=args.json)
     elif args.command == "report":

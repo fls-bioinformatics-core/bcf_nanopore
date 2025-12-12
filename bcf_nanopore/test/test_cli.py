@@ -14,6 +14,7 @@ from bcf_nanopore.mock import MockPromethionDataDir
 from bcf_nanopore.mock import MockProjectAnalysisDir
 from bcf_nanopore.cli import info as cli_info
 from bcf_nanopore.cli import setup as cli_setup
+from bcf_nanopore.cli import update as cli_update
 from bcf_nanopore.cli import fetch as cli_fetch
 from bcf_nanopore.cli import report as cli_report
 
@@ -202,6 +203,58 @@ class TestSetupCommand(unittest.TestCase):
         self.assertTrue(Path(analysis_dir_path).joinpath("ScriptCode").is_dir())
         self.assertTrue(Path(analysis_dir_path).joinpath("logs").is_dir())
         self.assertEqual(Path(analysis_dir_path).stat().st_gid, new_group)
+
+
+class TestUpdateCommand(unittest.TestCase):
+
+    def setUp(self):
+        self.wd = tempfile.mkdtemp()
+
+    def tearDown(self):
+        if Path(self.wd).exists():
+            shutil.rmtree(self.wd)
+
+    def test_update(self):
+        """
+        update: adds new runs to an analysis directory
+        """
+        # Mock source data directory
+        project_dir = MockPromethionDataDir("PromethION_Project_001_PerGynt")
+        project_dir.add_flow_cell("20240513_0829_1A_PAW15419_465bb23f",
+                                  relpath=Path("PG1-2_20240513").joinpath("PG1-2"))
+        data_dir = project_dir.create(self.wd)
+        # Mock project directory
+        analysis_dir = MockProjectAnalysisDir("PromethION_Project_001_PerGynt_analysis")
+        analysis_dir.add_run("PG1-2_20240513",
+                             samples={ "PG1": ("NB03", "PAW14589"),
+                                       "PG2": ("NB04", "PAW14589")})
+        analysis_dir_path = analysis_dir.create(
+            self.wd,
+            user="Per Gynt",
+            principal_investigator="Henrik Ibsen",
+            application="Methylation study",
+            organism="Human",
+            data_dir=data_dir,
+            project_id="PROMETHION#001")
+        # Check initial (mock) analysis project
+        analysis_dir = ProjectAnalysisDir(analysis_dir_path)
+        self.assertEqual(analysis_dir.info.runs, "PG1-2_20240513")
+        self.assertEqual(analysis_dir.runs, ["PG1-2_20240513"])
+        # Add more runs to the source data
+        project_dir.add_flow_cell("20240529_0830_1A_PAW17328_523ce32d",
+                                  relpath=Path("PG3-4_20240529").joinpath("PG3-4"))
+        project_dir.add_flow_cell("20240602_0831_1A_PAW17328_523ce32d",
+                                  relpath=Path("PG5-6_20240602").joinpath("PG5-6"))
+        project_dir.update(self.wd)
+        # Update the analysis directory
+        cli_update(analysis_dir_path, data_dir)
+        # Check updated analysis project
+        analysis_dir = ProjectAnalysisDir(analysis_dir_path)
+        self.assertEqual(analysis_dir.info.runs,
+                         "PG1-2_20240513,PG3-4_20240529,PG5-6_20240602")
+        self.assertEqual(analysis_dir.runs, ["PG1-2_20240513",
+                                             "PG3-4_20240529",
+                                             "PG5-6_20240602"])
 
 
 class TestFetchCommand(unittest.TestCase):
