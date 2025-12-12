@@ -119,6 +119,75 @@ class TestProjectAnalysisDir(unittest.TestCase):
         self.assertEqual(analysis_dir.datestamp("PG1-2_20240513"), "20240513")
         self.assertEqual(analysis_dir.datestamp("PG3-4_20240529"), "20240529")
 
+    def test_project_analysis_dir_update_with_new_runs(self):
+        """
+        ProjectAnalysisDir: update analysis directory with new runs
+        """
+        data_dir = MockPromethionDataDir("PromethION_Project_001_PerGynt")
+        data_dir.add_flow_cell("20240513_0829_1A_PAW15419_465bb23f",
+                               relpath=Path("PG1-2_20240513").joinpath("PG1-2"))
+        project_dir = data_dir.create(self.wd)
+        analysis_dir_path = str(Path(self.wd).joinpath("PromethION_Project_001_PerGynt_analysis"))
+        analysis_dir = ProjectAnalysisDir(analysis_dir_path)
+        self.assertFalse(analysis_dir.exists())
+        analysis_dir.create(project_dir,
+                            user="Per Gynt",
+                            PI="Henrik Ibsen",
+                            application="Methylation study",
+                            organism="Human")
+        # Check top-level analysis directory
+        self.assertTrue(analysis_dir.exists())
+        self.assertEqual(analysis_dir.path, analysis_dir_path)
+        self.assertEqual(analysis_dir.info.name, "PromethION_Project_001_PerGynt")
+        self.assertEqual(analysis_dir.info.id, "PROMETHION#001")
+        self.assertEqual(analysis_dir.info.platform, "promethion")
+        self.assertEqual(analysis_dir.info.data_dir, project_dir)
+        self.assertEqual(analysis_dir.info.user, "Per Gynt")
+        self.assertEqual(analysis_dir.info.PI, "Henrik Ibsen")
+        self.assertEqual(analysis_dir.info.application, "Methylation study")
+        self.assertEqual(analysis_dir.info.organism, "Human")
+        self.assertEqual(analysis_dir.info.runs, "PG1-2_20240513")
+        self.assertEqual(analysis_dir.runs, ["PG1-2_20240513"])
+        self.assertTrue(Path(analysis_dir_path).joinpath("README").exists())
+        self.assertTrue(Path(analysis_dir_path).joinpath("project.info").exists())
+        # Check sub-directories
+        self.assertTrue(Path(analysis_dir_path).joinpath("ScriptCode").is_dir())
+        self.assertTrue(Path(analysis_dir_path).joinpath("logs").is_dir())
+        # Check run directories
+        for run in ["001_PG1-2_20240513"]:
+            run_dir = Path(analysis_dir_path).joinpath(run)
+            self.assertTrue(run_dir.is_dir())
+            for f in ["README", "flowcell_basecalls.tsv", "samples.tsv"]:
+                self.assertTrue(run_dir.joinpath(f).exists(),
+                                f"Expected file {f} not found in run directory "
+                                f"'{run}'")
+        # Check datestamps
+        self.assertEqual(analysis_dir.datestamp(), "20240513")
+        self.assertEqual(analysis_dir.datestamp("PG1-2_20240513"), "20240513")
+        # Add new run with extra flowcell and basecalls
+        data_dir.add_flow_cell("20240529_0830_1A_PAW17328_523ce32d",
+                               relpath=Path("PG3-4_20240529").joinpath("PG3-4"))
+        data_dir.add_basecalls_dir(str(Path("PG3-4_20240529").joinpath("Rebasecalling","PG3-4")),
+                                   flow_cell_name="20240529_0830_1A_PAW17328_523ce32d")
+        data_dir.update(self.wd)
+        # Update the analysis directory
+        analysis_dir.update(project_dir)
+        # Check runs metadata
+        self.assertEqual(analysis_dir.info.runs, "PG1-2_20240513,PG3-4_20240529")
+        self.assertEqual(analysis_dir.runs, ["PG1-2_20240513", "PG3-4_20240529"])
+        # Check run directories
+        for run in ["001_PG1-2_20240513", "002_PG3-4_20240529"]:
+            run_dir = Path(analysis_dir_path).joinpath(run)
+            self.assertTrue(run_dir.is_dir())
+            for f in ["README", "flowcell_basecalls.tsv", "samples.tsv"]:
+                self.assertTrue(run_dir.joinpath(f).exists(),
+                                f"Expected file {f} not found in run directory "
+                                f"'{run}'")
+        # Check datestamps
+        self.assertEqual(analysis_dir.datestamp(), "20240513")
+        self.assertEqual(analysis_dir.datestamp("PG1-2_20240513"), "20240513")
+        self.assertEqual(analysis_dir.datestamp("PG3-4_20240529"), "20240529")
+
     def test_project_analysis_dir_load_existing(self):
         """
         ProjectAnalysisDir: load existing analysis project
