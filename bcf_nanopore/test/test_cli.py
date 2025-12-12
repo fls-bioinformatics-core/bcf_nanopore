@@ -273,8 +273,8 @@ class TestFetchCommand(unittest.TestCase):
         # Make source data
         data_dir = MockPromethionDataDir("PromethION_Project_001_PerGynt")
         data_dir.add_flow_cell("20240513_0829_1A_PAW15419_465bb23f",
-                               relpath=Path("PG1-4_20240513").joinpath("PG1-2"))
-        data_dir.add_basecalls_dir(str(Path("PG1-4_20240513").joinpath("Rebasecalling","PG1-2")),
+                               relpath=Path("PG1-2_20240513").joinpath("PG1-2"))
+        data_dir.add_basecalls_dir(str(Path("PG1-2_20240513").joinpath("Rebasecalling","PG1-2")),
                                    flow_cell_name="20240513_0829_1A_PAW15419_465bb23f")
         source_dir = os.path.join(self.wd, "source")
         os.mkdir(source_dir)
@@ -282,7 +282,54 @@ class TestFetchCommand(unittest.TestCase):
         # Fetch subset
         target_dir = os.path.join(self.wd, "target")
         cli_fetch(project_dir, target_dir)
+        # Check contents
         self.assertTrue(Path(target_dir).joinpath("PromethION_Project_001_PerGynt").exists())
+        for d in [Path("PG1-2_20240513").joinpath("PG1-2", "20240513_0829_1A_PAW15419_465bb23f"),
+                  Path("PG1-2_20240513").joinpath("Rebasecalling", "PG1-2"),]:
+            d = Path(target_dir).joinpath("PromethION_Project_001_PerGynt",d)
+            self.assertTrue(d.exists(), f"{d} does not exist")
+
+    def test_fetch_adds_new_runs(self):
+        """
+        fetch: adds new runs to existing copy
+        """
+        # Make source data with inital data
+        data_dir = MockPromethionDataDir("PromethION_Project_001_PerGynt")
+        data_dir.add_flow_cell("20240513_0829_1A_PAW15419_465bb23f",
+                               relpath=Path("PG1-2_20240513").joinpath("PG1-2"))
+        data_dir.add_basecalls_dir(str(Path("PG1-2_20240513").joinpath("Rebasecalling","PG1-2")),
+                                   flow_cell_name="20240513_0829_1A_PAW15419_465bb23f")
+        source_dir = os.path.join(self.wd, "source")
+        os.mkdir(source_dir)
+        project_dir = data_dir.create(source_dir)
+        # Fetch initial subset
+        target_dir = os.path.join(self.wd, "target")
+        cli_fetch(project_dir, target_dir)
+        # Check contents
+        self.assertTrue(Path(target_dir).joinpath("PromethION_Project_001_PerGynt").exists())
+        for d in [Path("PG1-2_20240513").joinpath("PG1-2", "20240513_0829_1A_PAW15419_465bb23f"),
+                  Path("PG1-2_20240513").joinpath("Rebasecalling", "PG1-2"),]:
+            d = Path(target_dir).joinpath("PromethION_Project_001_PerGynt",d)
+            self.assertTrue(d.exists(), f"{d} does not exist")
+        for d in [Path("PG3-4_20240529").joinpath("PG3-4", "20240529_0830_1A_PAW17328_523ce32d"),
+                  Path("PG5-6_20240602").joinpath("PG5-6", "20240602_0831_1A_PAW17328_523ce32d")]:
+            d = Path(target_dir).joinpath("PromethION_Project_001_PerGynt",d)
+            self.assertFalse(d.exists(), f"{d} shouldn't exist")
+        # Add more runs to the source data
+        data_dir.add_flow_cell("20240529_0830_1A_PAW17328_523ce32d",
+                               relpath=Path("PG3-4_20240529").joinpath("PG3-4"))
+        data_dir.add_flow_cell("20240602_0831_1A_PAW17328_523ce32d",
+                               relpath=Path("PG5-6_20240602").joinpath("PG5-6"))
+        data_dir.update(source_dir)
+        # Fetch the new data
+        cli_fetch(project_dir, target_dir)
+        # Check contents
+        for d in [Path("PG1-2_20240513").joinpath("PG1-2", "20240513_0829_1A_PAW15419_465bb23f"),
+                  Path("PG1-2_20240513").joinpath("Rebasecalling", "PG1-2"),
+                  Path("PG3-4_20240529").joinpath("PG3-4", "20240529_0830_1A_PAW17328_523ce32d"),
+                  Path("PG5-6_20240602").joinpath("PG5-6", "20240602_0831_1A_PAW17328_523ce32d")]:
+            d = Path(target_dir).joinpath("PromethION_Project_001_PerGynt",d)
+            self.assertTrue(d.exists(), f"{d} does not exist")
 
     def test_fetch_trailing_slash_on_source_name(self):
         """
