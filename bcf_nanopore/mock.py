@@ -112,6 +112,22 @@ class MockPromethionDataDir:
     Utility class for creating directories which mimic PromethION
     data directories
 
+    Example of creating an initial mock project directory with two
+    flow cells
+
+    >>> project = MockPromethionDataDir("PromethION_Project_011_JohnDoe")
+    >>> project.add_flow_cell("20240513_0829_1A_PAW15419_465bb23f",
+    ...                       relpath=Path("PG1-2_20240513").joinpath("PG1-2"))
+    >>> project.add_flow_cell("20240529_0830_1A_PAW17328_523ce32d",
+    ...                       relpath=Path("PG3-4_20240529").joinpath("PG3-4"))
+    >>> project_dir = project.create(os.getcwd())
+
+    To add another flow cell to this project directory:
+
+    >>> project.add_flow_cell("20240502_0831_1A_PAW16072_253da29d"
+    ...                       relpath=Path("PG5-6_20240602").joinpath("PG5-6"))
+    >>> project_dir = project.update(os.getcwd())
+
     Arguments:
         name (str): name of the PromethION project
     """
@@ -153,17 +169,33 @@ class MockPromethionDataDir:
               directory structure under
         """
         # Make top level directory
-        top_dir = Path(top_dir).absolute().joinpath(self.name)
-        top_dir.mkdir()
-        print(f"...made {top_dir}")
+        mock_dir = Path(top_dir).absolute().joinpath(self.name)
+        mock_dir.mkdir()
+        print(f"...made {mock_dir}")
+        return self.update(top_dir)
+
+    def update(self, top_dir):
+        """
+        Update a mock PromethION output directory
+
+        Args:
+            top_dir (str): path to directory to update the mock
+            directory structure under
+        """
+        # Check top level directory
+        mock_dir = Path(top_dir).absolute().joinpath(self.name)
+        if not mock_dir.exists():
+            raise OSError(f"Directory {mock_dir} does not exist")
+        print(f"...updating {mock_dir}")
         # Add flow cells
         for fc in self._flow_cells:
-            fc.create(top_dir)
+            if not fc.path(mock_dir).exists():
+                fc.create(mock_dir)
         # Add basecall dirs
         for bc in self._basecalls_dirs:
-            bc.create(top_dir)
-        return str(top_dir)
-
+            if not bc.path(mock_dir).exists():
+                bc.create(mock_dir)
+        return str(mock_dir)
 
 class MockFlowcellDir:
     """
@@ -178,6 +210,22 @@ class MockFlowcellDir:
         self.name = str(name)
         self.relpath = relpath
 
+    def path(self, top_dir):
+        """
+        Return path to mock flow cell directory
+
+        Args:
+            top_dir (Path): directory to create
+              mock flow cell directory under
+
+        Returns:
+            Path: path to the mock flow cell directory
+        """
+        if self.relpath:
+            return Path(top_dir).joinpath(self.relpath,
+                                          self.name)
+        return Path(top_dir).joinpath(self.name)
+
     def create(self, top_dir):
         """
         Create the mock flow cell directory
@@ -186,11 +234,7 @@ class MockFlowcellDir:
             top_dir (Path): directory to create the
               mock flow cell directory under
         """
-        if self.relpath:
-            fc_path = Path(top_dir).joinpath(self.relpath,
-                                             self.name)
-        else:
-            fc_path = Path(top_dir).joinpath(self.name)
+        fc_path = self.path(top_dir)
         fc_path.mkdir(parents=True)
         print(f"...made {fc_path}")
         # Make subdirs
@@ -277,6 +321,19 @@ class MockBasecallsDir:
         self.relpath = str(relpath)
         self.flow_cell_name = flow_cell_name
 
+    def path(self, top_dir):
+        """
+        Return path to mock basecalls directory
+
+        Args:
+            top_dir (Path): directory to create
+              mock basecalls directory under
+
+        Returns:
+            Path: path to the mock basecalls directory
+        """
+        return Path(top_dir).joinpath(self.relpath)
+
     def create(self, top_dir):
         """
         Create the mock base calls directory
@@ -285,7 +342,7 @@ class MockBasecallsDir:
             top_dir (Path): directory to create the
               mock flow cell directory under
         """
-        bc_path = Path(top_dir).joinpath(self.relpath)
+        bc_path = self.path(top_dir)
         bc_path.mkdir(parents=True)
         print(f"...made {bc_path}")
         # Make subdirs

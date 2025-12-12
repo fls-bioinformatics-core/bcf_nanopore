@@ -116,8 +116,10 @@ class ProjectAnalysisDir:
         """
         if self.exists():
             raise OSError("%s: already exists" % self.path)
+        # Load source project directory
+        project = ProjectDir(project_dir)
+        # Make directory and add top-level metadata
         os.makedirs(self.path)
-        # Store top-level metadata
         metadata = {
             'user': user,
             'PI': PI,
@@ -132,12 +134,64 @@ class ProjectAnalysisDir:
         self.info['id'] = self._make_project_id(self.info['name'])
         self.info['platform'] = "promethion"
         self.info.save(filen=self.project_info_file)
-        # Load source project directory
+        # Import runs from the source project directory
+        self.import_runs(project)
+        # Make subdirectories
+        for subdir in ("logs", "ScriptCode"):
+            Path(self.path).joinpath(subdir).mkdir()
+        # Create a README file
+        read_me_file = os.path.join(self.path, "README")
+        with open(read_me_file, 'wt') as read_me:
+            read_me.write(
+                f"""This is the analysis directory for {os.path.basename(self.info.data_dir)}
+
+The following files and directories have been automatically generated:
+
+- '{os.path.basename(self.project_info_file)}': top-level information about the project
+- Subdirectories for each run in the project, named with a leading
+  number to indicate order of processing (e.g. '001_{project.runs[0].name}'):
+- 'logs': directory for log files;
+- 'ScriptCode': directory for custom scripts and code.
+""")
+        # Report information
+        print(self.report_project_summary())
+
+    def update(self, project_dir):
+        """
+        Update the analysis directory with new runs from source
+
+        Arguments:
+          project_dir (str): path to PromethION project
+            directory
+        """
+        if not self.exists():
+            raise OSError("%s: doesn't exist" % self.path)
+        # Import runs from source project
         project = ProjectDir(project_dir)
+        self.import_runs(project)
+        # Report information
+        print(self.report_project_summary())
+
+    def import_runs(self, project):
+        """
+        Add runs to analysis directory
+
+        Scans the supplied project directory for runs
+        and adds them to the analysis directory, if
+        they aren't already present.
+
+        Arguments:
+            project (ProjectDir): PromethION project
+              source data directory
+        """
         # Handle run_dirs
         for run in project.runs:
+            # Check if run was already imported
+            if run.name in self.run_dirs:
+                print(f"-- run '{run.name}' already imported as '{self.run_dirs[run.name]}'")
+                continue
             # Create a subdirectory for the run
-            print(f"-- run '{run.name}'")
+            print(f"-- importing run '{run.name}'")
             run_dir = get_numbered_subdir(run.name, self.path, full_path=True)
             print(f"   creating directory: '{run_dir}'")
             os.makedirs(run_dir)
@@ -231,25 +285,6 @@ The following files have been automatically generated:
         # Update the 'runs' field in the project info
         self.info['runs'] = ",".join(self.runs)
         self.info.save(filen=self.project_info_file)
-        # Make subdirectories
-        for subdir in ("logs", "ScriptCode"):
-            Path(self.path).joinpath(subdir).mkdir()
-        # Create a README file
-        read_me_file = os.path.join(self.path, "README")
-        with open(read_me_file, 'wt') as read_me:
-            read_me.write(
-                f"""This is the analysis directory for {os.path.basename(self.info.data_dir)}
-
-The following files and directories have been automatically generated:
-
-- '{os.path.basename(self.project_info_file)}': top-level information about the project
-- Subdirectories for each run in the project, named with a leading
-  number to indicate order of processing (e.g. '001_{project.runs[0].name}'):
-- 'logs': directory for log files;
-- 'ScriptCode': directory for custom scripts and code.
-""")
-        # Report information
-        print(self.report_project_summary())
 
     @property
     def runs(self):
