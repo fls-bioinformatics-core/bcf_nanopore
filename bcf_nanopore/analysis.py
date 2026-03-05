@@ -713,31 +713,41 @@ class ProjectInfo(MetadataDict):
                 data_items[item] = name
                 order.append(item)
         MetadataDict.__init__(self,
-                              attributes={
-                                  'name': 'Project name',
-                                  'id': 'Project ID',
-                                  'platform': 'Platform',
-                                  'user': 'User',
-                                  'PI': 'PI',
-                                  'application': 'Application',
-                                  'organism': 'Organism',
-                                  'runs': 'Runs',
-                                  'data_dir': 'Data directory',
-                                  'comments': 'Comments',
-                              },
-                              order=(
-                                  'name',
-                                  'id',
-                                  'platform',
-                                  'user',
-                                  'PI',
-                                  'application',
-                                  'organism',
-                                  'runs',
-                                  'data_dir',
-                                  'comments',
-                              ),
-                              filen=filein)
+                              attributes=data_items,
+                              order=order,
+                              filen=filein,
+                              strict=False,
+                              include_undefined=True)
+
+
+class RunInfo(MetadataDict):
+    """
+    Class for storing and handling run info
+    """
+
+    def __init__(self, filein=None, custom_items=None):
+        # Core metadata items
+        data_items = {
+            "name": "Run name",
+        }
+        order = [ "name",]
+        # Additional custom items
+        if custom_items:
+            for item in custom_items:
+                # Create a name for writing to file, by replacing
+                # underscores with spaces and then capitalizing
+                # e.g. "order_number" -> "Order number"
+                name = str(item)
+                if name.lower() != name:
+                    raise Exception(f"'{name}': metadata items must be lowercase")
+                if name[0].isdigit():
+                    raise Exception(f"'{name}': metadata items must not start with a number")
+                if any([not (c.isalnum() or c == "_") for c in name]):
+                    raise Exception(f"'{name}': metadata items must only contain letters and underscores")
+                name = str(item.replace("_", " ").capitalize())
+                data_items[item] = name
+                order.append(item)
+        MetadataDict.__init__(self,
                               attributes=data_items,
                               order=order,
                               filen=filein,
