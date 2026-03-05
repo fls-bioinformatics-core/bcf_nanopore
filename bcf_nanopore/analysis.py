@@ -672,8 +672,8 @@ class ProjectInfo(MetadataDict):
         metadata items
     """
 
-    def __init__(self, filein=None):
     def __init__(self, filein=None, custom_items=None):
+        # Core metadata
         data_items = {
             "name": "Project name",
             "id": "Project ID",
