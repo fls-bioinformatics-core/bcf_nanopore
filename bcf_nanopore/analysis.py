@@ -566,8 +566,8 @@ The following files have been automatically generated:
                 raise KeyError("%s: unrecognised run name" % run)
             # Get total number of samples across all runs
             value = 0
-            for run in runs:
-                samples_file = os.path.join(self.path, self.run_dirs[run], "samples.tsv")
+            for r in runs:
+                samples_file = os.path.join(self.path, self.run_dirs[r], "samples.tsv")
                 if os.path.exists(samples_file):
                     value += len(SamplesInfo(samples_file))
             def fmt_func(s): return '?' if s == "" else s
@@ -579,10 +579,10 @@ The following files have been automatically generated:
             else:
                 raise KeyError("%s: unrecognised run name" % run)
             sample_names = []
-            for run in runs:
+            for r in runs:
                 sample_names.extend([s["Sample"] for s in SamplesInfo(os.path.join(self.path,
-                                                                                   self.run_dirs[run],
-                                                                                  "samples.tsv"))])
+                                                                                   self.run_dirs[r],
+                                                                                   "samples.tsv"))])
             value = ",".join(sample_names)
         elif field == "primary_data":
             value = self.info.data_dir
@@ -592,7 +592,29 @@ The following files have been automatically generated:
             value = self.info.comments
             def fmt_func(s): return '' if s is None else str(s)
         else:
-            raise KeyError("%s: unrecognised field" % field)
+            # Look for custom data items for run
+            got_value = False
+            if run:
+                # Check run metadata
+                run_info_file = os.path.join(self.path,
+                                             self.run_dirs[run],
+                                             "run.info")
+                if os.path.exists(run_info_file):
+                    try:
+                        value = RunInfo(run_info_file)[field]
+                        got_value = True
+                    except KeyError:
+                        pass
+            if not got_value:
+                # Check project metadata
+                try:
+                    value = self.info[field]
+                    got_value = True
+                except KeyError:
+                    pass
+            if not got_value:
+                # No matching metadata
+                raise KeyError("%s: unrecognised field" % field)
         return fmt_func(value)
 
     def datestamp(self, run=None):

@@ -336,6 +336,44 @@ class TestProjectAnalysisDir(unittest.TestCase):
         self.assertEqual(analysis_dir.info.runs, "PG1-2_20240513,PG3-4_20240529")
         self.assertEqual(analysis_dir.runs, ["PG1-2_20240513", "PG3-4_20240529"])
 
+    def test_project_analysis_dir_load_existing_custom_project_metadata(self):
+        """
+        ProjectAnalysisDir: load existing analysis project with custom project metadata
+        """
+        data_dir = "/mnt/data/PromethION_Project_001_PerGynt"
+        analysis_dir = MockProjectAnalysisDir("PromethION_Project_001_PerGynt_analysis")
+        analysis_dir.add_run("PG1-2_20240513",
+                             samples={ "PG1": ("NB03", "PAW14589"),
+                                       "PG2": ("NB04", "PAW14589")})
+        analysis_dir.add_run("PG3-4_20240529",
+                             samples={ "PG3": ("NB07", "PAW15894"),
+                                       "PG4": ("NB08", "PAW15894")})
+        analysis_dir_path = analysis_dir.create(
+            self.wd,
+            user="Per Gynt",
+            principal_investigator="Henrik Ibsen",
+            application="Methylation study",
+            organism="Human",
+            data_dir=data_dir,
+            project_id="PROMETHION#001",
+            extra_project_metadata={ "Order numbers": "#00123,#00456",
+                                     "Analyst": "Ben Franklin" })
+        analysis_dir = ProjectAnalysisDir(analysis_dir_path)
+        self.assertTrue(analysis_dir.exists())
+        self.assertEqual(analysis_dir.path, analysis_dir_path)
+        self.assertEqual(analysis_dir.info.name, "PromethION_Project_001_PerGynt")
+        self.assertEqual(analysis_dir.info.id, "PROMETHION#001")
+        self.assertEqual(analysis_dir.info.platform, "promethion")
+        self.assertEqual(analysis_dir.info.data_dir, data_dir)
+        self.assertEqual(analysis_dir.info.user, "Per Gynt")
+        self.assertEqual(analysis_dir.info.PI, "Henrik Ibsen")
+        self.assertEqual(analysis_dir.info.application, "Methylation study")
+        self.assertEqual(analysis_dir.info.organism, "Human")
+        self.assertEqual(analysis_dir.info.runs, "PG1-2_20240513,PG3-4_20240529")
+        self.assertEqual(analysis_dir.info.order_numbers, "#00123,#00456")
+        self.assertEqual(analysis_dir.info.analyst, "Ben Franklin")
+        self.assertEqual(analysis_dir.runs, ["PG1-2_20240513", "PG3-4_20240529"])
+
     def test_project_analysis_dir_load_existing_legacy_run_dir_names(self):
         """
         ProjectAnalysisDir: load existing analysis project (legacy run dir names)
@@ -673,6 +711,31 @@ class TestProjectAnalysisDir(unittest.TestCase):
         self.assertRaises(KeyError,
                           analysis_dir.report_project_runs,
                           "_]:name+run,#samples")
+
+    def test_project_analysis_dir_single_run_report_project_runs_custom_metadata(self):
+        """
+        ProjectAnalysisDir: report runs for analysis project with custom metadata
+        """
+        data_dir = "/mnt/data/PromethION_Project_001_PerGynt"
+        analysis_dir = MockProjectAnalysisDir("PromethION_Project_001_PerGynt_analysis",)
+        analysis_dir.add_run("PG1-2_20240513",
+                             samples={"PG1": ("NB03", "PAW14589"),
+                                      "PG2": ("NB04", "PAW14589")},
+                             metadata={ "Order numbers": "#00123" })
+        analysis_dir_path = analysis_dir.create(
+            self.wd,
+            user="Per Gynt",
+            principal_investigator="Henrik Ibsen",
+            application="Methylation study",
+            organism="Human",
+            data_dir=data_dir,
+            project_id="PROMETHION#001",
+            extra_project_metadata={ "Analysts": "Sam Beckett" })
+        analysis_dir = ProjectAnalysisDir(analysis_dir_path)
+        self.assertEqual(
+            analysis_dir.report_project_runs("name,run,#samples,user,pi,analysts,order_numbers"),
+            "PromethION_Project_001_PerGynt\tPG1-2_20240513\t2\tPer Gynt\tHenrik Ibsen\tSam Beckett\t#00123")
+
 
 class TestFlowcellBasecallsInfo(unittest.TestCase):
 
