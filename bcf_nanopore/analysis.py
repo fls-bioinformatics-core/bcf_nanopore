@@ -58,6 +58,7 @@ class ProjectAnalysisDir:
       +-- 001_Run_name
       |     |
       |     +-- flowcell_basecalls.tsv
+      |         run.info
       |         report...
       |
       +-- 002_Run_name
@@ -73,16 +74,26 @@ class ProjectAnalysisDir:
 
     Arguments:
       path (str): path to the analysis directory
+      custom_project_metadata_items (list): optional
+        list of additional custom metadata items to
+        associate with the top-level analysis directory
+      custom_run_metadata_items (list): optional list of
+        additional custom metadata items to associate
+        with each run
     """
 
-    def __init__(self, path):
+    def __init__(self, path, custom_project_metadata_items=None,
+                 custom_run_metadata_items=None):
         # Top-level metadata
         self.path = os.path.abspath(path)
         print(self.path)
+        # Additional metadata items
+        self._custom_project_metadata_items = custom_project_metadata_items
+        self._custom_run_metadata_items = custom_run_metadata_items
         # Load top-level metadata
         self.project_info_file = os.path.join(self.path,
                                               "project.info")
-        self.info = ProjectInfo()
+        self.info = ProjectInfo(custom_items=self._custom_project_metadata_items)
         if os.path.exists(self.project_info_file):
             self.info.load(self.project_info_file)
         else:
@@ -196,6 +207,11 @@ The following files and directories have been automatically generated:
             print(f"   creating directory: '{run_dir}'")
             os.makedirs(run_dir)
             print(f"   populating run directory...")
+            # Create a metadata file
+            run_info_file = os.path.join(run_dir, "run.info")
+            run_info = RunInfo(custom_items=self._custom_run_metadata_items)
+            run_info["name"] = run.name
+            run_info.save(filen=run_info_file)
             # Create a TSV file with flow cell and base calls info
             flow_cell_basecalls_file = os.path.join(run_dir,
                                                     "flowcell_basecalls.tsv")
