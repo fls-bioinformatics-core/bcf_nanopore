@@ -601,7 +601,8 @@ The following files have been automatically generated:
                                              "run.info")
                 if os.path.exists(run_info_file):
                     try:
-                        value = RunInfo(run_info_file)[field]
+                        value = RunInfo(run_info_file,
+                                        custom_items=self._custom_run_metadata_items)[field]
                         got_value = True
                     except KeyError:
                         pass
