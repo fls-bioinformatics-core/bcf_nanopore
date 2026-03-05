@@ -430,8 +430,9 @@ class MockProjectAnalysisDir:
     def __init__(self, name):
         self.name = str(name)
         self.runs = {}
+        self.run_metadata = {}
 
-    def add_run(self, run, samples=None):
+    def add_run(self, run, samples=None, metadata=None):
         """
         Add a mock run to the analysis project
 
@@ -446,15 +447,32 @@ class MockProjectAnalysisDir:
                 "Sample2": ("barcode02","FC12345")
             }
 
+        Metadata values can be set by supplying a
+        dictionary via the 'metadata' argument which
+        maps metadata items to their values, for
+        example:
+
+        ::
+
+            metadata = {
+                "Order numbers": "#00123",
+            }
+
+        These are then written to the 'run.info' file
+        in the mock analysis directory.
+
         Arguments:
           run (str): name of the run to add
           samples (dict): optional, dictionary mapping
             sample names to (barcode,flowcell) tuples
+          metadata (dict): optional, dictionary mapping
+            items to value for the 'run.info' file
         """
         self.runs[run] = samples
+        self.run_metadata[run] = metadata
 
     def create(self, top_dir, data_dir=None , user=None, principal_investigator=None,
-               application=None, organism=None, project_id=None):
+               application=None, organism=None, project_id=None, extra_project_metadata=None):
         """
         Create mock PromethION analysis project directory
 
@@ -469,6 +487,9 @@ class MockProjectAnalysisDir:
           application (str): optional, application
           organism (str): optional, organism
           project_id (str): optional, project ID string
+          extra_project_metadata (dict): optional,
+            dictionary of extra metadata items and values
+            to add to the project metadata
         """
         # Make top level directory
         top_dir = Path(top_dir).absolute().joinpath(self.name)
@@ -499,6 +520,14 @@ class MockProjectAnalysisDir:
             project_info['data_dir'] = str(data_dir)
         project_info['platform'] = "promethion"
         project_info.save(filen=str(top_dir.joinpath("project.info")))
+        if extra_project_metadata:
+            # Append extra items to the metadata file
+            with open(str(top_dir.joinpath("project.info")), "at") as fp:
+                for key in extra_project_metadata:
+                    value = extra_project_metadata[key]
+                    if value is None:
+                        value = "."
+                    fp.write(f"{key}\t{value}\n")
         # Add in run subdirectories
         for ix, run in enumerate(self.runs.keys()):
             run_dir = top_dir.joinpath(f"{ix+1:03d}_{run}")
@@ -536,6 +565,14 @@ class MockProjectAnalysisDir:
                         fp.write(f"{sample}\t{barcode}\t{flowcell}\n")
             with open(run_dir.joinpath("samples.tsv"), "rt") as fp:
                 print(fp.read())
+            # Metadata file
+            with open(run_dir.joinpath("run.info"), "wt") as fp:
+                fp.write(f"Run name\t{run}\n")
+                if self.run_metadata[run]:
+                    for item, value in self.run_metadata[run].items():
+                        if value is None:
+                            value = "."
+                        fp.write(f"{item}\t{value}\n")
         return str(top_dir)
 
 def create_barcode_dirs(top_dir, number_of_barcodes=24):
