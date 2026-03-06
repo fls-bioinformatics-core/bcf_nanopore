@@ -202,7 +202,7 @@ def info(project_dir):
                                               file_types)]))
 
 
-def metadata(metadata_file, dump_json=False):
+def extract_metadata(metadata_file, dump_json=False):
     """
     Extract metadata from HTML report or JSON file
 
@@ -503,8 +503,8 @@ def bcf_nanopore_main():
     info_cmd.add_argument('project_dir',
                           help="top level PromethION project directory")
 
-    # Metadata command
-    md_cmd = sp.add_parser("metadata",
+    # Extract_metadata command
+    md_cmd = sp.add_parser("extract_metadata",
                            help="Extract metadata from HTML or JSON report")
     md_cmd.add_argument('file',
                         help="HTML or JSON report file")
@@ -668,8 +668,8 @@ def bcf_nanopore_main():
     elif args.command == "update":
         update(args.analysis_dir, args.project_dir,
                permissions=args.permissions, group=args.group)
-    elif args.command == "metadata":
-        metadata(args.file, dump_json=args.json)
+    elif args.command == "extract_metadata":
+        extract_metadata(args.file, dump_json=args.json)
     elif args.command == "report":
         if args.runs:
             mode = "runs"
