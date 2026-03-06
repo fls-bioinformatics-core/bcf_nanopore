@@ -298,8 +298,11 @@ def update(path, project_dir, permissions=None, group=None):
       group (str): update the filesystem group associated
         with the analysis directory to the supplied group name
     """
+    custom_project_metadata_items, custom_run_metadata_items = get_custom_metadata_items()
     # Read in data from the analysis directory
-    analysis_dir = ProjectAnalysisDir(path)
+    analysis_dir = ProjectAnalysisDir(path,
+                                      custom_project_metadata_items=custom_project_metadata_items,
+                                      custom_run_metadata_items=custom_run_metadata_items)
     # Do the update
     analysis_dir.update(project_dir)
     # Set permissions and group
