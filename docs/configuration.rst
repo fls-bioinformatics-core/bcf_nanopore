@@ -104,3 +104,6 @@ e.g. ``name+run``, or
 
 e.g. ``[_]:name+run``.
 
+If custom metadata items have also been defined then these are
+can also be specified in the reporting templates.
+
