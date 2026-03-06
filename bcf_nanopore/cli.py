@@ -260,6 +260,7 @@ def setup(project_dir, user, PI, application=None, organism=None, top_dir=None,
       group (str): update the filesystem group associated
         with the analysis directory to the supplied group name
     """
+    custom_project_metadata_items, custom_run_metadata_items = get_custom_metadata_items()
     # Read source project data
     project_name = os.path.basename(os.path.normpath(project_dir))
     # Create analysis dir
@@ -268,7 +269,9 @@ def setup(project_dir, user, PI, application=None, organism=None, top_dir=None,
     top_dir = os.path.abspath(top_dir)
     analysis_dir = ProjectAnalysisDir(
         os.path.join(top_dir,
-                     "%s_analysis" % project_name))
+                     "%s_analysis" % project_name),
+        custom_project_metadata_items=custom_project_metadata_items,
+        custom_run_metadata_items=custom_run_metadata_items)
     analysis_dir.create(project_dir,
                         user=user,
                         PI=PI,

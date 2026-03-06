@@ -10,6 +10,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from bcf_nanopore.analysis import ProjectAnalysisDir
+from bcf_nanopore.analysis import RunInfo
 from bcf_nanopore.mock import MockPromethionDataDir
 from bcf_nanopore.mock import MockProjectAnalysisDir
 from bcf_nanopore.cli import info as cli_info
@@ -45,10 +46,12 @@ class TestSetupCommand(unittest.TestCase):
 
     def setUp(self):
         self.wd = tempfile.mkdtemp()
+        self.cwd = os.getcwd()
 
     def tearDown(self):
         if Path(self.wd).exists():
             shutil.rmtree(self.wd)
+        os.chdir(self.cwd)
 
     def test_setup_single_run(self):
         """
@@ -203,6 +206,54 @@ class TestSetupCommand(unittest.TestCase):
         self.assertTrue(Path(analysis_dir_path).joinpath("ScriptCode").is_dir())
         self.assertTrue(Path(analysis_dir_path).joinpath("logs").is_dir())
         self.assertEqual(Path(analysis_dir_path).stat().st_gid, new_group)
+
+    def test_setup_custom_metadata(self):
+        """
+        setup: create new analysis directory with custom metadata
+        """
+        # Make a local config file
+        local_settings = os.path.join(self.wd, "bcf_nanopore.ini")
+        with open(local_settings, "wt") as fp:
+            fp.write("[metadata]\ncustom_project_metadata=supplier\ncustom_run_metadata=analyst,order_numbers\n")
+        os.chdir(self.wd)
+        # Create mock source directory
+        data_dir = MockPromethionDataDir("PromethION_Project_001_PerGynt")
+        data_dir.add_flow_cell("20240513_0829_1A_PAW15419_465bb23f",
+                               relpath=Path("PG1-4_20240513").joinpath("PG1-2"))
+        data_dir.add_basecalls_dir(str(Path("PG1-4_20240513").joinpath("Rebasecalling","PG1-2")),
+                                   flow_cell_name="20240513_0829_1A_PAW15419_465bb23f")
+        project_dir = data_dir.create(self.wd)
+        analysis_dir_path = str(Path(self.wd).joinpath("PromethION_Project_001_PerGynt_analysis"))
+        # Run the setup command
+        cli_setup(project_dir, "Per Gynt", "Henrik Ibsen", "Methylation study",
+                  "Human", top_dir=self.wd)
+        # Check the new project analysis directory
+        analysis_dir = ProjectAnalysisDir(analysis_dir_path)
+        self.assertTrue(analysis_dir.exists())
+        self.assertEqual(analysis_dir.path, analysis_dir_path)
+        self.assertEqual(analysis_dir.info.name, "PromethION_Project_001_PerGynt")
+        self.assertEqual(analysis_dir.info.id, "PROMETHION#001")
+        self.assertEqual(analysis_dir.info.platform, "promethion")
+        self.assertEqual(analysis_dir.info.data_dir, project_dir)
+        self.assertEqual(analysis_dir.info.user, "Per Gynt")
+        self.assertEqual(analysis_dir.info.PI, "Henrik Ibsen")
+        self.assertEqual(analysis_dir.info.application, "Methylation study")
+        self.assertEqual(analysis_dir.info.organism, "Human")
+        self.assertEqual(analysis_dir.info.supplier, None)
+        self.assertTrue(Path(analysis_dir_path).joinpath("README").exists())
+        self.assertTrue(Path(analysis_dir_path).joinpath("project.info").exists())
+        # Check sub-directories
+        self.assertTrue(Path(analysis_dir_path).joinpath("ScriptCode").is_dir())
+        self.assertTrue(Path(analysis_dir_path).joinpath("logs").is_dir())
+        # Check run directory
+        run_dir = Path(analysis_dir_path).joinpath("001_PG1-4_20240513")
+        self.assertTrue(run_dir.is_dir())
+        for f in ["README", "flowcell_basecalls.tsv", "samples.tsv", "run.info"]:
+            self.assertTrue(run_dir.joinpath(f).exists(),
+                            f"Expected file {f} not found in run directory")
+            run_info = RunInfo(run_dir.joinpath("run.info"))
+            self.assertEqual(run_info["analyst"], None)
+            self.assertEqual(run_info["order_numbers"], None)
 
 
 class TestUpdateCommand(unittest.TestCase):
