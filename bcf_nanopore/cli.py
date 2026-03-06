@@ -5,7 +5,6 @@
 #
 
 import os
-import json
 import tempfile
 import shutil
 from argparse import ArgumentParser
