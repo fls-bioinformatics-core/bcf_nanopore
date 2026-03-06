@@ -161,7 +161,7 @@ Usage:
 
 ::
 
-   bcf_nanopore metdata [--json] REPORT_FILE
+   bcf_nanopore metadata [--json] REPORT_FILE
 
 Extracts and prints JSON data extracted from ``REPORT_FILE``
 (which must either a HTML or JSON report from the PromethION
