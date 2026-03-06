@@ -538,10 +538,12 @@ class TestReportCommand(unittest.TestCase):
 
     def setUp(self):
         self.wd = tempfile.mkdtemp()
+        self.cwd = os.getcwd()
 
     def tearDown(self):
         if Path(self.wd).exists():
             shutil.rmtree(self.wd)
+        os.chdir(self.cwd)
 
     def test_report_project_in_default_mode(self):
         """
@@ -681,6 +683,82 @@ PromethION_Project_001_PerGynt	PROMETHION#001	PG3-4_20240529			Per Gynt	Henrik I
         cli_report(analysis_dir_path, mode="runs", fields=fields, out_file=out_file)
         expected_report = f"""20240513		Per Gynt	PROMETHION#001	PG1-2_20240513	2		Human	Methylation study	Henrik Ibsen	{analysis_dir_path}		{data_dir}
 20240513		Per Gynt	PROMETHION#001	PG3-4_20240529	2		Human	Methylation study	Henrik Ibsen	{analysis_dir_path}		{data_dir}
+"""
+        self.assertTrue(out_file.exists())
+        with open(out_file, "rt") as fp:
+            self.assertEqual(fp.read(), expected_report)
+
+    def test_report_project_in_runs_mode_including_custom_metadata(self):
+        """
+        report: generate report of runs including custom metadata
+        """
+        # Make a local config file
+        local_settings = os.path.join(self.wd, "bcf_nanopore.ini")
+        with open(local_settings, "wt") as fp:
+            fp.write("[metadata]\ncustom_project_metadata=supplier\ncustom_run_metadata=analyst,order_numbers\n")
+        os.chdir(self.wd)
+        # Set up run with custom metadata
+        data_dir = "/mnt/data/PromethION_Project_001_PerGynt"
+        analysis_dir = MockProjectAnalysisDir("PromethION_Project_001_PerGynt_analysis")
+        analysis_dir.add_run("PG1-2_20240513",
+                             samples={ "PG1": ("NB03", "PAW14589"),
+                                       "PG2": ("NB04", "PAW14589")},
+                             metadata={ "Order numbers": "#00124",
+                                        "Analyst": "Sam Beckett" })
+        analysis_dir.add_run("PG3-4_20240529",
+                             samples={ "PG3": ("NB07", "PAW15894"),
+                                       "PG4": ("NB08", "PAW15894")},
+                             metadata={ "Order numbers": "#00456" })
+        analysis_dir_path = analysis_dir.create(
+            self.wd,
+            user="Per Gynt",
+            principal_investigator="Henrik Ibsen",
+            application="Methylation study",
+            organism="Human",
+            data_dir=data_dir,
+            project_id="PROMETHION#001",
+            extra_project_metadata={ "Supplier": "ONT" })
+        fields = "id,run,#samples,supplier,analyst,order_numbers"
+        out_file = Path(self.wd).joinpath("report.txt")
+        cli_report(analysis_dir_path, mode="runs", fields=fields, out_file=out_file)
+        expected_report = f"""PROMETHION#001	PG1-2_20240513	2	ONT	Sam Beckett	#00124
+PROMETHION#001	PG3-4_20240529	2	ONT	?	#00456
+"""
+        self.assertTrue(out_file.exists())
+        with open(out_file, "rt") as fp:
+            self.assertEqual(fp.read(), expected_report)
+
+    def test_report_project_in_runs_mode_including_custom_metadata_not_set(self):
+        """
+        report: generate report of runs including custom metadata (defined but not set)
+        """
+        # Make a local config file defining custom metadata items
+        local_settings = os.path.join(self.wd, "bcf_nanopore.ini")
+        with open(local_settings, "wt") as fp:
+            fp.write("[metadata]\ncustom_project_metadata=supplier\ncustom_run_metadata=analyst,order_numbers\n")
+        os.chdir(self.wd)
+        # Set up run without setting custom metadata
+        data_dir = "/mnt/data/PromethION_Project_001_PerGynt"
+        analysis_dir = MockProjectAnalysisDir("PromethION_Project_001_PerGynt_analysis")
+        analysis_dir.add_run("PG1-2_20240513",
+                             samples={ "PG1": ("NB03", "PAW14589"),
+                                       "PG2": ("NB04", "PAW14589")})
+        analysis_dir.add_run("PG3-4_20240529",
+                             samples={ "PG3": ("NB07", "PAW15894"),
+                                       "PG4": ("NB08", "PAW15894")})
+        analysis_dir_path = analysis_dir.create(
+            self.wd,
+            user="Per Gynt",
+            principal_investigator="Henrik Ibsen",
+            application="Methylation study",
+            organism="Human",
+            data_dir=data_dir,
+            project_id="PROMETHION#001")
+        fields = "id,run,#samples,supplier,analyst,order_numbers"
+        out_file = Path(self.wd).joinpath("report.txt")
+        cli_report(analysis_dir_path, mode="runs", fields=fields, out_file=out_file)
+        expected_report = f"""PROMETHION#001	PG1-2_20240513	2	?	?	?
+PROMETHION#001	PG3-4_20240529	2	?	?	?
 """
         self.assertTrue(out_file.exists())
         with open(out_file, "rt") as fp:

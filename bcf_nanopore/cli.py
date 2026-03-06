@@ -333,9 +333,12 @@ def report(path, mode="summary", fields=None, template=None, out_file=None,
         recent runs (default is report all runs)
     """
     # Get configuration settings
+    custom_project_metadata_items, custom_run_metadata_items = get_custom_metadata_items()
     reporting_templates = get_reporting_templates()
     # Read in data
-    analysis_dir = ProjectAnalysisDir(path)
+    analysis_dir = ProjectAnalysisDir(path,
+                                      custom_project_metadata_items=custom_project_metadata_items,
+                                      custom_run_metadata_items=custom_run_metadata_items)
     # Summary mode
     if mode == "summary":
         report_text = analysis_dir.report_project_summary(most_recent=most_recent)
