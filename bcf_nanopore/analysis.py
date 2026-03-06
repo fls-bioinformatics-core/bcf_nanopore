@@ -22,6 +22,7 @@ import shutil
 import logging
 from pathlib import Path
 from auto_process_ngs.metadata import MetadataDict
+from auto_process_ngs.metadata import item_to_name
 from auto_process_ngs.utils import get_numbered_subdir
 from bcftbx.TabFile import TabFile
 from bcftbx.utils import extract_prefix
@@ -741,14 +742,16 @@ class ProjectInfo(MetadataDict):
                 # Create a name for writing to file, by replacing
                 # underscores with spaces and then capitalizing
                 # e.g. "order_number" -> "Order number"
-                name = str(item)
-                if name.lower() != name:
-                    raise Exception(f"'{name}': metadata items must be lowercase")
-                if name[0].isdigit():
-                    raise Exception(f"'{name}': metadata items must not start with a number")
-                if any([not (c.isalnum() or c == "_") for c in name]):
-                    raise Exception(f"'{name}': metadata items must only contain letters and underscores")
-                name = str(item.replace("_", " ").capitalize())
+                # Check custom item name
+                if item[0].isdigit():
+                    raise Exception(f"'{item}': metadata items must not start with a number")
+                if any([not (c.isalnum() or c == "_") for c in item]):
+                    raise Exception(f"'{item}': metadata items must only contain letters and underscores")
+                if item[0].isupper() and not any([c.isupper() if c.isalpha() else False for c in item[1:]]):
+                    raise Exception(f"'{item}': metadata items cannot be capitalized (use '{item.lower()}' instead)")
+                name = item_to_name(item)
+                if item in data_items:
+                    raise Exception(f"Custom metadata item '{item}' duplicates an existing item")
                 data_items[item] = name
                 order.append(item)
         MetadataDict.__init__(self,
@@ -776,14 +779,16 @@ class RunInfo(MetadataDict):
                 # Create a name for writing to file, by replacing
                 # underscores with spaces and then capitalizing
                 # e.g. "order_number" -> "Order number"
-                name = str(item)
-                if name.lower() != name:
-                    raise Exception(f"'{name}': metadata items must be lowercase")
-                if name[0].isdigit():
-                    raise Exception(f"'{name}': metadata items must not start with a number")
-                if any([not (c.isalnum() or c == "_") for c in name]):
-                    raise Exception(f"'{name}': metadata items must only contain letters and underscores")
-                name = str(item.replace("_", " ").capitalize())
+                # Check custom item name
+                if item[0].isdigit():
+                    raise Exception(f"'{item}': metadata items must not start with a number")
+                if any([not (c.isalnum() or c == "_") for c in item]):
+                    raise Exception(f"'{item}': metadata items must only contain letters and underscores")
+                if item[0].isupper() and not any([c.isupper() if c.isalpha() else False for c in item[1:]]):
+                    raise Exception(f"'{item}': metadata items cannot be capitalized (use '{item.lower()}' instead)")
+                name = item_to_name(item)
+                if item in data_items:
+                    raise Exception(f"Custom metadata item '{item}' duplicates an existing item")
                 data_items[item] = name
                 order.append(item)
         MetadataDict.__init__(self,
