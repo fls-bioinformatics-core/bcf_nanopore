@@ -312,7 +312,7 @@ def update(path, project_dir, permissions=None, group=None):
         set_group(group, analysis_dir.path)
 
 
-def metadata(path, items=None):
+def metadata(path, items=None, update=False):
     """
     Display or update metadata for Promethion project analysis directory
 
@@ -320,6 +320,8 @@ def metadata(path, items=None):
         path (str): path to PromethION project analysis dir
         items (list): list of metadata update specifications, with
           values of the form "[RUN:]ITEM=VALUE"
+        update (bool): if True then update items in legacy metadata
+          files
     """
     # Get configuration settings
     custom_project_metadata_items, custom_run_metadata_items = get_custom_metadata_items()
@@ -328,6 +330,20 @@ def metadata(path, items=None):
     analysis_dir = ProjectAnalysisDir(path,
                                       custom_project_metadata_items=custom_project_metadata_items,
                                       custom_run_metadata_items=custom_run_metadata_items)
+    if update:
+        # Update metadata items
+        # Should be sufficient to load and then save
+        print("...updating top-level metadata file")
+        analysis_dir.info.save()
+        for run in analysis_dir.run_dirs:
+            print(f"...updating run '{run}' metadata file")
+            run_info = RunInfo(os.path.join(analysis_dir.path,
+                                            analysis_dir.run_dirs[run],
+                                            "run.info"))
+            if run_info.name is None:
+                print(f"...setting missing run name for '{run}'")
+                run_info["name"] = run
+            run_info.save()
     if items:
         # Update metadata values
         for raw_item in items:
@@ -342,15 +358,15 @@ def metadata(path, items=None):
                 item, value = item.split("=")
             except ValueError:
                 raise Exception(f"{raw_item}: invalid metadata item specification")
-            # Update the metadata
+            # Set values for specific metadata
             if run is None:
-                # Update project metadata item
-                print(f"...updating '{item}': '{value}'")
+                # Update project metadata values
+                print(f"...setting '{item}': '{value}'")
                 analysis_dir.info[item] = value
                 analysis_dir.info.save()
             elif run in analysis_dir.runs:
-                # Update run metadata item
-                print(f"...updating '{item}' for run '{run}': '{value}'")
+                # Update run metadata values
+                print(f"...setting '{item}' for run '{run}': '{value}'")
                 run_info = RunInfo(os.path.join(analysis_dir.path,
                                                 analysis_dir.run_dirs[run],
                                                 "run.info"),
@@ -685,6 +701,10 @@ def bcf_nanopore_main():
                               "specified then update the item associated "
                               "with that run, otherwise update the item "
                               "associated with the project")
+    metadata_cmd.add_argument('-u', '--update', action="store_true",
+                              dest="update",
+                              help="update legacy metadata items and add missing "
+                              "values")
 
     # Fetch command
     default_runner = settings.runners.rsync
@@ -741,7 +761,8 @@ def bcf_nanopore_main():
         update(args.analysis_dir, args.project_dir,
                permissions=args.permissions, group=args.group)
     elif args.command == "metadata":
-        metadata(args.analysis_dir, items=args.item_value)
+        metadata(args.analysis_dir, items=args.item_value,
+                 update=args.update)
     elif args.command == "extract_metadata":
         extract_metadata(args.file, dump_json=args.json)
     elif args.command == "report":

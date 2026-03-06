@@ -872,3 +872,42 @@ class TestMetadataCommand(unittest.TestCase):
                 if item == "idx":
                     continue
                 self.assertEqual(run_info[item], expected_metadata[run][item])
+
+    def test_metadata_update_legacy(self):
+        """
+        metadata: update legacy metadata to add missing fields and values
+        """
+        # Set up run
+        data_dir = "/mnt/data/PromethION_Project_001_PerGynt"
+        analysis_dir = MockProjectAnalysisDir("PromethION_Project_001_PerGynt_analysis")
+        analysis_dir.add_run("PG1-2_20240513",
+                             samples={ "PG1": ("NB03", "PAW14589"),
+                                       "PG2": ("NB04", "PAW14589")})
+        analysis_dir.add_run("PG3-4_20240529",
+                             samples={ "PG3": ("NB07", "PAW15894"),
+                                       "PG4": ("NB08", "PAW15894")})
+        analysis_dir_path = analysis_dir.create(
+            self.wd,
+            user="Per Gynt",
+            principal_investigator="Henrik Ibsen",
+            application="Methylation study",
+            organism="Human",
+            data_dir=data_dir,
+            project_id="PROMETHION#001")
+        # Remove the run.info files (to simulate a legacy directory)
+        for run_dir in ["001_PG1-2_20240513", "002_PG3-4_20240529"]:
+            run_info_file = os.path.join(analysis_dir_path, run_dir, "run.info")
+            if os.path.exists(run_info_file):
+                os.remove(run_info_file)
+        # Check that metadata items are not defined
+        for run_dir in ["001_PG1-2_20240513", "002_PG3-4_20240529"]:
+            run = "_".join(run_dir.split("_")[1:])
+            run_info = RunInfo(os.path.join(analysis_dir_path, run_dir, "run.info"))
+            self.assertEqual(run_info["name"], None)
+        # Update metadata items
+        cli_metadata(analysis_dir_path, update=True)
+        # Check run metadata was updated
+        for run_dir in ["001_PG1-2_20240513", "002_PG3-4_20240529"]:
+            run = "_".join(run_dir.split("_")[1:])
+            run_info = RunInfo(os.path.join(analysis_dir_path, run_dir, "run.info"))
+            self.assertEqual(run_info["name"], run)
