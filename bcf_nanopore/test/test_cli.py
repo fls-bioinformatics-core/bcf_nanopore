@@ -841,8 +841,6 @@ class TestMetadataCommand(unittest.TestCase):
                                          "PG1-2_20240513:order_numbers=#00124",
                                          "PG1-2_20240513:analyst=Sam Beckett",
                                          "PG3-4_20240529:order_numbers=#00456"])
-        # analyst=Sam Beckett
-        # order_numbers=#00456
         # Check project metadata was updated
         project_info = ProjectInfo(os.path.join(analysis_dir_path, "project.info"))
         self.assertEqual(project_info.user, "Per Gynt")
