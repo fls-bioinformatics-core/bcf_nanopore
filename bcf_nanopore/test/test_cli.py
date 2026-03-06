@@ -10,6 +10,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from bcf_nanopore.analysis import ProjectAnalysisDir
+from bcf_nanopore.analysis import ProjectInfo
 from bcf_nanopore.analysis import RunInfo
 from bcf_nanopore.mock import MockPromethionDataDir
 from bcf_nanopore.mock import MockProjectAnalysisDir
@@ -18,6 +19,7 @@ from bcf_nanopore.cli import setup as cli_setup
 from bcf_nanopore.cli import update as cli_update
 from bcf_nanopore.cli import fetch as cli_fetch
 from bcf_nanopore.cli import report as cli_report
+from bcf_nanopore.cli import metadata as cli_metadata
 
 
 class TestInfoCommand(unittest.TestCase):
@@ -763,3 +765,110 @@ PROMETHION#001	PG3-4_20240529	2	?	?	?
         self.assertTrue(out_file.exists())
         with open(out_file, "rt") as fp:
             self.assertEqual(fp.read(), expected_report)
+
+
+class TestMetadataCommand(unittest.TestCase):
+
+    def setUp(self):
+        self.wd = tempfile.mkdtemp()
+        self.cwd = os.getcwd()
+
+    def tearDown(self):
+        if Path(self.wd).exists():
+            shutil.rmtree(self.wd)
+        os.chdir(self.cwd)
+
+    def test_metadata_set_project_metadata(self):
+        """
+        metadata: set project metadata items
+        """
+        # Set up run
+        data_dir = "/mnt/data/PromethION_Project_001_PerGynt"
+        analysis_dir = MockProjectAnalysisDir("PromethION_Project_001_PerGynt_analysis")
+        analysis_dir.add_run("PG1-2_20240513",
+                             samples={ "PG1": ("NB03", "PAW14589"),
+                                       "PG2": ("NB04", "PAW14589")})
+        analysis_dir.add_run("PG3-4_20240529",
+                             samples={ "PG3": ("NB07", "PAW15894"),
+                                       "PG4": ("NB08", "PAW15894")})
+        analysis_dir_path = analysis_dir.create(
+            self.wd,
+            user="Per Gynt",
+            principal_investigator="Henrik Ibsen",
+            application="Methylation study",
+            organism="Human",
+            data_dir=data_dir,
+            project_id="PROMETHION#001")
+        # Update custom metadata items
+        cli_metadata(analysis_dir_path, ["user=Eliza Doolittle",
+                                         "PI=George Bernard-Shaw",
+                                         "organism=Mouse"])
+        # Check metadata was updated
+        project_info = ProjectInfo(os.path.join(analysis_dir_path, "project.info"))
+        self.assertEqual(project_info.user, "Eliza Doolittle")
+        self.assertEqual(project_info.PI, "George Bernard-Shaw")
+        self.assertEqual(project_info.application, "Methylation study")
+        self.assertEqual(project_info.organism, "Mouse")
+
+    def test_metadata_set_custom_metadata(self):
+        """
+        metadata: set custom metadata items
+        """
+        # Make a local config file
+        local_settings = os.path.join(self.wd, "bcf_nanopore.ini")
+        with open(local_settings, "wt") as fp:
+            fp.write("[metadata]\ncustom_project_metadata=supplier\ncustom_run_metadata=analyst,order_numbers\n")
+        os.chdir(self.wd)
+        # Set up run with custom metadata
+        data_dir = "/mnt/data/PromethION_Project_001_PerGynt"
+        analysis_dir = MockProjectAnalysisDir("PromethION_Project_001_PerGynt_analysis")
+        analysis_dir.add_run("PG1-2_20240513",
+                             samples={ "PG1": ("NB03", "PAW14589"),
+                                       "PG2": ("NB04", "PAW14589")})
+        analysis_dir.add_run("PG3-4_20240529",
+                             samples={ "PG3": ("NB07", "PAW15894"),
+                                       "PG4": ("NB08", "PAW15894")})
+        analysis_dir_path = analysis_dir.create(
+            self.wd,
+            user="Per Gynt",
+            principal_investigator="Henrik Ibsen",
+            application="Methylation study",
+            organism="Human",
+            data_dir=data_dir,
+            project_id="PROMETHION#001")
+        # Update custom metadata items
+        cli_metadata(analysis_dir_path, ["supplier=ONT",
+                                         "PG1-2_20240513:order_numbers=#00124",
+                                         "PG1-2_20240513:analyst=Sam Beckett",
+                                         "PG3-4_20240529:order_numbers=#00456"])
+        # analyst=Sam Beckett
+        # order_numbers=#00456
+        # Check project metadata was updated
+        project_info = ProjectInfo(os.path.join(analysis_dir_path, "project.info"))
+        self.assertEqual(project_info.user, "Per Gynt")
+        self.assertEqual(project_info.PI, "Henrik Ibsen")
+        self.assertEqual(project_info.application, "Methylation study")
+        self.assertEqual(project_info.organism, "Human")
+        self.assertEqual(project_info.supplier, "ONT")
+        # Check run metadata was updated
+        expected_metadata = {
+            "PG1-2_20240513": {
+                "idx": "001",
+                "order_numbers": "#00124",
+                "analyst": "Sam Beckett"
+            },
+            "PG3-4_20240529": {
+                "idx": "002",
+                "order_numbers": "#00456",
+                "analyst": None
+            }
+        }
+        for run in expected_metadata:
+            idx = expected_metadata[run]["idx"]
+            run_info = RunInfo(os.path.join(analysis_dir_path,
+                                            f"{idx}_{run}",
+                                            "run.info"))
+            for item in expected_metadata[run]:
+                if item == "idx":
+                    continue
+                self.assertEqual(run_info[item], expected_metadata[run][item])

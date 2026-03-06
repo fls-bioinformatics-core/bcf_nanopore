@@ -16,6 +16,7 @@ from auto_process_ngs.fileops import set_permissions
 from bcftbx.JobRunner import fetch_runner
 from bcftbx.JobRunner import BaseJobRunner
 from .analysis import ProjectAnalysisDir
+from .analysis import RunInfo
 from .nanopore.promethion import BasecallsMetadata
 from .nanopore.promethion import ProjectDir
 from .settings import Settings
@@ -311,6 +312,65 @@ def update(path, project_dir, permissions=None, group=None):
     if group:
         set_group(group, analysis_dir.path)
 
+
+def metadata(path, items=None):
+    """
+    Display or update metadata for Promethion project analysis directory
+
+    Arguments:
+        path (str): path to PromethION project analysis dir
+        items (list): list of metadata update specifications, with
+          values of the form "[RUN:]ITEM=VALUE"
+    """
+    # Get configuration settings
+    custom_project_metadata_items, custom_run_metadata_items = get_custom_metadata_items()
+    reporting_templates = get_reporting_templates()
+    # Read in data
+    analysis_dir = ProjectAnalysisDir(path,
+                                      custom_project_metadata_items=custom_project_metadata_items,
+                                      custom_run_metadata_items=custom_run_metadata_items)
+    if items:
+        # Update metadata values
+        for raw_item in items:
+            # Extract run
+            try:
+                run, item = raw_item.split(":")
+            except ValueError:
+                run = None
+                item = raw_item
+            # Split item and value
+            try:
+                item, value = item.split("=")
+            except ValueError:
+                raise Exception(f"{raw_item}: invalid metadata item specification")
+            # Update the metadata
+            if run is None:
+                # Update project metadata item
+                print(f"...updating '{item}': '{value}'")
+                analysis_dir.info[item] = value
+                analysis_dir.info.save()
+            elif run in analysis_dir.runs:
+                # Update run metadata item
+                print(f"...updating '{item}' for run '{run}': '{value}'")
+                run_info = RunInfo(os.path.join(analysis_dir.path,
+                                                analysis_dir.run_dirs[run],
+                                                "run.info"),
+                                   custom_items=custom_run_metadata_items)
+                run_info[item] = value
+                run_info.save()
+    else:
+        # Display project-level metadata
+        for item in analysis_dir.info:
+            print(f"{item}:\t{analysis_dir.info[item]}")
+        # Display run-level metadata for each run
+        for run in analysis_dir.runs:
+            print(f"\n{run}")
+            run_info = RunInfo(os.path.join(analysis_dir.path,
+                                            analysis_dir.run_dirs[run],
+                                            "run.info"),
+                               custom_items=custom_run_metadata_items)
+            for item in run_info:
+                print(f"\t{item}:\t{run_info[item]}")
 
 def report(path, mode="summary", fields=None, template=None, out_file=None,
            most_recent=None):
@@ -614,6 +674,19 @@ def bcf_nanopore_main():
                             type=int,
                             help="only report N most recent runs")
 
+    # Metadata command
+    metadata_cmd = sp.add_parser("metadata",
+                                 help="report/update metadata for a PromethION "
+                                 "analysis directory")
+    metadata_cmd.add_argument('analysis_dir',
+                              help="PromethION analysis directory")
+    metadata_cmd.add_argument('--set', action="append",
+                              dest="item_value", metavar="[RUN:]ITEM=VALUE",
+                              help="set metadata ITEM to VALUE; if RUN is "
+                              "specified then update the item associated "
+                              "with that run, otherwise update the item "
+                              "associated with the project")
+
     # Fetch command
     default_runner = settings.runners.rsync
     fetch_cmd = sp.add_parser("fetch",
@@ -668,6 +741,8 @@ def bcf_nanopore_main():
     elif args.command == "update":
         update(args.analysis_dir, args.project_dir,
                permissions=args.permissions, group=args.group)
+    elif args.command == "metadata":
+        metadata(args.analysis_dir, items=args.item_value)
     elif args.command == "extract_metadata":
         extract_metadata(args.file, dump_json=args.json)
     elif args.command == "report":
