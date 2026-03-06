@@ -78,7 +78,7 @@ class Settings(GenericSettings):
         Arguments:
           settings_file (str): if set then use this
             as the settings file; otherwise attempt
-            locate a file by searching the default
+            to locate a file by searching the default
             locations
         """
         if settings_file is None:
