@@ -443,7 +443,7 @@ The following files have been automatically generated:
             most_recent (int): optional, number of most recent
             runs to report
         """
-        fields = [f.strip().lower() for f in fields.split(',')]
+        fields = [f.strip() for f in fields.split(',')]
         output = []
         if not most_recent:
             # Report all runs
@@ -509,7 +509,7 @@ The following files have been automatically generated:
           str: value associated with the field
         """
         delimiter = " "
-        field = field.strip().lower()
+        field = field.strip()
         if field.startswith("["):
             # Handle custom delimiter for composite field
             field_ = field.split(":")
@@ -528,7 +528,7 @@ The following files have been automatically generated:
             return delimiter.join([str(x) for x in value])
         # Single field specified
         fmt_func = fmt_value
-        if field == "" or field == "null":
+        if field == "" or field.lower() == "null":
             value = ''
         elif field == "name":
             value = self.info.name
