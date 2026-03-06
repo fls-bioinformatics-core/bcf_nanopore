@@ -142,7 +142,7 @@ Usage:
 
 ::
 
-    bcf_nanopore metadata [--set [RUN:]ITEM=VALUE...] ANALYSIS_DIR
+    bcf_nanopore metadata [--set [RUN:]ITEM=VALUE...] [--update] ANALYSIS_DIR
 
 Report or update metadata items associated with ``ANALYSIS_DIR`` and its
 runs.
@@ -159,6 +159,11 @@ Both built-in and custom metadata items can be updated using the
 
 If no ``--set`` arguments are specified then the command will display the
 current metadata values.
+
+In addition the ``--update`` argument can be specified to force updating of
+the items in the metadata files even if no values were updated; this is
+intended for updating "legacy" analysis project directories (i.e. those
+produced by earlier versions of the software).
 
 ----------
 ``report``
