@@ -82,7 +82,7 @@ class TestSetupCommand(unittest.TestCase):
         # Check run directory
         run_dir = Path(analysis_dir_path).joinpath("001_PG1-4_20240513")
         self.assertTrue(run_dir.is_dir())
-        for f in ["README", "flowcell_basecalls.tsv", "samples.tsv"]:
+        for f in ["README", "flowcell_basecalls.tsv", "samples.tsv", "run.info"]:
             self.assertTrue(run_dir.joinpath(f).exists(),
                             f"Expected file {f} not found in run directory")
 
@@ -121,7 +121,7 @@ class TestSetupCommand(unittest.TestCase):
         for run in ["001_PG1-2_20240513", "002_PG3-4_20240529"]:
             run_dir = Path(analysis_dir_path).joinpath(run)
             self.assertTrue(run_dir.is_dir())
-            for f in ["README", "flowcell_basecalls.tsv", "samples.tsv"]:
+            for f in ["README", "flowcell_basecalls.tsv", "samples.tsv", "run.info"]:
                 self.assertTrue(run_dir.joinpath(f).exists(),
                                 f"Expected file {f} not found in run directory "
                                 f"'{run}'")
