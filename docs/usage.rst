@@ -134,6 +134,32 @@ will copy POD5, FASTQ and BAM files, whereas
 
 will only copy FASTQ and BAM files.
 
+------------
+``metadata``
+------------
+
+Usage:
+
+::
+
+    bcf_nanopore metadata [--set [RUN:]ITEM=VALUE...] ANALYSIS_DIR
+
+Report or update metadata items associated with ``ANALYSIS_DIR`` and its
+runs.
+
+The ``--set`` option can be specified multiple times to update the values
+associated with several items in a single invocation.
+
+Updated values are specified with the syntax ``[RUN:]ITEM=VALUE``; if a
+run name is specified then ``ITEM`` should be a metadata item associated
+with the run, otherwise it should be a project-level metadata item.
+
+Both built-in and custom metadata items can be updated using the
+``metadata`` command.
+
+If no ``--set`` arguments are specified then the command will display the
+current metadata values.
+
 ----------
 ``report``
 ----------
