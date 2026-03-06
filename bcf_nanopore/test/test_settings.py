@@ -32,7 +32,9 @@ class TestSettings(unittest.TestCase):
         # Runners
         self.assertTrue(isinstance(s.runners.rsync,
                                    SimpleJobRunner))
-        # Reporting templates
+        # Custom metadata
+        self.assertEqual(s.metadata.custom_project_metadata, None)
+        self.assertEqual(s.metadata.custom_run_metadata, None)
 
     def test_settings_from_config_file(self):
         """
@@ -55,6 +57,22 @@ rsync = SimpleJobRunner(nslots=4)
         self.assertTrue(isinstance(s.runners.rsync,
                                    SimpleJobRunner))
         self.assertEqual(s.runners.rsync.nslots, 4)
+
+    def test_settings_custom_metadata_items(self):
+        """
+        Settings: load custom metadata settings from config .ini file
+        """
+        settings_file = Path(self.wd).joinpath("bcf_nanopore.ini")
+        with open(settings_file, "wt") as fp:
+            fp.write("""[metadata]
+custom_project_metadata = supplier
+custom_run_metadata = order_numbers,analysts
+""")
+        # Load settings
+        s = Settings(settings_file)
+        # Custom metadata
+        self.assertEqual(s.metadata.custom_project_metadata, "supplier")
+        self.assertEqual(s.metadata.custom_run_metadata, "order_numbers,analysts")
 
     def test_settings_reporting_templates(self):
         """

@@ -6,6 +6,11 @@
 ;permissions = None
 ;group = None
 
+# Define custom metadata items for project and run levels
+;[metadata]
+;custom_project_metadata = supplier
+;custom_run_metadata = analysts,order_numbers
+
 # Define runners for specific jobs
 ;[runners]
 ;rsync = SimpleJobRunner

@@ -33,6 +33,21 @@ specification.
 * ``rsync``: runner for large and/or long-running data transfer
   operations (e.g. fetching raw data files)
 
+--------------
+Metadata items
+--------------
+
+Additional site-specific metadata items can be configured in the
+``metadata`` section:
+
+* ``custom_project_metadata``: specifies a comma-separated list of
+  metadata item names to store at the project level
+* ``custom_run_metadata``: specifies a comma-separated list of
+  metadata item names to store for each run
+
+Note that metadata item names can only contain letters, numbers
+and the underscore character, and cannot start with a digit).
+
 -------------------
 Reporting templates
 -------------------

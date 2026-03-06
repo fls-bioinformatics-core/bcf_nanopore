@@ -1,7 +1,7 @@
 #!/bin/env python
 #
 #     settings.py: handle package configuration
-#     Copyright (C) University of Manchester 2025 Peter Briggs
+#     Copyright (C) University of Manchester 2025-2026 Peter Briggs
 #
 
 """
@@ -54,6 +54,8 @@ class Settings(GenericSettings):
                 "general": { "default_runner": jobrunner,
                              "permissions": str,
                              "group": str },
+                "metadata": { "custom_project_metadata": str,
+                              "custom_run_metadata": str },
                 "runners": { "rsync": jobrunner },
                 "reporting_templates": { "*": str },
             },
