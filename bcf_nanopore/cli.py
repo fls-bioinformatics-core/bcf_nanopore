@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #
 #     cli.py: implement CLI for managing PromethION data for BCF
-#     Copyright (C) University of Manchester 2024-2025 Peter Briggs
+#     Copyright (C) University of Manchester 2024-2026 Peter Briggs
 #
 
 import os
@@ -24,17 +24,78 @@ from .utils import fmt_value
 from .utils import fmt_yes_no
 from . import get_version
 
-# Configuration
-__settings = Settings()
 
 # File types
 FILE_TYPES = [ "POD5", "FASTQ", "BAM" ]
 FILE_TYPES_LOWER = [t.lower() for t in FILE_TYPES]
 
-# Reporting templates from configuration
-REPORTING_TEMPLATES = {}
-for t in [t for t in __settings.reporting_templates]:
-    REPORTING_TEMPLATES[t] = __settings.reporting_templates[t]
+
+def get_settings():
+    """
+    Fetch the configuration settings
+
+    Returns
+      Settings: a Settings instance with the default
+        configuration parameters loaded
+    """
+    return Settings()
+
+
+def get_reporting_templates(settings=None):
+    """
+    Return the configured reporting templates
+
+    Returns the reporting templates defined in the configuration
+    file as a dictionary, with the template names as keys and
+    the templates as the associated values.
+
+    Arguments:
+      settings (Settings): a Settings instance with the
+        configuration parameters to use (otherwise default
+        settings will be used)
+
+    Returns:
+      Dictionary of reporting templates.
+    """
+    if settings is None:
+        settings = get_settings()
+    templates = {}
+    for t in [t for t in settings.reporting_templates]:
+        templates[t] = settings.reporting_templates[t]
+    return templates
+
+
+def get_custom_metadata_items(settings=None):
+    """
+    Returns custom project and run metadata items
+
+    Returns the custom metadata items defined in the configuration
+    file for project and run levels.
+
+    If no items are defined, returns None; otherwise the items
+    are returned as lists.
+
+    Arguments:
+      settings (Settings): a Settings instance with the
+        configuration parameters to use (otherwise default
+        settings will be used)
+
+    Returns:
+      Tuple: tuple of (project_metadata, run_metadata) where the
+        metadata items are returned as lists, or None if no items
+        are defined.
+    """
+    if settings is None:
+        settings = get_settings()
+    try:
+        project_metadata_items = settings.metadata.custom_project_metadata.split(",")
+    except AttributeError:
+        project_metadata_items = None
+    try:
+        run_metadata_items = settings.metadata.custom_run_metadata.split(",")
+    except AttributeError:
+        run_metadata_items = None
+    return (project_metadata_items, run_metadata_items)
 
 
 def config():
@@ -265,6 +326,8 @@ def report(path, mode="summary", fields=None, template=None, out_file=None,
       most_recent (int): optional, only report this number of most
         recent runs (default is report all runs)
     """
+    # Get configuration settings
+    reporting_templates = get_reporting_templates()
     # Read in data
     analysis_dir = ProjectAnalysisDir(path)
     # Summary mode
@@ -277,7 +340,7 @@ def report(path, mode="summary", fields=None, template=None, out_file=None,
             fields = "name,id,run,NULL,NULL,user,pi,application,organism,NULL,#samples,samples"
         if template:
             try:
-                fields = REPORTING_TEMPLATES[template]
+                fields = reporting_templates[template]
             except KeyError:
                 raise Exception("%s: undefined template" % template)
         # Report
@@ -408,8 +471,9 @@ def fetch(project_dir, target_dir, file_types=None, dry_run=False,
 def bcf_nanopore_main():
 
     # Defaults
-    default_permissions = __settings.general.permissions
-    default_group = __settings.general.group
+    settings = get_settings()
+    default_permissions = settings.general.permissions
+    default_group = settings.general.group
 
     # Main parser
     p = ArgumentParser()
@@ -542,7 +606,7 @@ def bcf_nanopore_main():
                             help="only report N most recent runs")
 
     # Fetch command
-    default_runner = __settings.runners.rsync
+    default_runner = settings.runners.rsync
     fetch_cmd = sp.add_parser("fetch",
                               help="fetch BAM files from PromethION project "
                               "directory")
