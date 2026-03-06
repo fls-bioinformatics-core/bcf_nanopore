@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #
 #     analysis: handle analyses of ONT PromethION data
-#     Copyright (C) University of Manchester 2025 Peter Briggs
+#     Copyright (C) University of Manchester 2025-2026 Peter Briggs
 #
 
 """
@@ -22,6 +22,7 @@ import shutil
 import logging
 from pathlib import Path
 from auto_process_ngs.metadata import MetadataDict
+from auto_process_ngs.metadata import item_to_name
 from auto_process_ngs.utils import get_numbered_subdir
 from bcftbx.TabFile import TabFile
 from bcftbx.utils import extract_prefix
@@ -58,6 +59,7 @@ class ProjectAnalysisDir:
       +-- 001_Run_name
       |     |
       |     +-- flowcell_basecalls.tsv
+      |         run.info
       |         report...
       |
       +-- 002_Run_name
@@ -73,16 +75,26 @@ class ProjectAnalysisDir:
 
     Arguments:
       path (str): path to the analysis directory
+      custom_project_metadata_items (list): optional
+        list of additional custom metadata items to
+        associate with the top-level analysis directory
+      custom_run_metadata_items (list): optional list of
+        additional custom metadata items to associate
+        with each run
     """
 
-    def __init__(self, path):
+    def __init__(self, path, custom_project_metadata_items=None,
+                 custom_run_metadata_items=None):
         # Top-level metadata
         self.path = os.path.abspath(path)
         print(self.path)
+        # Additional metadata items
+        self._custom_project_metadata_items = custom_project_metadata_items
+        self._custom_run_metadata_items = custom_run_metadata_items
         # Load top-level metadata
         self.project_info_file = os.path.join(self.path,
                                               "project.info")
-        self.info = ProjectInfo()
+        self.info = ProjectInfo(custom_items=self._custom_project_metadata_items)
         if os.path.exists(self.project_info_file):
             self.info.load(self.project_info_file)
         else:
@@ -196,6 +208,11 @@ The following files and directories have been automatically generated:
             print(f"   creating directory: '{run_dir}'")
             os.makedirs(run_dir)
             print(f"   populating run directory...")
+            # Create a metadata file
+            run_info_file = os.path.join(run_dir, "run.info")
+            run_info = RunInfo(custom_items=self._custom_run_metadata_items)
+            run_info["name"] = run.name
+            run_info.save(filen=run_info_file)
             # Create a TSV file with flow cell and base calls info
             flow_cell_basecalls_file = os.path.join(run_dir,
                                                     "flowcell_basecalls.tsv")
@@ -426,7 +443,7 @@ The following files have been automatically generated:
             most_recent (int): optional, number of most recent
             runs to report
         """
-        fields = [f.strip().lower() for f in fields.split(',')]
+        fields = [f.strip() for f in fields.split(',')]
         output = []
         if not most_recent:
             # Report all runs
@@ -492,7 +509,7 @@ The following files have been automatically generated:
           str: value associated with the field
         """
         delimiter = " "
-        field = field.strip().lower()
+        field = field.strip()
         if field.startswith("["):
             # Handle custom delimiter for composite field
             field_ = field.split(":")
@@ -511,7 +528,7 @@ The following files have been automatically generated:
             return delimiter.join([str(x) for x in value])
         # Single field specified
         fmt_func = fmt_value
-        if field == "" or field == "null":
+        if field == "" or field.lower() == "null":
             value = ''
         elif field == "name":
             value = self.info.name
@@ -550,8 +567,8 @@ The following files have been automatically generated:
                 raise KeyError("%s: unrecognised run name" % run)
             # Get total number of samples across all runs
             value = 0
-            for run in runs:
-                samples_file = os.path.join(self.path, self.run_dirs[run], "samples.tsv")
+            for r in runs:
+                samples_file = os.path.join(self.path, self.run_dirs[r], "samples.tsv")
                 if os.path.exists(samples_file):
                     value += len(SamplesInfo(samples_file))
             def fmt_func(s): return '?' if s == "" else s
@@ -563,10 +580,10 @@ The following files have been automatically generated:
             else:
                 raise KeyError("%s: unrecognised run name" % run)
             sample_names = []
-            for run in runs:
+            for r in runs:
                 sample_names.extend([s["Sample"] for s in SamplesInfo(os.path.join(self.path,
-                                                                                   self.run_dirs[run],
-                                                                                  "samples.tsv"))])
+                                                                                   self.run_dirs[r],
+                                                                                   "samples.tsv"))])
             value = ",".join(sample_names)
         elif field == "primary_data":
             value = self.info.data_dir
@@ -576,7 +593,30 @@ The following files have been automatically generated:
             value = self.info.comments
             def fmt_func(s): return '' if s is None else str(s)
         else:
-            raise KeyError("%s: unrecognised field" % field)
+            # Look for custom data items for run
+            got_value = False
+            if run:
+                # Check run metadata
+                run_info_file = os.path.join(self.path,
+                                             self.run_dirs[run],
+                                             "run.info")
+                if os.path.exists(run_info_file):
+                    try:
+                        value = RunInfo(run_info_file,
+                                        custom_items=self._custom_run_metadata_items)[field]
+                        got_value = True
+                    except KeyError:
+                        pass
+            if not got_value:
+                # Check project metadata
+                try:
+                    value = self.info[field]
+                    got_value = True
+                except KeyError:
+                    pass
+            if not got_value:
+                # No matching metadata
+                raise KeyError("%s: unrecognised field" % field)
         return fmt_func(value)
 
     def datestamp(self, run=None):
@@ -662,38 +702,101 @@ class ProjectInfo(MetadataDict):
 
     Data is written to file using the 'save()' method.
 
+    Additional non-canonical data items can be specified via the
+    'custom_items' argument.
+
     Arguments:
       filein (str): path to exisiting project information
         file to read data from
+      custom_items (list): optional list of extra custom
+        metadata items
     """
 
-    def __init__(self, filein=None):
+    def __init__(self, filein=None, custom_items=None):
+        # Core metadata
+        data_items = {
+            "name": "Project name",
+            "id": "Project ID",
+            "platform": "Platform",
+            "user": "User",
+            "PI": "PI",
+            "application": "Application",
+            "organism": "Organism",
+            "runs": "Runs",
+            "data_dir": "Data directory",
+            "comments": "Comments",
+        }
+        order = [ "name",
+                  "id",
+                  "platform",
+                  "user",
+                  "PI",
+                  "application",
+                  "organism",
+                  "runs",
+                  "data_dir",
+                  "comments", ]
+        # Additional custom items
+        if custom_items:
+            for item in custom_items:
+                # Create a name for writing to file, by replacing
+                # underscores with spaces and then capitalizing
+                # e.g. "order_number" -> "Order number"
+                # Check custom item name
+                if item[0].isdigit():
+                    raise Exception(f"'{item}': metadata items must not start with a number")
+                if any([not (c.isalnum() or c == "_") for c in item]):
+                    raise Exception(f"'{item}': metadata items must only contain letters and underscores")
+                if item[0].isupper() and not any([c.isupper() if c.isalpha() else False for c in item[1:]]):
+                    raise Exception(f"'{item}': metadata items cannot be capitalized (use '{item.lower()}' instead)")
+                name = item_to_name(item)
+                if item in data_items:
+                    raise Exception(f"Custom metadata item '{item}' duplicates an existing item")
+                data_items[item] = name
+                order.append(item)
         MetadataDict.__init__(self,
-                              attributes={
-                                  'name': 'Project name',
-                                  'id': 'Project ID',
-                                  'platform': 'Platform',
-                                  'user': 'User',
-                                  'PI': 'PI',
-                                  'application': 'Application',
-                                  'organism': 'Organism',
-                                  'runs': 'Runs',
-                                  'data_dir': 'Data directory',
-                                  'comments': 'Comments',
-                              },
-                              order=(
-                                  'name',
-                                  'id',
-                                  'platform',
-                                  'user',
-                                  'PI',
-                                  'application',
-                                  'organism',
-                                  'runs',
-                                  'data_dir',
-                                  'comments',
-                              ),
-                              filen=filein)
+                              attributes=data_items,
+                              order=order,
+                              filen=filein,
+                              strict=False,
+                              include_undefined=True)
+
+
+class RunInfo(MetadataDict):
+    """
+    Class for storing and handling run info
+    """
+
+    def __init__(self, filein=None, custom_items=None):
+        # Core metadata items
+        data_items = {
+            "name": "Run name",
+        }
+        order = [ "name",]
+        # Additional custom items
+        if custom_items:
+            for item in custom_items:
+                # Create a name for writing to file, by replacing
+                # underscores with spaces and then capitalizing
+                # e.g. "order_number" -> "Order number"
+                # Check custom item name
+                if item[0].isdigit():
+                    raise Exception(f"'{item}': metadata items must not start with a number")
+                if any([not (c.isalnum() or c == "_") for c in item]):
+                    raise Exception(f"'{item}': metadata items must only contain letters and underscores")
+                if item[0].isupper() and not any([c.isupper() if c.isalpha() else False for c in item[1:]]):
+                    raise Exception(f"'{item}': metadata items cannot be capitalized (use '{item.lower()}' instead)")
+                name = item_to_name(item)
+                if item in data_items:
+                    raise Exception(f"Custom metadata item '{item}' duplicates an existing item")
+                data_items[item] = name
+                order.append(item)
+        MetadataDict.__init__(self,
+                              attributes=data_items,
+                              order=order,
+                              filen=filein,
+                              strict=False,
+                              include_undefined=True)
 
 
 class SamplesInfo(MetadataTabFile):

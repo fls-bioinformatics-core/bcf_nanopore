@@ -134,6 +134,37 @@ will copy POD5, FASTQ and BAM files, whereas
 
 will only copy FASTQ and BAM files.
 
+------------
+``metadata``
+------------
+
+Usage:
+
+::
+
+    bcf_nanopore metadata [--set [RUN:]ITEM=VALUE...] [--update] ANALYSIS_DIR
+
+Report or update metadata items associated with ``ANALYSIS_DIR`` and its
+runs.
+
+The ``--set`` option can be specified multiple times to update the values
+associated with several items in a single invocation.
+
+Updated values are specified with the syntax ``[RUN:]ITEM=VALUE``; if a
+run name is specified then ``ITEM`` should be a metadata item associated
+with the run, otherwise it should be a project-level metadata item.
+
+Both built-in and custom metadata items can be updated using the
+``metadata`` command.
+
+If no ``--set`` arguments are specified then the command will display the
+current metadata values.
+
+In addition the ``--update`` argument can be specified to force updating of
+the items in the metadata files even if no values were updated; this is
+intended for updating "legacy" analysis project directories (i.e. those
+produced by earlier versions of the software).
+
 ----------
 ``report``
 ----------
@@ -153,15 +184,15 @@ project, with the fields reported for each run being defined by the
 If ``-r`` (``--most_recent``) is specified then reporting of runs is limited
 to only the ``N`` most recent runs in the project.
 
-------------
-``metadata``
-------------
+--------------------
+``extract_metadata``
+--------------------
 
 Usage:
 
 ::
 
-   bcf_nanopore metdata [--json] REPORT_FILE
+   bcf_nanopore extract_metadata [--json] REPORT_FILE
 
 Extracts and prints JSON data extracted from ``REPORT_FILE``
 (which must either a HTML or JSON report from the PromethION

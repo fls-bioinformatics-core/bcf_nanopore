@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 #
 #     cli.py: implement CLI for managing PromethION data for BCF
-#     Copyright (C) University of Manchester 2024-2025 Peter Briggs
+#     Copyright (C) University of Manchester 2024-2026 Peter Briggs
 #
 
 import os
-import json
 import tempfile
 import shutil
 from argparse import ArgumentParser
@@ -16,6 +15,7 @@ from auto_process_ngs.fileops import set_permissions
 from bcftbx.JobRunner import fetch_runner
 from bcftbx.JobRunner import BaseJobRunner
 from .analysis import ProjectAnalysisDir
+from .analysis import RunInfo
 from .nanopore.promethion import BasecallsMetadata
 from .nanopore.promethion import ProjectDir
 from .settings import Settings
@@ -24,17 +24,78 @@ from .utils import fmt_value
 from .utils import fmt_yes_no
 from . import get_version
 
-# Configuration
-__settings = Settings()
 
 # File types
 FILE_TYPES = [ "POD5", "FASTQ", "BAM" ]
 FILE_TYPES_LOWER = [t.lower() for t in FILE_TYPES]
 
-# Reporting templates from configuration
-REPORTING_TEMPLATES = {}
-for t in [t for t in __settings.reporting_templates]:
-    REPORTING_TEMPLATES[t] = __settings.reporting_templates[t]
+
+def get_settings():
+    """
+    Fetch the configuration settings
+
+    Returns
+      Settings: a Settings instance with the default
+        configuration parameters loaded
+    """
+    return Settings()
+
+
+def get_reporting_templates(settings=None):
+    """
+    Return the configured reporting templates
+
+    Returns the reporting templates defined in the configuration
+    file as a dictionary, with the template names as keys and
+    the templates as the associated values.
+
+    Arguments:
+      settings (Settings): a Settings instance with the
+        configuration parameters to use (otherwise default
+        settings will be used)
+
+    Returns:
+      Dictionary of reporting templates.
+    """
+    if settings is None:
+        settings = get_settings()
+    templates = {}
+    for t in [t for t in settings.reporting_templates]:
+        templates[t] = settings.reporting_templates[t]
+    return templates
+
+
+def get_custom_metadata_items(settings=None):
+    """
+    Returns custom project and run metadata items
+
+    Returns the custom metadata items defined in the configuration
+    file for project and run levels.
+
+    If no items are defined, returns None; otherwise the items
+    are returned as lists.
+
+    Arguments:
+      settings (Settings): a Settings instance with the
+        configuration parameters to use (otherwise default
+        settings will be used)
+
+    Returns:
+      Tuple: tuple of (project_metadata, run_metadata) where the
+        metadata items are returned as lists, or None if no items
+        are defined.
+    """
+    if settings is None:
+        settings = get_settings()
+    try:
+        project_metadata_items = settings.metadata.custom_project_metadata.split(",")
+    except AttributeError:
+        project_metadata_items = None
+    try:
+        run_metadata_items = settings.metadata.custom_run_metadata.split(",")
+    except AttributeError:
+        run_metadata_items = None
+    return (project_metadata_items, run_metadata_items)
 
 
 def config():
@@ -141,7 +202,7 @@ def info(project_dir):
                                               file_types)]))
 
 
-def metadata(metadata_file, dump_json=False):
+def extract_metadata(metadata_file, dump_json=False):
     """
     Extract metadata from HTML report or JSON file
 
@@ -199,6 +260,7 @@ def setup(project_dir, user, PI, application=None, organism=None, top_dir=None,
       group (str): update the filesystem group associated
         with the analysis directory to the supplied group name
     """
+    custom_project_metadata_items, custom_run_metadata_items = get_custom_metadata_items()
     # Read source project data
     project_name = os.path.basename(os.path.normpath(project_dir))
     # Create analysis dir
@@ -207,7 +269,9 @@ def setup(project_dir, user, PI, application=None, organism=None, top_dir=None,
     top_dir = os.path.abspath(top_dir)
     analysis_dir = ProjectAnalysisDir(
         os.path.join(top_dir,
-                     "%s_analysis" % project_name))
+                     "%s_analysis" % project_name),
+        custom_project_metadata_items=custom_project_metadata_items,
+        custom_run_metadata_items=custom_run_metadata_items)
     analysis_dir.create(project_dir,
                         user=user,
                         PI=PI,
@@ -234,8 +298,11 @@ def update(path, project_dir, permissions=None, group=None):
       group (str): update the filesystem group associated
         with the analysis directory to the supplied group name
     """
+    custom_project_metadata_items, custom_run_metadata_items = get_custom_metadata_items()
     # Read in data from the analysis directory
-    analysis_dir = ProjectAnalysisDir(path)
+    analysis_dir = ProjectAnalysisDir(path,
+                                      custom_project_metadata_items=custom_project_metadata_items,
+                                      custom_run_metadata_items=custom_run_metadata_items)
     # Do the update
     analysis_dir.update(project_dir)
     # Set permissions and group
@@ -244,6 +311,80 @@ def update(path, project_dir, permissions=None, group=None):
     if group:
         set_group(group, analysis_dir.path)
 
+
+def metadata(path, items=None, update=False):
+    """
+    Display or update metadata for Promethion project analysis directory
+
+    Arguments:
+        path (str): path to PromethION project analysis dir
+        items (list): list of metadata update specifications, with
+          values of the form "[RUN:]ITEM=VALUE"
+        update (bool): if True then update items in legacy metadata
+          files
+    """
+    # Get configuration settings
+    custom_project_metadata_items, custom_run_metadata_items = get_custom_metadata_items()
+    # Read in data
+    analysis_dir = ProjectAnalysisDir(path,
+                                      custom_project_metadata_items=custom_project_metadata_items,
+                                      custom_run_metadata_items=custom_run_metadata_items)
+    if update:
+        # Update metadata items
+        # Should be sufficient to load and then save
+        print("...updating top-level metadata file")
+        analysis_dir.info.save()
+        for run in analysis_dir.run_dirs:
+            print(f"...updating run '{run}' metadata file")
+            run_info = RunInfo(os.path.join(analysis_dir.path,
+                                            analysis_dir.run_dirs[run],
+                                            "run.info"))
+            if run_info.name is None:
+                print(f"...setting missing run name for '{run}'")
+                run_info["name"] = run
+            run_info.save()
+    if items:
+        # Update metadata values
+        for raw_item in items:
+            # Extract run
+            try:
+                run, item = raw_item.split(":")
+            except ValueError:
+                run = None
+                item = raw_item
+            # Split item and value
+            try:
+                item, value = item.split("=")
+            except ValueError:
+                raise Exception(f"{raw_item}: invalid metadata item specification")
+            # Set values for specific metadata
+            if run is None:
+                # Update project metadata values
+                print(f"...setting '{item}': '{value}'")
+                analysis_dir.info[item] = value
+                analysis_dir.info.save()
+            elif run in analysis_dir.runs:
+                # Update run metadata values
+                print(f"...setting '{item}' for run '{run}': '{value}'")
+                run_info = RunInfo(os.path.join(analysis_dir.path,
+                                                analysis_dir.run_dirs[run],
+                                                "run.info"),
+                                   custom_items=custom_run_metadata_items)
+                run_info[item] = value
+                run_info.save()
+    else:
+        # Display project-level metadata
+        for item in analysis_dir.info:
+            print(f"{item}:\t{analysis_dir.info[item]}")
+        # Display run-level metadata for each run
+        for run in analysis_dir.runs:
+            print(f"\n{run}")
+            run_info = RunInfo(os.path.join(analysis_dir.path,
+                                            analysis_dir.run_dirs[run],
+                                            "run.info"),
+                               custom_items=custom_run_metadata_items)
+            for item in run_info:
+                print(f"\t{item}:\t{run_info[item]}")
 
 def report(path, mode="summary", fields=None, template=None, out_file=None,
            most_recent=None):
@@ -265,8 +406,13 @@ def report(path, mode="summary", fields=None, template=None, out_file=None,
       most_recent (int): optional, only report this number of most
         recent runs (default is report all runs)
     """
+    # Get configuration settings
+    custom_project_metadata_items, custom_run_metadata_items = get_custom_metadata_items()
+    reporting_templates = get_reporting_templates()
     # Read in data
-    analysis_dir = ProjectAnalysisDir(path)
+    analysis_dir = ProjectAnalysisDir(path,
+                                      custom_project_metadata_items=custom_project_metadata_items,
+                                      custom_run_metadata_items=custom_run_metadata_items)
     # Summary mode
     if mode == "summary":
         report_text = analysis_dir.report_project_summary(most_recent=most_recent)
@@ -277,7 +423,7 @@ def report(path, mode="summary", fields=None, template=None, out_file=None,
             fields = "name,id,run,NULL,NULL,user,pi,application,organism,NULL,#samples,samples"
         if template:
             try:
-                fields = REPORTING_TEMPLATES[template]
+                fields = reporting_templates[template]
             except KeyError:
                 raise Exception("%s: undefined template" % template)
         # Report
@@ -408,8 +554,9 @@ def fetch(project_dir, target_dir, file_types=None, dry_run=False,
 def bcf_nanopore_main():
 
     # Defaults
-    default_permissions = __settings.general.permissions
-    default_group = __settings.general.group
+    settings = get_settings()
+    default_permissions = settings.general.permissions
+    default_group = settings.general.group
 
     # Main parser
     p = ArgumentParser()
@@ -430,8 +577,8 @@ def bcf_nanopore_main():
     info_cmd.add_argument('project_dir',
                           help="top level PromethION project directory")
 
-    # Metadata command
-    md_cmd = sp.add_parser("metadata",
+    # Extract_metadata command
+    md_cmd = sp.add_parser("extract_metadata",
                            help="Extract metadata from HTML or JSON report")
     md_cmd.add_argument('file',
                         help="HTML or JSON report file")
@@ -541,8 +688,25 @@ def bcf_nanopore_main():
                             type=int,
                             help="only report N most recent runs")
 
+    # Metadata command
+    metadata_cmd = sp.add_parser("metadata",
+                                 help="report/update metadata for a PromethION "
+                                 "analysis directory")
+    metadata_cmd.add_argument('analysis_dir',
+                              help="PromethION analysis directory")
+    metadata_cmd.add_argument('--set', action="append",
+                              dest="item_value", metavar="[RUN:]ITEM=VALUE",
+                              help="set metadata ITEM to VALUE; if RUN is "
+                              "specified then update the item associated "
+                              "with that run, otherwise update the item "
+                              "associated with the project")
+    metadata_cmd.add_argument('-u', '--update', action="store_true",
+                              dest="update",
+                              help="update legacy metadata items and add missing "
+                              "values")
+
     # Fetch command
-    default_runner = __settings.runners.rsync
+    default_runner = settings.runners.rsync
     fetch_cmd = sp.add_parser("fetch",
                               help="fetch BAM files from PromethION project "
                               "directory")
@@ -596,7 +760,10 @@ def bcf_nanopore_main():
         update(args.analysis_dir, args.project_dir,
                permissions=args.permissions, group=args.group)
     elif args.command == "metadata":
-        metadata(args.file, dump_json=args.json)
+        metadata(args.analysis_dir, items=args.item_value,
+                 update=args.update)
+    elif args.command == "extract_metadata":
+        extract_metadata(args.file, dump_json=args.json)
     elif args.command == "report":
         if args.runs:
             mode = "runs"

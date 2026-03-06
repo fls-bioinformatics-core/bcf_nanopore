@@ -61,7 +61,7 @@ class TestProjectAnalysisDir(unittest.TestCase):
         # Check run directory
         run_dir = Path(analysis_dir_path).joinpath("001_PG1-4_20240513")
         self.assertTrue(run_dir.is_dir())
-        for f in ["README", "flowcell_basecalls.tsv", "samples.tsv"]:
+        for f in ["README", "flowcell_basecalls.tsv", "samples.tsv", "run.info"]:
             self.assertTrue(run_dir.joinpath(f).exists(),
                             f"Expected file {f} not found in run directory")
         # Check datestamps
@@ -110,7 +110,7 @@ class TestProjectAnalysisDir(unittest.TestCase):
         for run in ["001_PG1-2_20240513", "002_PG3-4_20240529"]:
             run_dir = Path(analysis_dir_path).joinpath(run)
             self.assertTrue(run_dir.is_dir())
-            for f in ["README", "flowcell_basecalls.tsv", "samples.tsv"]:
+            for f in ["README", "flowcell_basecalls.tsv", "samples.tsv", "run.info"]:
                 self.assertTrue(run_dir.joinpath(f).exists(),
                                 f"Expected file {f} not found in run directory "
                                 f"'{run}'")
@@ -118,6 +118,120 @@ class TestProjectAnalysisDir(unittest.TestCase):
         self.assertEqual(analysis_dir.datestamp(), "20240513")
         self.assertEqual(analysis_dir.datestamp("PG1-2_20240513"), "20240513")
         self.assertEqual(analysis_dir.datestamp("PG3-4_20240529"), "20240529")
+
+    def test_project_analysis_dir_create_custom_project_metadata(self):
+        """
+        ProjectAnalysisDir: create new analysis directory with custom project metadata
+        """
+        data_dir = MockPromethionDataDir("PromethION_Project_001_PerGynt")
+        data_dir.add_flow_cell("20240513_0829_1A_PAW15419_465bb23f",
+                               relpath=Path("PG1-4_20240513").joinpath("PG1-2"))
+        data_dir.add_basecalls_dir(str(Path("PG1-4_20240513").joinpath("Rebasecalling","PG1-2")),
+                                   flow_cell_name="20240513_0829_1A_PAW15419_465bb23f")
+        project_dir = data_dir.create(self.wd)
+        analysis_dir_path = str(Path(self.wd).joinpath("PromethION_Project_001_PerGynt_analysis"))
+        analysis_dir = ProjectAnalysisDir(analysis_dir_path,
+                                          custom_project_metadata_items=["order_numbers", "analyst"])
+        self.assertFalse(analysis_dir.exists())
+        analysis_dir.create(project_dir,
+                            user="Per Gynt",
+                            PI="Henrik Ibsen",
+                            application="Methylation study",
+                            organism="Human")
+        # Check top-level analysis directory
+        self.assertTrue(analysis_dir.exists())
+        self.assertEqual(analysis_dir.path, analysis_dir_path)
+        self.assertEqual(analysis_dir.info.name, "PromethION_Project_001_PerGynt")
+        self.assertEqual(analysis_dir.info.id, "PROMETHION#001")
+        self.assertEqual(analysis_dir.info.platform, "promethion")
+        self.assertEqual(analysis_dir.info.data_dir, project_dir)
+        self.assertEqual(analysis_dir.info.user, "Per Gynt")
+        self.assertEqual(analysis_dir.info.PI, "Henrik Ibsen")
+        self.assertEqual(analysis_dir.info.application, "Methylation study")
+        self.assertEqual(analysis_dir.info.organism, "Human")
+        self.assertEqual(analysis_dir.info.runs, "PG1-4_20240513")
+        self.assertEqual(analysis_dir.info.order_numbers, None)
+        self.assertEqual(analysis_dir.info.analyst, None)
+        self.assertEqual(analysis_dir.runs, ["PG1-4_20240513"])
+        self.assertTrue(Path(analysis_dir_path).joinpath("README").exists())
+        self.assertTrue(Path(analysis_dir_path).joinpath("project.info").exists())
+        # Check sub-directories
+        self.assertTrue(Path(analysis_dir_path).joinpath("ScriptCode").is_dir())
+        self.assertTrue(Path(analysis_dir_path).joinpath("logs").is_dir())
+        # Check run directory
+        run_dir = Path(analysis_dir_path).joinpath("001_PG1-4_20240513")
+        self.assertTrue(run_dir.is_dir())
+        for f in ["README", "flowcell_basecalls.tsv", "samples.tsv", "run.info"]:
+            self.assertTrue(run_dir.joinpath(f).exists(),
+                            f"Expected file {f} not found in run directory")
+        # Check run metadata items
+        expected_items = set(["Run name"])
+        with open(run_dir.joinpath("run.info"), "rt") as fp:
+            for line in fp:
+                item = line.split("\t")[0]
+                self.assertTrue(item in expected_items, f"{item}: unexpected item")
+                expected_items.remove(item)
+        self.assertEqual(len(expected_items), 0,
+                         f"{expected_items}: items not found in 'run.info'")
+        # Check datestamps
+        self.assertEqual(analysis_dir.datestamp(), "20240513")
+        self.assertEqual(analysis_dir.datestamp("PG1-4_20240513"), "20240513")
+
+    def test_project_analysis_dir_create_custom_run_metadata(self):
+        """
+        ProjectAnalysisDir: create new analysis directory with custom run metadata
+        """
+        data_dir = MockPromethionDataDir("PromethION_Project_001_PerGynt")
+        data_dir.add_flow_cell("20240513_0829_1A_PAW15419_465bb23f",
+                               relpath=Path("PG1-4_20240513").joinpath("PG1-2"))
+        data_dir.add_basecalls_dir(str(Path("PG1-4_20240513").joinpath("Rebasecalling","PG1-2")),
+                                   flow_cell_name="20240513_0829_1A_PAW15419_465bb23f")
+        project_dir = data_dir.create(self.wd)
+        analysis_dir_path = str(Path(self.wd).joinpath("PromethION_Project_001_PerGynt_analysis"))
+        analysis_dir = ProjectAnalysisDir(analysis_dir_path,
+                                          custom_run_metadata_items=["order_numbers", "analyst"])
+        self.assertFalse(analysis_dir.exists())
+        analysis_dir.create(project_dir,
+                            user="Per Gynt",
+                            PI="Henrik Ibsen",
+                            application="Methylation study",
+                            organism="Human")
+        # Check top-level analysis directory
+        self.assertTrue(analysis_dir.exists())
+        self.assertEqual(analysis_dir.path, analysis_dir_path)
+        self.assertEqual(analysis_dir.info.name, "PromethION_Project_001_PerGynt")
+        self.assertEqual(analysis_dir.info.id, "PROMETHION#001")
+        self.assertEqual(analysis_dir.info.platform, "promethion")
+        self.assertEqual(analysis_dir.info.data_dir, project_dir)
+        self.assertEqual(analysis_dir.info.user, "Per Gynt")
+        self.assertEqual(analysis_dir.info.PI, "Henrik Ibsen")
+        self.assertEqual(analysis_dir.info.application, "Methylation study")
+        self.assertEqual(analysis_dir.info.organism, "Human")
+        self.assertEqual(analysis_dir.info.runs, "PG1-4_20240513")
+        self.assertEqual(analysis_dir.runs, ["PG1-4_20240513"])
+        self.assertTrue(Path(analysis_dir_path).joinpath("README").exists())
+        self.assertTrue(Path(analysis_dir_path).joinpath("project.info").exists())
+        # Check sub-directories
+        self.assertTrue(Path(analysis_dir_path).joinpath("ScriptCode").is_dir())
+        self.assertTrue(Path(analysis_dir_path).joinpath("logs").is_dir())
+        # Check run directory
+        run_dir = Path(analysis_dir_path).joinpath("001_PG1-4_20240513")
+        self.assertTrue(run_dir.is_dir())
+        for f in ["README", "flowcell_basecalls.tsv", "samples.tsv", "run.info"]:
+            self.assertTrue(run_dir.joinpath(f).exists(),
+                            f"Expected file {f} not found in run directory")
+        # Check run metadata items
+        expected_items = set(["Run name", "Order numbers", "Analyst"])
+        with open(run_dir.joinpath("run.info"), "rt") as fp:
+            for line in fp:
+                item = line.split("\t")[0]
+                self.assertTrue(item in expected_items, f"{item}: unexpected item")
+                expected_items.remove(item)
+        self.assertEqual(len(expected_items), 0,
+                         f"{expected_items}: items not found in 'run.info'")
+        # Check datestamps
+        self.assertEqual(analysis_dir.datestamp(), "20240513")
+        self.assertEqual(analysis_dir.datestamp("PG1-4_20240513"), "20240513")
 
     def test_project_analysis_dir_update_with_new_runs(self):
         """
@@ -157,7 +271,7 @@ class TestProjectAnalysisDir(unittest.TestCase):
         for run in ["001_PG1-2_20240513"]:
             run_dir = Path(analysis_dir_path).joinpath(run)
             self.assertTrue(run_dir.is_dir())
-            for f in ["README", "flowcell_basecalls.tsv", "samples.tsv"]:
+            for f in ["README", "flowcell_basecalls.tsv", "samples.tsv", "run.info"]:
                 self.assertTrue(run_dir.joinpath(f).exists(),
                                 f"Expected file {f} not found in run directory "
                                 f"'{run}'")
@@ -179,7 +293,7 @@ class TestProjectAnalysisDir(unittest.TestCase):
         for run in ["001_PG1-2_20240513", "002_PG3-4_20240529"]:
             run_dir = Path(analysis_dir_path).joinpath(run)
             self.assertTrue(run_dir.is_dir())
-            for f in ["README", "flowcell_basecalls.tsv", "samples.tsv"]:
+            for f in ["README", "flowcell_basecalls.tsv", "samples.tsv", "run.info"]:
                 self.assertTrue(run_dir.joinpath(f).exists(),
                                 f"Expected file {f} not found in run directory "
                                 f"'{run}'")
@@ -220,6 +334,44 @@ class TestProjectAnalysisDir(unittest.TestCase):
         self.assertEqual(analysis_dir.info.application, "Methylation study")
         self.assertEqual(analysis_dir.info.organism, "Human")
         self.assertEqual(analysis_dir.info.runs, "PG1-2_20240513,PG3-4_20240529")
+        self.assertEqual(analysis_dir.runs, ["PG1-2_20240513", "PG3-4_20240529"])
+
+    def test_project_analysis_dir_load_existing_custom_project_metadata(self):
+        """
+        ProjectAnalysisDir: load existing analysis project with custom project metadata
+        """
+        data_dir = "/mnt/data/PromethION_Project_001_PerGynt"
+        analysis_dir = MockProjectAnalysisDir("PromethION_Project_001_PerGynt_analysis")
+        analysis_dir.add_run("PG1-2_20240513",
+                             samples={ "PG1": ("NB03", "PAW14589"),
+                                       "PG2": ("NB04", "PAW14589")})
+        analysis_dir.add_run("PG3-4_20240529",
+                             samples={ "PG3": ("NB07", "PAW15894"),
+                                       "PG4": ("NB08", "PAW15894")})
+        analysis_dir_path = analysis_dir.create(
+            self.wd,
+            user="Per Gynt",
+            principal_investigator="Henrik Ibsen",
+            application="Methylation study",
+            organism="Human",
+            data_dir=data_dir,
+            project_id="PROMETHION#001",
+            extra_project_metadata={ "Order numbers": "#00123,#00456",
+                                     "Analyst": "Ben Franklin" })
+        analysis_dir = ProjectAnalysisDir(analysis_dir_path)
+        self.assertTrue(analysis_dir.exists())
+        self.assertEqual(analysis_dir.path, analysis_dir_path)
+        self.assertEqual(analysis_dir.info.name, "PromethION_Project_001_PerGynt")
+        self.assertEqual(analysis_dir.info.id, "PROMETHION#001")
+        self.assertEqual(analysis_dir.info.platform, "promethion")
+        self.assertEqual(analysis_dir.info.data_dir, data_dir)
+        self.assertEqual(analysis_dir.info.user, "Per Gynt")
+        self.assertEqual(analysis_dir.info.PI, "Henrik Ibsen")
+        self.assertEqual(analysis_dir.info.application, "Methylation study")
+        self.assertEqual(analysis_dir.info.organism, "Human")
+        self.assertEqual(analysis_dir.info.runs, "PG1-2_20240513,PG3-4_20240529")
+        self.assertEqual(analysis_dir.info.order_numbers, "#00123,#00456")
+        self.assertEqual(analysis_dir.info.analyst, "Ben Franklin")
         self.assertEqual(analysis_dir.runs, ["PG1-2_20240513", "PG3-4_20240529"])
 
     def test_project_analysis_dir_load_existing_legacy_run_dir_names(self):
@@ -559,6 +711,31 @@ class TestProjectAnalysisDir(unittest.TestCase):
         self.assertRaises(KeyError,
                           analysis_dir.report_project_runs,
                           "_]:name+run,#samples")
+
+    def test_project_analysis_dir_single_run_report_project_runs_custom_metadata(self):
+        """
+        ProjectAnalysisDir: report runs for analysis project with custom metadata
+        """
+        data_dir = "/mnt/data/PromethION_Project_001_PerGynt"
+        analysis_dir = MockProjectAnalysisDir("PromethION_Project_001_PerGynt_analysis",)
+        analysis_dir.add_run("PG1-2_20240513",
+                             samples={"PG1": ("NB03", "PAW14589"),
+                                      "PG2": ("NB04", "PAW14589")},
+                             metadata={ "Order numbers": "#00123" })
+        analysis_dir_path = analysis_dir.create(
+            self.wd,
+            user="Per Gynt",
+            principal_investigator="Henrik Ibsen",
+            application="Methylation study",
+            organism="Human",
+            data_dir=data_dir,
+            project_id="PROMETHION#001",
+            extra_project_metadata={ "Analysts": "Sam Beckett" })
+        analysis_dir = ProjectAnalysisDir(analysis_dir_path)
+        self.assertEqual(
+            analysis_dir.report_project_runs("name,run,#samples,user,pi,analysts,order_numbers"),
+            "PromethION_Project_001_PerGynt\tPG1-2_20240513\t2\tPer Gynt\tHenrik Ibsen\tSam Beckett\t#00123")
+
 
 class TestFlowcellBasecallsInfo(unittest.TestCase):
 
