@@ -67,6 +67,8 @@ class TestProjectAnalysisDir(unittest.TestCase):
         # Check datestamps
         self.assertEqual(analysis_dir.datestamp(), "20240513")
         self.assertEqual(analysis_dir.datestamp("PG1-4_20240513"), "20240513")
+        self.assertEqual(analysis_dir.datestamp_short(), "240513")
+        self.assertEqual(analysis_dir.datestamp_short("PG1-4_20240513"), "240513")
 
     def test_project_analysis_dir_create_multiple_runs(self):
         """
@@ -118,6 +120,9 @@ class TestProjectAnalysisDir(unittest.TestCase):
         self.assertEqual(analysis_dir.datestamp(), "20240513")
         self.assertEqual(analysis_dir.datestamp("PG1-2_20240513"), "20240513")
         self.assertEqual(analysis_dir.datestamp("PG3-4_20240529"), "20240529")
+        self.assertEqual(analysis_dir.datestamp_short(), "240513")
+        self.assertEqual(analysis_dir.datestamp_short("PG1-2_20240513"), "240513")
+        self.assertEqual(analysis_dir.datestamp_short("PG3-4_20240529"), "240529")
 
     def test_project_analysis_dir_create_custom_project_metadata(self):
         """
@@ -176,6 +181,8 @@ class TestProjectAnalysisDir(unittest.TestCase):
         # Check datestamps
         self.assertEqual(analysis_dir.datestamp(), "20240513")
         self.assertEqual(analysis_dir.datestamp("PG1-4_20240513"), "20240513")
+        self.assertEqual(analysis_dir.datestamp_short(), "240513")
+        self.assertEqual(analysis_dir.datestamp_short("PG1-4_20240513"), "240513")
 
     def test_project_analysis_dir_create_custom_run_metadata(self):
         """
@@ -232,6 +239,8 @@ class TestProjectAnalysisDir(unittest.TestCase):
         # Check datestamps
         self.assertEqual(analysis_dir.datestamp(), "20240513")
         self.assertEqual(analysis_dir.datestamp("PG1-4_20240513"), "20240513")
+        self.assertEqual(analysis_dir.datestamp_short(), "240513")
+        self.assertEqual(analysis_dir.datestamp_short("PG1-4_20240513"), "240513")
 
     def test_project_analysis_dir_update_with_new_runs(self):
         """
@@ -278,6 +287,8 @@ class TestProjectAnalysisDir(unittest.TestCase):
         # Check datestamps
         self.assertEqual(analysis_dir.datestamp(), "20240513")
         self.assertEqual(analysis_dir.datestamp("PG1-2_20240513"), "20240513")
+        self.assertEqual(analysis_dir.datestamp_short(), "240513")
+        self.assertEqual(analysis_dir.datestamp_short("PG1-2_20240513"), "240513")
         # Add new run with extra flowcell and basecalls
         data_dir.add_flow_cell("20240529_0830_1A_PAW17328_523ce32d",
                                relpath=Path("PG3-4_20240529").joinpath("PG3-4"))
@@ -301,6 +312,9 @@ class TestProjectAnalysisDir(unittest.TestCase):
         self.assertEqual(analysis_dir.datestamp(), "20240513")
         self.assertEqual(analysis_dir.datestamp("PG1-2_20240513"), "20240513")
         self.assertEqual(analysis_dir.datestamp("PG3-4_20240529"), "20240529")
+        self.assertEqual(analysis_dir.datestamp_short(), "240513")
+        self.assertEqual(analysis_dir.datestamp_short("PG1-2_20240513"), "240513")
+        self.assertEqual(analysis_dir.datestamp_short("PG3-4_20240529"), "240529")
 
     def test_project_analysis_dir_load_existing(self):
         """

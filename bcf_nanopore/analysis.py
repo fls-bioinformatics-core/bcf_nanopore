@@ -660,6 +660,30 @@ The following files have been automatically generated:
         except IndexError:
             return None
 
+    def datestamp_short(self, run=None):
+        """
+        Fetch "short" datestamp for project or run
+
+        The short version of the datestamp has a 2-digit year
+        instead a 4-digit year (e.g. "260310" instead of
+        "20260310").
+
+        Args:
+            run:
+
+        Returns:
+            run (str): optional, specifies run to get datestamp for
+
+        Returns:
+            str: earliest associated datestamp extracted from
+            flow cell directories within project or run
+        """
+        datestamp = self.datestamp(run)
+        if datestamp and len(datestamp) == 8:
+            return datestamp[2:]
+        else:
+            return datestamp
+
     @staticmethod
     def _make_project_id(name):
         """
