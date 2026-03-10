@@ -469,6 +469,7 @@ The following files have been automatically generated:
         - name (project name)
         - id (project ID)
         - datestamp (earliest associated flow cell datestamp)
+        - datestamp_short (datestamp with 2-digit year)
         - nruns (number of runs)
         - #runs (alias for 'nruns')
         - runs (comma-separated list of run names)
@@ -477,6 +478,7 @@ The following files have been automatically generated:
         - pi (associated PIs)
         - run (name of run)
         - run_datestamp (datestamp of run)
+        - run_datestamp_short (datestamp of run with 2-digit year)
         - nsamples (number of samples)
         - #samples (alias for 'nsamples')
         - samples (comma-separated list of sample names)
@@ -536,10 +538,16 @@ The following files have been automatically generated:
             value = self.info.id
         elif field == "datestamp":
             value = self.datestamp()
+        elif field == "datestamp_short":
+            value = self.datestamp_short()
         elif field == "run_datestamp":
             if run is None:
                 raise KeyError(f"'{field}' field requires a run name")
             value = self.datestamp(run)
+        elif field == "run_datestamp_short":
+            if run is None:
+                raise KeyError(f"'{field}' field requires a run name")
+            value = self.datestamp_short(run)
         elif field == "run":
             if run is None:
                 raise KeyError(f"'{field}' field requires a run name")
@@ -659,6 +667,30 @@ The following files have been automatically generated:
             return sorted(list(datestamps))[0]
         except IndexError:
             return None
+
+    def datestamp_short(self, run=None):
+        """
+        Fetch "short" datestamp for project or run
+
+        The short version of the datestamp has a 2-digit year
+        instead a 4-digit year (e.g. "260310" instead of
+        "20260310").
+
+        Args:
+            run:
+
+        Returns:
+            run (str): optional, specifies run to get datestamp for
+
+        Returns:
+            str: earliest associated datestamp extracted from
+            flow cell directories within project or run
+        """
+        datestamp = self.datestamp(run)
+        if datestamp and len(datestamp) == 8:
+            return datestamp[2:]
+        else:
+            return datestamp
 
     @staticmethod
     def _make_project_id(name):

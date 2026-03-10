@@ -67,6 +67,8 @@ class TestProjectAnalysisDir(unittest.TestCase):
         # Check datestamps
         self.assertEqual(analysis_dir.datestamp(), "20240513")
         self.assertEqual(analysis_dir.datestamp("PG1-4_20240513"), "20240513")
+        self.assertEqual(analysis_dir.datestamp_short(), "240513")
+        self.assertEqual(analysis_dir.datestamp_short("PG1-4_20240513"), "240513")
 
     def test_project_analysis_dir_create_multiple_runs(self):
         """
@@ -118,6 +120,9 @@ class TestProjectAnalysisDir(unittest.TestCase):
         self.assertEqual(analysis_dir.datestamp(), "20240513")
         self.assertEqual(analysis_dir.datestamp("PG1-2_20240513"), "20240513")
         self.assertEqual(analysis_dir.datestamp("PG3-4_20240529"), "20240529")
+        self.assertEqual(analysis_dir.datestamp_short(), "240513")
+        self.assertEqual(analysis_dir.datestamp_short("PG1-2_20240513"), "240513")
+        self.assertEqual(analysis_dir.datestamp_short("PG3-4_20240529"), "240529")
 
     def test_project_analysis_dir_create_custom_project_metadata(self):
         """
@@ -176,6 +181,8 @@ class TestProjectAnalysisDir(unittest.TestCase):
         # Check datestamps
         self.assertEqual(analysis_dir.datestamp(), "20240513")
         self.assertEqual(analysis_dir.datestamp("PG1-4_20240513"), "20240513")
+        self.assertEqual(analysis_dir.datestamp_short(), "240513")
+        self.assertEqual(analysis_dir.datestamp_short("PG1-4_20240513"), "240513")
 
     def test_project_analysis_dir_create_custom_run_metadata(self):
         """
@@ -232,6 +239,8 @@ class TestProjectAnalysisDir(unittest.TestCase):
         # Check datestamps
         self.assertEqual(analysis_dir.datestamp(), "20240513")
         self.assertEqual(analysis_dir.datestamp("PG1-4_20240513"), "20240513")
+        self.assertEqual(analysis_dir.datestamp_short(), "240513")
+        self.assertEqual(analysis_dir.datestamp_short("PG1-4_20240513"), "240513")
 
     def test_project_analysis_dir_update_with_new_runs(self):
         """
@@ -278,6 +287,8 @@ class TestProjectAnalysisDir(unittest.TestCase):
         # Check datestamps
         self.assertEqual(analysis_dir.datestamp(), "20240513")
         self.assertEqual(analysis_dir.datestamp("PG1-2_20240513"), "20240513")
+        self.assertEqual(analysis_dir.datestamp_short(), "240513")
+        self.assertEqual(analysis_dir.datestamp_short("PG1-2_20240513"), "240513")
         # Add new run with extra flowcell and basecalls
         data_dir.add_flow_cell("20240529_0830_1A_PAW17328_523ce32d",
                                relpath=Path("PG3-4_20240529").joinpath("PG3-4"))
@@ -301,6 +312,9 @@ class TestProjectAnalysisDir(unittest.TestCase):
         self.assertEqual(analysis_dir.datestamp(), "20240513")
         self.assertEqual(analysis_dir.datestamp("PG1-2_20240513"), "20240513")
         self.assertEqual(analysis_dir.datestamp("PG3-4_20240529"), "20240529")
+        self.assertEqual(analysis_dir.datestamp_short(), "240513")
+        self.assertEqual(analysis_dir.datestamp_short("PG1-2_20240513"), "240513")
+        self.assertEqual(analysis_dir.datestamp_short("PG3-4_20240529"), "240529")
 
     def test_project_analysis_dir_load_existing(self):
         """
@@ -735,6 +749,29 @@ class TestProjectAnalysisDir(unittest.TestCase):
         self.assertEqual(
             analysis_dir.report_project_runs("name,run,#samples,user,pi,analysts,order_numbers"),
             "PromethION_Project_001_PerGynt\tPG1-2_20240513\t2\tPer Gynt\tHenrik Ibsen\tSam Beckett\t#00123")
+
+    def test_project_analysis_dir_single_run_report_project_runs_datestamps(self):
+        """
+        ProjectAnalysisDir: handle datestamps when reporting runs
+        """
+        data_dir = "/mnt/data/PromethION_Project_001_PerGynt"
+        analysis_dir = MockProjectAnalysisDir("PromethION_Project_001_PerGynt_analysis",)
+        analysis_dir.add_run("PG1-2_20240513",
+                             samples={"PG1": ("NB03", "PAW14589"),
+                                      "PG2": ("NB04", "PAW14589")},)
+        analysis_dir_path = analysis_dir.create(
+            self.wd,
+            user="Per Gynt",
+            principal_investigator="Henrik Ibsen",
+            application="Methylation study",
+            organism="Human",
+            data_dir=data_dir,
+            project_id="PROMETHION#001")
+        analysis_dir = ProjectAnalysisDir(analysis_dir_path)
+        self.assertEqual(
+            analysis_dir.report_project_runs(
+                "datestamp,datestamp_short,run_datestamp,run_datestamp_short,name,run,#samples"),
+            "20240513\t240513\t20240513\t240513\tPromethION_Project_001_PerGynt\tPG1-2_20240513\t2")
 
 
 class TestFlowcellBasecallsInfo(unittest.TestCase):

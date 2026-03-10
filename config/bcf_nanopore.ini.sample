@@ -18,4 +18,4 @@
 # Templates for reporting
 # Assign fields to template names for reporting projects
 ;[reporting_templates]
-;bcf = datestamp,NULL,user,id,#samples,NULL,organism,application,PI,analysis_dir,NULL,primary_data
+;bcf = datestamp_short,NULL,user,id,#samples,NULL,organism,application,PI,analysis_dir,NULL,primary_data
