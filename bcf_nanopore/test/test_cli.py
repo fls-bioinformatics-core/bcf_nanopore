@@ -44,6 +44,22 @@ class TestInfoCommand(unittest.TestCase):
         project_dir = data_dir.create(self.wd)
         cli_info(project_dir)
 
+    def test_info_handle_non_flowcell_subdir(self):
+        """
+        info: handle non-flowcell subdirectory in project
+        """
+
+        data_dir = MockPromethionDataDir("PromethION_Project_001_PerGynt")
+        data_dir.add_flow_cell("20240513_0829_1A_PAW15419_465bb23f",
+                               relpath=Path("PG1-4_20240513").joinpath("PG1-2"))
+        data_dir.add_basecalls_dir(str(Path("PG1-4_20240513").joinpath("Rebasecalling","PG1-2")),
+                                   flow_cell_name="20240513_0829_1A_PAW15419_465bb23f")
+        project_dir = data_dir.create(self.wd)
+        # Add a non-flowcell subdirectory
+        Path(project_dir).joinpath("my_batch_symlinks", "bam_pass").mkdir(parents=True)
+        # Run the 'info' command
+        cli_info(project_dir)
+
 class TestSetupCommand(unittest.TestCase):
 
     def setUp(self):
