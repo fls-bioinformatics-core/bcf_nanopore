@@ -416,7 +416,14 @@ class BasecallsMetadata:
             for name in ("modifications", "modified_base_context"):
                 self.modifications = self._fetch_item(settings, name)
                 if self.modifications:
-                    break                         
+                    # Clean up special characters
+                    self.modifications = "".join([c for c in self.modifications
+                                                  if ord(c) in range(128)])
+                    # Transform newlines into commas
+                    self.modifications = self.modifications.replace("\n", ",")
+                    # Remove leading/trailing whitespace
+                    self.modifications = self.modifications.strip()
+                    break
         else:
             self.modifications = None
         try:
