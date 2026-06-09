@@ -63,6 +63,22 @@ class TestProjectDir(unittest.TestCase):
         self.assertEqual(project.name, "PromethION_Project_001_PerGynt")
         self.assertEqual(len(project.flow_cells), 3)
 
+    def test_project_dir_non_flowcell_subdirectory(self):
+        """
+        ProjectDir: load from directory with non-flowcell subdirectory
+        """
+        data_dir = MockPromethionDataDir("PromethION_Project_001_PerGynt")
+        # Add a run
+        data_dir.add_flow_cell("20240513_0829_1A_PAW15419_465bb23f",
+                               relpath=Path("PG1-4_20240513").joinpath("PG1-2"))
+        project_dir = data_dir.create(self.wd)
+        # Add a non-flowcell subdirectory
+        Path(project_dir).joinpath("my_batch_symlinks", "bam_pass").mkdir(parents=True)
+        # Load the data
+        project = ProjectDir(project_dir)
+        self.assertEqual(project.name, "PromethION_Project_001_PerGynt")
+        self.assertEqual(len(project.flow_cells), 1)
+
 class TestRunDir(unittest.TestCase):
 
     def setUp(self):

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #
 #     nanopore.promethion: library for for managing ONT PromethION data
-#     Copyright (C) University of Manchester 2024-2025 Peter Briggs
+#     Copyright (C) University of Manchester 2024-2026 Peter Briggs
 #
 
 """
@@ -119,9 +119,12 @@ class RunDir:
                     break
         print("...located %d flow cell directories" % len(flow_cell_dirs))
         for d in flow_cell_dirs:
-            print("...adding flow cell '%s'" % d)
-            fc = FlowCell(d, run=self.name)
-            self.flow_cells.append(fc)
+            try:
+                print("...adding flow cell '%s'" % d)
+                fc = FlowCell(d, run=self.name)
+                self.flow_cells.append(fc)
+            except Exception as e:
+                print(f"... failed to add flow cell ({e})")
         self.flow_cells = sorted(self.flow_cells, key=lambda x: x.name)
         print("...located %d base calls directories" % len(basecalls_dirs))
         for d in basecalls_dirs:
