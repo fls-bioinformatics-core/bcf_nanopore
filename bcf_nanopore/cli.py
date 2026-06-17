@@ -5,6 +5,7 @@
 #
 
 import os
+import logging
 import tempfile
 import shutil
 from argparse import ArgumentParser
@@ -18,11 +19,17 @@ from .analysis import ProjectAnalysisDir
 from .analysis import RunInfo
 from .nanopore.promethion import BasecallsMetadata
 from .nanopore.promethion import ProjectDir
+from .nanopore.promethion import FlowCell
+from .nanopore.promethion import barcode_dirs
+from .qc.pipeline import NanoporeQC
 from .settings import Settings
 from .utils import execute_command
 from .utils import fmt_value
-from .utils import fmt_yes_no
 from . import get_version
+
+
+# Module-specific logger
+logger = logging.getLogger(__name__)
 
 
 # File types
@@ -551,6 +558,27 @@ def fetch(project_dir, target_dir, file_types=None, dry_run=False,
             set_group(group, os.path.join(target_dir, project_name))
 
 
+def qc(fastqs, out_dir, fastq_screen_conf_file, qc_modules, project_dir=None):
+    """
+    Run the Nanopore QC pipeline
+
+    Arguments:
+        fastqs (list): Fastqs to run the QC pipeline on
+        out_dir (list): path to directory where the outputs will be written
+        fastq_screen_conf_file (str): path to FastqScreen configuration file
+        qc_modules (list): list of QC module names to run
+        project_dir (str): optional, path to PromethION project directory
+    """
+    # Run the screens
+    print("Starting QC...")
+    nanopore_qc = NanoporeQC(modules=qc_modules)
+    nanopore_qc.run(fastqs,
+                    fastq_screen_conf_file,
+                    out_dir,
+                    project_dir=project_dir)
+    print("Finished QC.")
+
+
 def bcf_nanopore_main():
 
     # Defaults
@@ -743,6 +771,31 @@ def bcf_nanopore_main():
                            help=f"job runner to use (default: "
                            f"'{default_runner}')")
 
+    # QC command
+    qc_cmd = sp.add_parser("qc",
+                           help="Run QC on PromethION data")
+    mutex = qc_cmd.add_mutually_exclusive_group()
+    mutex.add_argument("--project", action="store",
+                       dest="project_dir",
+                       metavar="dir",
+                       help="PromethION project directory")
+    mutex.add_argument("--flowcell", action="store", nargs="+",
+                       dest="flowcells",
+                       metavar="flowcell [flowcell..]",
+                       help="Input flowcell directories")
+    mutex.add_argument("--fastq", action="store", nargs="+",
+                       dest="fastqs", metavar="fastq [fastq...]",
+                       help="Input Fastq files")
+    qc_cmd.add_argument("--modules", action="store",
+                        metavar="MODULE1[,MODULE2...]",
+                        help="Specify QC modules to run as comma-separated "
+                             "list of names; can be one or more of 'nanoplot', "
+                             "'fastq_screen'")
+    qc_cmd.add_argument("-o", "--out_dir", action="store",
+                        help="Output directory")
+    qc_cmd.add_argument("-c", "--conf_file", action="store",
+                        help="FastqScreen conf file")
+
     # Process command line
     args = p.parse_args()
 
@@ -777,3 +830,64 @@ def bcf_nanopore_main():
               file_types=[x for x in str(args.file_types).split(",")],
               dry_run=args.dry_run, runner=args.runner,
               permissions=args.permissions, group=args.group)
+    elif args.command == "qc":
+        # Gather input Fastqs
+        if args.fastqs:
+            # List of Fastqs
+            fastqs = [os.path.abspath(fq) for fq in args.fastqs]
+        elif args.flowcells:
+            # List of flowcells
+            fastqs = []
+            for flowcell in args.flowcells:
+                flowcell = FlowCell(os.path.abspath(flowcell))
+                if "fastq" not in flowcell.file_types:
+                    logger.warning(f"{flowcell}: no Fastqs?")
+                    continue
+                barcodes = barcode_dirs(flowcell.fastq_pass)
+                if barcodes:
+                    barcodes.append("unclassified")
+                    for barcode in barcodes:
+                        barcode_dir = os.path.join(flowcell.fastq_pass,
+                                                   barcode)
+                        for fq in os.listdir(barcode_dir):
+                            fastqs.append(os.path.join(barcode_dir, fq))
+                else:
+                    for fq in os.listdir(flowcell.fastq_pass):
+                        fastqs.append(os.path.join(flowcell.fastq_pass, fq))
+        elif args.project_dir:
+            # PromethION project directory
+            fastqs = []
+            for run in ProjectDir(args.project_dir).runs:
+                print(f"Run '{run.name}'...")
+                for flowcell in run.flow_cells:
+                    print(f"...flow cell: '{flowcell}'")
+                    if "fastq" not in flowcell.file_types:
+                        logger.warn(f"{flowcell}: no Fastqs?")
+                        continue
+                    barcodes = barcode_dirs(flowcell.fastq_pass)
+                    if barcodes:
+                        barcodes.append("unclassified")
+                        for barcode in barcodes:
+                            barcode_dir = os.path.join(flowcell.fastq_pass,
+                                                       barcode)
+                            for fq in os.listdir(barcode_dir):
+                                fastqs.append(os.path.join(barcode_dir, fq))
+                    else:
+                        for fq in os.listdir(flowcell.fastq_pass):
+                            fastqs.append(os.path.join(flowcell.fastq_pass, fq))
+        # Collect QC modules
+        if args.modules:
+            qc_modules = args.modules.split(",")
+        else:
+            qc_modules = ["nanoplot", "fastq_screen"]
+        # Fastq conf file
+        if args.conf_file:
+            fastq_screen_conf_file = os.path.abspath(args.conf_file)
+        else:
+            fastq_screen_conf_file = None
+        # Output directory
+        if not args.out_dir:
+            out_dir = os.getcwd()
+        else:
+            out_dir = os.path.abspath(args.out_dir)
+        qc(fastqs, out_dir, fastq_screen_conf_file, qc_modules)
