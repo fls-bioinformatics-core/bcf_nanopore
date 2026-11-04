@@ -772,6 +772,8 @@ def bcf_nanopore_main():
                            f"'{default_runner}')")
 
     # QC command
+    qc_modules = settings.qc.modules
+    conf_file = settings.qc.fastq_screen_conf_file
     qc_cmd = sp.add_parser("qc",
                            help="Run QC on PromethION data")
     mutex = qc_cmd.add_mutually_exclusive_group()
@@ -790,11 +792,12 @@ def bcf_nanopore_main():
                         metavar="MODULE1[,MODULE2...]",
                         help="Specify QC modules to run as comma-separated "
                              "list of names; can be one or more of 'nanoplot', "
-                             "'fastq_screen'")
+                             f"'fastq_screen' (default: {qc_modules})")
     qc_cmd.add_argument("-o", "--out_dir", action="store",
                         help="Output directory")
     qc_cmd.add_argument("-c", "--conf_file", action="store",
-                        help="FastqScreen conf file")
+                        default=conf_file,
+                        help=f"FastqScreen conf file (default: {conf_file})")
 
     # Process command line
     args = p.parse_args()
@@ -876,15 +879,9 @@ def bcf_nanopore_main():
                         for fq in os.listdir(flowcell.fastq_pass):
                             fastqs.append(os.path.join(flowcell.fastq_pass, fq))
         # Collect QC modules
-        if args.modules:
-            qc_modules = args.modules.split(",")
-        else:
-            qc_modules = ["nanoplot", "fastq_screen"]
+        qc_modules = args.modules.split(",")
         # Fastq conf file
-        if args.conf_file:
-            fastq_screen_conf_file = os.path.abspath(args.conf_file)
-        else:
-            fastq_screen_conf_file = None
+        fastq_screen_conf_file = os.path.abspath(args.conf_file)
         # Output directory
         if not args.out_dir:
             out_dir = os.getcwd()
