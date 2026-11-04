@@ -11,6 +11,11 @@
 ;custom_project_metadata = supplier
 ;custom_run_metadata = analysts,order_numbers
 
+# Custom defaults for running QC
+;[qc]
+;modules = nanoplot,fastq_screen
+;fastq_screen_conf_file = /path/to/fastqscreen.conf
+
 # Define runners for specific jobs
 ;[runners]
 ;rsync = SimpleJobRunner
