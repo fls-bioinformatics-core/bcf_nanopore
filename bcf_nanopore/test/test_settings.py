@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Tests for the 'analysis' module
+# Tests for the 'settings' module
 
 import os
 import shutil
@@ -73,6 +73,36 @@ custom_run_metadata = order_numbers,analysts
         # Custom metadata
         self.assertEqual(s.metadata.custom_project_metadata, "supplier")
         self.assertEqual(s.metadata.custom_run_metadata, "order_numbers,analysts")
+
+    def test_settings_qc_defaults(self):
+        """
+        Settings: load QC default settings from empty config .ini file
+        """
+        settings_file = Path(self.wd).joinpath("bcf_nanopore.ini")
+        with open(settings_file, "wt") as fp:
+            fp.write("""[qc]
+""")
+        # Load settings
+        s = Settings(settings_file)
+        # QC settings
+        self.assertEqual(s.qc.modules, "nanoplot,fastq_screen")
+        self.assertEqual(s.qc.fastq_screen_conf_file, None)
+
+    def test_settings_qc(self):
+        """
+        Settings: load QC settings from config .ini file
+        """
+        settings_file = Path(self.wd).joinpath("bcf_nanopore.ini")
+        with open(settings_file, "wt") as fp:
+            fp.write("""[qc]
+modules = nanoplot,fastq_screen,bababa
+fastq_screen_conf_file = /path/to/fastqscreen.conf
+""")
+        # Load settings
+        s = Settings(settings_file)
+        # QC settings
+        self.assertEqual(s.qc.modules, "nanoplot,fastq_screen,bababa")
+        self.assertEqual(s.qc.fastq_screen_conf_file, "/path/to/fastqscreen.conf")
 
     def test_settings_reporting_templates(self):
         """

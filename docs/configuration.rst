@@ -48,6 +48,19 @@ Additional site-specific metadata items can be configured in the
 Note that metadata item names can only contain letters, numbers
 and the underscore character, and cannot start with a digit).
 
+-----------
+QC settings
+-----------
+
+Custom defaults for running the QC pipeline can be configured in the
+``qc`` section:
+
+* ``modules``: specifies which QC modules to include when the
+  pipeline is run
+* ``fastqscreen_conf_file``: specifies the location of a ``.conf``
+  file with the panel of FASTA files to be used by the FastqScreen
+  program when screening for contaminants
+
 -------------------
 Reporting templates
 -------------------

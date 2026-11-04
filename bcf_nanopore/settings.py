@@ -40,8 +40,8 @@ class Settings(GenericSettings):
     2. Config directory of the installation
 
     Arguments:
-      settings_file (str): path to configuration file to
-        read settings from (optional)
+      settings_file (str or None): path to configuration
+        file to read settings from (optional)
       resolve_undefined (bool): if True (default) then
         assign values to "null" parameters by checking
         fallback parameters and default values
@@ -56,12 +56,15 @@ class Settings(GenericSettings):
                              "group": str },
                 "metadata": { "custom_project_metadata": str,
                               "custom_run_metadata": str },
+                "qc": { "modules": str,
+                        "fastq_screen_conf_file": str },
                 "runners": { "rsync": jobrunner },
                 "reporting_templates": { "*": str },
             },
             # Defaults
             defaults = {
-                "general.default_runner": "SimpleJobRunner"
+                "general.default_runner": "SimpleJobRunner",
+                "qc.modules": "nanoplot,fastq_screen"
             },
             # Fallbacks
             fallbacks = {
