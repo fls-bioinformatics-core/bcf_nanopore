@@ -796,6 +796,7 @@ def bcf_nanopore_main():
                        help="Input Fastq files")
     qc_cmd.add_argument("--modules", action="store",
                         metavar="MODULE1[,MODULE2...]",
+                        default=qc_modules,
                         help="Specify QC modules to run as comma-separated "
                              "list of names; can be one or more of 'nanoplot', "
                              f"'fastq_screen' (default: {qc_modules})")
