@@ -111,7 +111,8 @@ class NanoporeQC(Pipeline):
         self.add_task(make_report)
 
     def run(self, fastqs, fastq_screen_conf_file, out_dir,
-            nthreads=8, project_dir=None):
+            nthreads=8, project_dir=None, enable_conda=False,
+            conda=None, conda_env_dir=None):
         """
         Run the pipeline
         """
@@ -130,9 +131,9 @@ class NanoporeQC(Pipeline):
             },
             max_jobs=12,
             max_slots=12,
-            enable_conda=True,
-            conda_env_dir=os.path.join(os.getcwd(),
-                                       "__nanoporeqc.conda"),
+            enable_conda=enable_conda,
+            conda=conda,
+            conda_env_dir=conda_env_dir,
             runners={
                 "fastq_screen": SimpleJobRunner(nslots=nthreads),
                 "nanoplot": SimpleJobRunner(nslots=nthreads)

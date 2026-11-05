@@ -558,7 +558,8 @@ def fetch(project_dir, target_dir, file_types=None, dry_run=False,
             set_group(group, os.path.join(target_dir, project_name))
 
 
-def qc(fastqs, out_dir, fastq_screen_conf_file, qc_modules, project_dir=None):
+def qc(fastqs, out_dir, fastq_screen_conf_file, qc_modules, project_dir=None,
+       enable_conda=False):
     """
     Run the Nanopore QC pipeline
 
@@ -568,6 +569,8 @@ def qc(fastqs, out_dir, fastq_screen_conf_file, qc_modules, project_dir=None):
         fastq_screen_conf_file (str): path to FastqScreen configuration file
         qc_modules (list): list of QC module names to run
         project_dir (str): optional, path to PromethION project directory
+        enable_conda (bool): if True then enable conda dependency resolution
+          (default: False)
     """
     # Run the screens
     print("Starting QC...")
@@ -575,7 +578,10 @@ def qc(fastqs, out_dir, fastq_screen_conf_file, qc_modules, project_dir=None):
     nanopore_qc.run(fastqs,
                     fastq_screen_conf_file,
                     out_dir,
-                    project_dir=project_dir)
+                    project_dir=project_dir,
+                    enable_conda=enable_conda,
+                    conda_env_dir=os.path.join(os.getcwd(),
+                                               "__nanoporeqc.conda"))
     print("Finished QC.")
 
 
@@ -887,4 +893,5 @@ def bcf_nanopore_main():
             out_dir = os.getcwd()
         else:
             out_dir = os.path.abspath(args.out_dir)
-        qc(fastqs, out_dir, fastq_screen_conf_file, qc_modules)
+        qc(fastqs, out_dir, fastq_screen_conf_file, qc_modules,
+           enable_conda=settings.conda.enable_conda)
