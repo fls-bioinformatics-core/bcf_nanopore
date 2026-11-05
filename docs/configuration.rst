@@ -33,6 +33,20 @@ specification.
 * ``rsync``: runner for large and/or long-running data transfer
   operations (e.g. fetching raw data files)
 
+---------------------------
+Conda dependency resolution
+---------------------------
+
+The ``conda`` section allows configuration of ``conda`` for
+resolving dependencies within pipelines (e.g. within the ``qc``
+command):
+
+* ``enable_conda``: if set to ``true`` then ``conda`` dependency
+  resolution will be used (turned off by default)
+* ``env_dir``: set the path where conda environments should be
+  created or looked for when resolving dependencies (not set by
+  default)
+
 --------------
 Metadata items
 --------------

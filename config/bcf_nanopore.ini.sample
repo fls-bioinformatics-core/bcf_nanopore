@@ -16,6 +16,12 @@
 ;modules = nanoplot,fastq_screen
 ;fastq_screen_conf_file = /path/to/fastqscreen.conf
 
+# Conda dependency resolution
+# See https://auto-process-ngs.readthedocs.io/en/latest/configuration.html#using-conda-to-resolve-pipeline-dependencies
+;[conda]
+;enable_conda = False
+;env_dir = None
+
 # Define runners for specific jobs
 ;[runners]
 ;rsync = SimpleJobRunner

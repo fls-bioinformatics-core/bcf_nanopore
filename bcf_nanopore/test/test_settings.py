@@ -29,6 +29,12 @@ class TestSettings(unittest.TestCase):
         # General settings
         self.assertTrue(isinstance(s.general.default_runner,
                                    SimpleJobRunner))
+        # QC
+        self.assertEqual(s.qc.modules, "nanoplot,fastq_screen")
+        self.assertEqual(s.qc.fastq_screen_conf_file, None)
+        # Conda
+        self.assertFalse(s.conda.enable_conda)
+        self.assertEqual(s.conda.env_dir, None)
         # Runners
         self.assertTrue(isinstance(s.runners.rsync,
                                    SimpleJobRunner))
@@ -103,6 +109,22 @@ fastq_screen_conf_file = /path/to/fastqscreen.conf
         # QC settings
         self.assertEqual(s.qc.modules, "nanoplot,fastq_screen,bababa")
         self.assertEqual(s.qc.fastq_screen_conf_file, "/path/to/fastqscreen.conf")
+
+    def test_settings_conda(self):
+        """
+        Settings: load conda settings from config .ini file
+        """
+        settings_file = Path(self.wd).joinpath("bcf_nanopore.ini")
+        with open(settings_file, "wt") as fp:
+            fp.write("""[conda]
+enable_conda = True
+env_dir = /path/to/env_dir
+""")
+        # Load settings
+        s = Settings(settings_file)
+        # QC settings
+        self.assertTrue(s.conda.enable_conda)
+        self.assertEqual(s.conda.env_dir, "/path/to/env_dir")
 
     def test_settings_reporting_templates(self):
         """

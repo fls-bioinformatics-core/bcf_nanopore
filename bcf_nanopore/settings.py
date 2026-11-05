@@ -23,6 +23,7 @@ from auto_process_ngs.settings import GenericSettings
 from auto_process_ngs.settings import locate_settings_file
 from auto_process_ngs.settings import get_config_dir
 from auto_process_ngs.settings import jobrunner
+from auto_process_ngs.settings import path
 
 #######################################################################
 # Classes
@@ -57,14 +58,17 @@ class Settings(GenericSettings):
                 "metadata": { "custom_project_metadata": str,
                               "custom_run_metadata": str },
                 "qc": { "modules": str,
-                        "fastq_screen_conf_file": str },
+                        "fastq_screen_conf_file": path },
+                "conda": { "enable_conda": bool,
+                           "env_dir": path },
                 "runners": { "rsync": jobrunner },
                 "reporting_templates": { "*": str },
             },
             # Defaults
             defaults = {
                 "general.default_runner": "SimpleJobRunner",
-                "qc.modules": "nanoplot,fastq_screen"
+                "qc.modules": "nanoplot,fastq_screen",
+                "conda.enable_conda": False,
             },
             # Fallbacks
             fallbacks = {
