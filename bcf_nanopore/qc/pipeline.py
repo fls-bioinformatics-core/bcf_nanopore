@@ -35,6 +35,7 @@ class NanoporeQC(Pipeline):
         self.add_param("fastq_subset", type=int)
         self.add_param("fastq_screen_conf_file", type=str)
         self.add_param("read_counts_out_dir", type=str)
+        self.add_param("filter_fastqs_min_reads", type=int)
         self.add_param("fastq_screen_out_dir", type=str)
         self.add_param("nanoplot_out_dir", type=str)
         self.add_param("project_dir", type=str)
@@ -66,7 +67,8 @@ class NanoporeQC(Pipeline):
         filter_fastqs = FilterFastqs(
             "Filter Fastqs on number of reads",
             get_fastqs.output.fastqs,
-            get_read_counts.output.counts)
+            get_read_counts.output.counts,
+            min_reads=self.params.filter_fastqs_min_reads)
         self.add_task(filter_fastqs)
 
         merge_fastqs = MergeFastqs(
@@ -111,8 +113,9 @@ class NanoporeQC(Pipeline):
         self.add_task(make_report)
 
     def run(self, fastqs, fastq_screen_conf_file, out_dir,
-            nthreads=8, project_dir=None, enable_conda=False,
-            conda=None, conda_env_dir=None):
+            nthreads=8, project_dir=None, filter_fastqs_min_reads=1000,
+            enable_conda=False, conda=None, conda_env_dir=None,
+            poll_interval=None, max_jobs=12, max_slots=12):
         """
         Run the pipeline
         """
@@ -128,9 +131,11 @@ class NanoporeQC(Pipeline):
                 "fastq_screen_conf_file": fastq_screen_conf_file,
                 "out_dir": out_dir,
                 "nthreads": nthreads,
+                "filter_fastqs_min_reads": filter_fastqs_min_reads,
             },
-            max_jobs=12,
-            max_slots=12,
+            max_jobs=max_jobs,
+            max_slots=max_slots,
+            poll_interval=poll_interval,
             enable_conda=enable_conda,
             conda=conda,
             conda_env_dir=conda_env_dir,
