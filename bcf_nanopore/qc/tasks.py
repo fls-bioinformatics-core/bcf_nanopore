@@ -347,10 +347,10 @@ class NanoPlot(PipelineTask):
       fastqs (list): input Fastqs
       out_dir (str): path to output directory
       nthreads (int): number of threads to run NanoPlot with
-        (default: 1)
+        (default: use threads from runner)
     """
 
-    def init(self, fastqs, out_dir, nthreads=1):
+    def init(self, fastqs, out_dir, nthreads=None):
         self.conda("nanoplot=1.46.2")
         self.add_output("out_dir", Param(type="str"))
 
@@ -362,6 +362,11 @@ class NanoPlot(PipelineTask):
             "NanoPlot-data.tsv.gz",
             "*.png"
         ]
+        # Nthreads
+        if self.args.nthreads:
+            nthreads = self.args.nthreads
+        else:
+            nthreads = self.runner_nslots
         # Group Fastqs
         fq_groups = group_fastqs(self.args.fastqs)
         # Loop over flowcell/barcode combinations
@@ -411,7 +416,7 @@ class NanoPlot(PipelineTask):
                         /bin/cp $output {out_dir}
                     done
                     """.format(name=group_name,
-                               threads=self.args.nthreads,
+                               threads=nthreads,
                                fastqs=" ".join(fqs),
                                nanoplot_outputs=" ".join(nanoplot_outputs),
                                out_dir=out_dir))
