@@ -114,14 +114,22 @@ class NanoporeQC(Pipeline):
 
     def run(self, fastqs, fastq_screen_conf_file, out_dir,
             nthreads=8, project_dir=None, filter_fastqs_min_reads=1000,
-            enable_conda=False, conda=None, conda_env_dir=None,
-            poll_interval=None, max_jobs=12, max_slots=12):
+            working_dir=None, enable_conda=False, conda=None,
+            conda_env_dir=None, poll_interval=None, max_jobs=12,
+            max_slots=12):
         """
         Run the pipeline
         """
-        working_dir = tempfile.mkdtemp(prefix="__nanoporeqc.",
-                                       suffix=".tmp",
-                                       dir=os.getcwd())
+        # Working directory
+        clean_up_on_completion = False
+        if working_dir is None:
+            working_dir = tempfile.mkdtemp(prefix="__nanoporeqc.",
+                                           suffix=".tmp",
+                                           dir=os.getcwd())
+            clean_up_on_completion = True
+        working_dir = os.path.abspath(working_dir)
+        if not os.path.exists(working_dir):
+            os.mkdir(working_dir)
         status = Pipeline.run(
             self,
             working_dir=working_dir,
@@ -146,6 +154,7 @@ class NanoporeQC(Pipeline):
             default_runner=SimpleJobRunner(),
             verbose=False,
             exit_on_failure=PipelineFailure.DEFERRED)
-        if status == 0:
+        # Clean up working dir
+        if status == 0 and clean_up_on_completion:
             shutil.rmtree(working_dir)
         return status
