@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 #
 #     mock.py: utilities for creating mock data for tests
-#     Copyright (C) University of Manchester 2024-2025 Peter Briggs
+#     Copyright (C) University of Manchester 2024-2026 Peter Briggs
 #
 
 """
 Utilities for creating mock data for testing
 """
+import os
 import json
+import argparse
 from pathlib import Path
 from textwrap import dedent
 
@@ -642,3 +644,111 @@ def create_json_report(file_name, minknow_version="25"):
                             f"version '{minknow_version}'")
         # Write the mock JSON file
         Path(file_name).write_text(json.dumps(json_data) + "\n")
+
+
+class MockNanoPlot:
+    """
+    Create mock NanoPlot executable
+
+    This class can be used to create a mock
+    NanoPlot executable, which can be used
+    in place of the actual program for testing.
+
+    To create a mock script, use the 'create' static
+    method, e.g.
+
+    >>> MockNanoPlot.create("/tmpbin/NanoPlot")
+
+    The resulting executable will generate mock outputs
+    when run on Fastq files (ignoring their content).
+
+    The executable can be configured on creation to
+    produce different error conditions when run:
+
+    - the exit code can be set to an arbitrary value
+      via the `exit_code` argument
+    """
+
+    @staticmethod
+    def create(path,version=None,no_outputs=False,
+               exit_code=0):
+        """
+        Create a mock NanoPlot executable
+
+        Arguments:
+          path (str): path to the new executable
+            to create. The final executable must
+            not exist, however the directory it
+            will be created in must.
+          version (str): explicit version string
+          no_outputs (bool): if True then make
+            don't create mock outputs for NanoPlot
+          exit_code (int): exit code that the
+            mock executable should complete
+            with
+        """
+        path = os.path.abspath(path)
+        print("Building mock executable: %s" % path)
+        # Don't clobber an existing executable
+        assert(os.path.exists(path) is False)
+        with open(path, 'wt') as fp:
+            fp.write("""#!/usr/bin/env python
+import sys
+from bcf_nanopore.mock import MockNanoPlot
+sys.exit(MockNanoPlot(version=%s,
+                      no_outputs=%s,
+                      exit_code=%s).main(sys.argv[1:]))
+""" % (("\"%s\"" % version if version is not None else None),
+       no_outputs,
+       exit_code))
+            os.chmod(path, 0o775)
+        with open(path, 'rt') as fp:
+            print("NanoPlot:")
+            print("%s" % fp.read())
+        return path
+
+    def __init__(self,version=None,no_outputs=False,
+                 exit_code=0):
+        """
+        Internal: configure the mock NanoPlot
+        """
+        if version is None:
+            version = "1.46.2"
+        self._version = str(version)
+        self._no_outputs = no_outputs
+        self._exit_code = exit_code
+
+    def main(self,args):
+        """
+        Internal: provides mock NanoPlot functionality
+        """
+        # No args
+        if not args:
+            return self._exit_code
+        # Deal with arguments
+        p = argparse.ArgumentParser()
+        p.add_argument("-t",action="store")
+        p.add_argument("--fastq",action="store",nargs="+")
+        p.add_argument("--raw",action="store_true")
+        args = p.parse_args(args)
+        # Create NanoPlot outputs
+        if not self._no_outputs:
+            for fastq in args.fastq:
+                # Check input file
+                if not os.path.exists(fastq):
+                    print("%s: fastq file not found" % fastq)
+                    return 1
+                # Create mock outputs
+                for name in ["NanoPlot-report.html",
+                             "NanoStats.txt",
+                             "NanoPlot-data.tsv.gz",
+                             "LengthvsQualityScatterPlot_dot.png",
+                             "LengthvsQualityScatterPlot_kde.png",
+                             "Non_weightedHistogramReadlength.png",
+                             "Non_weightedLogTransformed_HistogramReadlength.png",
+                             "WeightedHistogramReadlength.png",
+                             "WeightedLogTransformed_HistogramReadlength.png",
+                             "Yield_By_Length.png"]:
+                    with open(name, "wt") as fp:
+                        fp.write("")
+        return self._exit_code
