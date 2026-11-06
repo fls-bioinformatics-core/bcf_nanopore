@@ -205,6 +205,9 @@ class FilterFastqs(PipelineTask):
                 name = fc
             if self.args.counts[name] >= self.args.min_reads:
                 self.output.fastqs.append(fq)
+        if len(self.output.fastqs) == 0:
+            raise PipelineError(f"No FASTQs passed minimum read filter "
+                                f"({self.args.min_reads} reads)")
 
 
 class FastqScreen(PipelineTask):
