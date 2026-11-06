@@ -35,9 +35,14 @@ class TestSettings(unittest.TestCase):
         # Conda
         self.assertFalse(s.conda.enable_conda)
         self.assertEqual(s.conda.env_dir, None)
+        # Scheduler
+        self.assertEqual(s.scheduler.max_concurrent_jobs, 12)
+        self.assertEqual(s.scheduler.max_cores, None)
+        self.assertEqual(s.scheduler.poll_interval, 5.0)
         # Runners
-        self.assertTrue(isinstance(s.runners.rsync,
-                                   SimpleJobRunner))
+        self.assertTrue(isinstance(s.runners.rsync, SimpleJobRunner))
+        self.assertTrue(isinstance(s.runners.fastq_screen, SimpleJobRunner))
+        self.assertTrue(isinstance(s.runners.nanoplot, SimpleJobRunner))
         # Custom metadata
         self.assertEqual(s.metadata.custom_project_metadata, None)
         self.assertEqual(s.metadata.custom_run_metadata, None)

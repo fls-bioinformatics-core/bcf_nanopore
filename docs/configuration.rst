@@ -22,6 +22,20 @@ General configuration options
 * ``group``: file system group to assign to copied and
   created data
 
+-------------
+Job scheduler
+-------------
+
+These settings configure the scheduler for running jobs within the
+package (for example within the QC pipeline):
+
+* ``max_concurrent_jobs``:  limits the number of jobs that the
+  scheduler is allowed to run at once
+* ``max_cores``: the maximum number of threads that the scheduler is
+  allowed to run at once (totalled across all running jobs)
+* ``poll_interval``: the interval (in seconds) at which the scheduler
+  checks and updates the status of running jobs
+
 -----------
 Job runners
 -----------
@@ -30,8 +44,15 @@ Define custom runners for certain types of job in this section,
 otherwise runners will default to the ``general.default_runner``
 specification.
 
+``fetch`` runners:
+
 * ``rsync``: runner for large and/or long-running data transfer
   operations (e.g. fetching raw data files)
+
+``qc`` runners:
+
+* ``fastq_screen``: runner for FastqScreen
+* ``nanoplot``: runner for NanoPlot
 
 ---------------------------
 Conda dependency resolution

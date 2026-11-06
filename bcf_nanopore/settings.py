@@ -55,13 +55,18 @@ class Settings(GenericSettings):
                 "general": { "default_runner": jobrunner,
                              "permissions": str,
                              "group": str },
+                "scheduler": { "max_concurrent_jobs": int,
+                               "max_cores": int,
+                               "poll_interval": float },
                 "metadata": { "custom_project_metadata": str,
                               "custom_run_metadata": str },
                 "qc": { "modules": str,
                         "fastq_screen_conf_file": path },
                 "conda": { "enable_conda": bool,
                            "env_dir": path },
-                "runners": { "rsync": jobrunner },
+                "runners": { "rsync": jobrunner,
+                             "fastq_screen": jobrunner,
+                             "nanoplot": jobrunner },
                 "reporting_templates": { "*": str },
             },
             # Defaults
@@ -69,6 +74,8 @@ class Settings(GenericSettings):
                 "general.default_runner": "SimpleJobRunner",
                 "qc.modules": "nanoplot,fastq_screen",
                 "conda.enable_conda": False,
+                "scheduler.max_concurrent_jobs": 12,
+                "scheduler.poll_interval": 5
             },
             # Fallbacks
             fallbacks = {
