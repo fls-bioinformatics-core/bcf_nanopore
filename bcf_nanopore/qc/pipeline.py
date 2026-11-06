@@ -14,7 +14,6 @@ from .tasks import MergeFastqs
 from .tasks import FastqScreen
 from .tasks import NanoPlot
 from .tasks import Report
-from bcftbx.JobRunner import SimpleJobRunner
 from auto_process_ngs.pipeliner import Pipeline
 from auto_process_ngs.pipeliner import PipelineFailure
 
@@ -113,10 +112,10 @@ class NanoporeQC(Pipeline):
         self.add_task(make_report)
 
     def run(self, fastqs, fastq_screen_conf_file, out_dir,
-            nthreads=8, project_dir=None, filter_fastqs_min_reads=1000,
+            nthreads=None, project_dir=None, filter_fastqs_min_reads=1000,
             working_dir=None, enable_conda=False, conda=None,
-            conda_env_dir=None, poll_interval=None, max_jobs=12,
-            max_slots=12):
+            conda_env_dir=None, runners=None, default_runner=None,
+            poll_interval=None, max_jobs=1, max_slots=None):
         """
         Run the pipeline
         """
@@ -130,6 +129,9 @@ class NanoporeQC(Pipeline):
         working_dir = os.path.abspath(working_dir)
         if not os.path.exists(working_dir):
             os.mkdir(working_dir)
+        # Job runners
+        if runners is None:
+            runners = {}
         status = Pipeline.run(
             self,
             working_dir=working_dir,
@@ -147,11 +149,8 @@ class NanoporeQC(Pipeline):
             enable_conda=enable_conda,
             conda=conda,
             conda_env_dir=conda_env_dir,
-            runners={
-                "fastq_screen": SimpleJobRunner(nslots=nthreads),
-                "nanoplot": SimpleJobRunner(nslots=nthreads)
-            },
-            default_runner=SimpleJobRunner(),
+            runners=runners,
+            default_runner=default_runner,
             verbose=False,
             exit_on_failure=PipelineFailure.DEFERRED)
         # Clean up working dir
