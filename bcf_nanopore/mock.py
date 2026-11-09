@@ -10,6 +10,7 @@ Utilities for creating mock data for testing
 import os
 import json
 import argparse
+import gzip
 from pathlib import Path
 from textwrap import dedent
 
