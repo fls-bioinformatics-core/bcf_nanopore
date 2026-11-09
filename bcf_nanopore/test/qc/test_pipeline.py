@@ -3,27 +3,19 @@
 # Tests for the 'qc.pipeline' module
 
 import os
-import gzip
 import shutil
 import tempfile
 import unittest
 from pathlib import Path
 from bcf_nanopore.qc.pipeline import NanoporeQC
 from bcf_nanopore.mock import MockNanoPlot
+from bcf_nanopore.mock import mock_fastq
 from auto_process_ngs.mock import MockSeqtk
 from auto_process_ngs.mock import MockFastqScreen
 
 
 # Polling interval for pipeline
 POLL_INTERVAL = 0.1
-
-
-# Test FASTQ read
-FQ_READ = """@432b5bb9-932d-4295-a07f-ab0728acb2e2 runid=50109f28-37e9-4f00-7b64-55ea624ebb57 ch=1234 start_time=2026-11-06T08:23:53.991043+01:00 flow_cell_id=PBC32123 basecall_gpu=NVIDIA_A800_80GB_PCIe protocol_group_id=Example sample_id=Example01 barcode=barcode01 barcode_alias=barcode01 parent_read_id=432b5bb9-932d-4295-a07f-ab0728acb2e2 basecall_model_version_id=dna_r10.4.1_e8.2_400bps_hac@v4.3.0
-ACTGTAGTCTACTCGTTGGGGTTGTGCCAGCAATTGGCAAAGTCCTACCGTGACAAGAAAGTTGTCGGTGTCTTTGTGACTTGCCTGTCGCTCTATCTTCAGAGGAGTTTAACGTCTCCATGAAATCCCTGTCTGAAGGGCTGACGCATGCTATCATGAGCTCTTGTCGGCCAAAGCAATATCAGCACCAACAGAAACACAAAGACACCGACAACTTTCTTGTGGGCTGCTACCCCAAGGGAATCCTGCAAGAGTCTTGTCCCCAAAGCGCAATCCCAATCCCAATGGTTTGAGCTTAGAGTCTCTGTAAGGGACATGGGTGGCTCTCTT
-+
-####%%#%$'()($$&''%%%&(&&$$%#$$%&())*)%$#%$%&(+001CCFEKFCDHIKGJSFJQFFEHHHISKSHDGLIJOFGDFA>==AF;8877289<DDE;::;CGA@@?AFIEKHIJKGFELJJIRPGHGFSGFGIPE@??@CCB????DFFH>=11111.))**00:28B??>7>78GB=>>@DA@@ADDHEBLJGS@@HKGSEB,3678:9:=?@@CSIHA:::;<+)()13<;=?SFJSFHLIGKIFLIHG?9421****11,MOSKBLJEEGGIGSHDFFIIKKLHLKOFJADD88:;@><664589AA891--,)*%%
-"""
 
 
 class TestNanoporeQC(unittest.TestCase):
@@ -68,9 +60,7 @@ class TestNanoporeQC(unittest.TestCase):
         for fq in fqs:
             fq = os.path.join(self.data, fq)
             fastqs.append(fq)
-            with gzip.open(fq, 'wt') as fp:
-                for _ in range(5):
-                    fp.write(FQ_READ)
+            mock_fastq(fq, nreads=5)
         # Set up and run the QC
         nanopore_qc = NanoporeQC()
         out_dir = os.path.join(self.wd, "nanopore_qc")
