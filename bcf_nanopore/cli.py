@@ -5,6 +5,7 @@
 #
 
 import os
+import logging
 import tempfile
 import shutil
 from argparse import ArgumentParser
@@ -14,15 +15,22 @@ from auto_process_ngs.fileops import set_group
 from auto_process_ngs.fileops import set_permissions
 from bcftbx.JobRunner import fetch_runner
 from bcftbx.JobRunner import BaseJobRunner
+from bcftbx.JobRunner import SimpleJobRunner
 from .analysis import ProjectAnalysisDir
 from .analysis import RunInfo
 from .nanopore.promethion import BasecallsMetadata
 from .nanopore.promethion import ProjectDir
+from .nanopore.promethion import FlowCell
+from .nanopore.promethion import barcode_dirs
+from .qc.pipeline import NanoporeQC
 from .settings import Settings
 from .utils import execute_command
 from .utils import fmt_value
-from .utils import fmt_yes_no
 from . import get_version
+
+
+# Module-specific logger
+logger = logging.getLogger(__name__)
 
 
 # File types
@@ -476,7 +484,7 @@ def fetch(project_dir, target_dir, file_types=None, dry_run=False,
     project_name = os.path.basename(project_dir)
     # Fetch job runner
     if runner is not None and not isinstance(runner, BaseJobRunner):
-            runner = fetch_runner(runner)
+        runner = fetch_runner(runner)
     print(f"Using job runner '{runner}'")
     # File types to include
     if not file_types:
@@ -549,6 +557,52 @@ def fetch(project_dir, target_dir, file_types=None, dry_run=False,
         print(f"Setting group on copied files to '{group}'")
         if not dry_run:
             set_group(group, os.path.join(target_dir, project_name))
+
+
+def qc(fastqs, out_dir, fastq_screen_conf_file, qc_modules,
+       filter_fastqs_min_reads=None, project_dir=None,
+       runners=None, default_runner=None, enable_conda=False,
+       max_jobs=None, max_slots=None, poll_interval=None):
+    """
+    Run the Nanopore QC pipeline
+
+    Arguments:
+        fastqs (list): Fastqs to run the QC pipeline on
+        out_dir (list): path to directory where the outputs will be written
+        fastq_screen_conf_file (str): path to FastqScreen configuration file
+        qc_modules (list): list of QC module names to run
+        filter_fastqs_min_reads (int): minimum number of reads to filter fastqs
+        project_dir (str): optional, path to PromethION project directory
+        runners (dict): optional, dictionary of job runners; recognised runner
+          IDs are: "fastq_screen", "nanoplot"
+        default_runner (str): optional, default job runner (overridden by
+          runners assigned to specific tasks)
+        enable_conda (bool): if True then enable conda dependency resolution
+          (default: False)
+        max_jobs (int): maximum number of jobs that the scheduler is allowed
+          to run at once
+        max_slots (int): maximum number of threads that the scheduler is allowed
+          to run at once (totalled across all running jobs)
+        poll_interval (int): interval (in seconds) at which the scheduler checks
+          and updates the status of running jobs
+    """
+    # Run the screens
+    print("Starting QC...")
+    nanopore_qc = NanoporeQC(modules=qc_modules)
+    nanopore_qc.run(fastqs,
+                    fastq_screen_conf_file,
+                    out_dir,
+                    filter_fastqs_min_reads=filter_fastqs_min_reads,
+                    project_dir=project_dir,
+                    enable_conda=enable_conda,
+                    conda_env_dir=os.path.join(os.getcwd(),
+                                               "__nanoporeqc.conda"),
+                    runners=runners,
+                    default_runner=default_runner,
+                    max_jobs=max_jobs,
+                    max_slots=max_slots,
+                    poll_interval=poll_interval)
+    print("Finished QC.")
 
 
 def bcf_nanopore_main():
@@ -743,6 +797,36 @@ def bcf_nanopore_main():
                            help=f"job runner to use (default: "
                            f"'{default_runner}')")
 
+    # QC command
+    qc_modules = settings.qc.modules
+    conf_file = settings.qc.fastq_screen_conf_file
+    qc_cmd = sp.add_parser("qc",
+                           help="Run QC on PromethION data")
+    mutex = qc_cmd.add_mutually_exclusive_group()
+    mutex.add_argument("--project", action="store",
+                       dest="project_dir",
+                       metavar="PROJECT_DIR",
+                       help="PromethION project directory")
+    mutex.add_argument("--flowcell", action="store", nargs="+",
+                       dest="flowcells",
+                       metavar="FLOWCELL_DIR",
+                       help="Input flowcell directories")
+    mutex.add_argument("--fastq", action="store", nargs="+",
+                       dest="fastqs",
+                       metavar="FASTQ",
+                       help="Input Fastq files")
+    qc_cmd.add_argument("--modules", action="store",
+                        metavar="MODULE1[,MODULE2...]",
+                        default=qc_modules,
+                        help="Specify QC modules to run as comma-separated "
+                             "list of names; can be one or more of 'nanoplot', "
+                             f"'fastq_screen' (default: {qc_modules})")
+    qc_cmd.add_argument("-o", "--out_dir", action="store",
+                        help="Output directory")
+    qc_cmd.add_argument("-c", "--conf_file", action="store",
+                        default=conf_file,
+                        help=f"FastqScreen conf file (default: {conf_file})")
+
     # Process command line
     args = p.parse_args()
 
@@ -777,3 +861,72 @@ def bcf_nanopore_main():
               file_types=[x for x in str(args.file_types).split(",")],
               dry_run=args.dry_run, runner=args.runner,
               permissions=args.permissions, group=args.group)
+    elif args.command == "qc":
+        # Gather input Fastqs
+        if args.fastqs:
+            # List of Fastqs
+            fastqs = [os.path.abspath(fq) for fq in args.fastqs]
+        elif args.flowcells:
+            # List of flowcells
+            fastqs = []
+            for flowcell in args.flowcells:
+                flowcell = FlowCell(os.path.abspath(flowcell))
+                if "fastq" not in flowcell.file_types:
+                    logger.warning(f"{flowcell}: no Fastqs?")
+                    continue
+                barcodes = barcode_dirs(flowcell.fastq_pass)
+                if barcodes:
+                    barcodes.append("unclassified")
+                    for barcode in barcodes:
+                        barcode_dir = os.path.join(flowcell.fastq_pass,
+                                                   barcode)
+                        for fq in os.listdir(barcode_dir):
+                            fastqs.append(os.path.join(barcode_dir, fq))
+                else:
+                    for fq in os.listdir(flowcell.fastq_pass):
+                        fastqs.append(os.path.join(flowcell.fastq_pass, fq))
+        elif args.project_dir:
+            # PromethION project directory
+            fastqs = []
+            for run in ProjectDir(args.project_dir).runs:
+                print(f"Run '{run.name}'...")
+                for flowcell in run.flow_cells:
+                    print(f"...flow cell: '{flowcell}'")
+                    if "fastq" not in flowcell.file_types:
+                        logger.warning(f"{flowcell}: no Fastqs?")
+                        continue
+                    barcodes = barcode_dirs(flowcell.fastq_pass)
+                    if barcodes:
+                        barcodes.append("unclassified")
+                        for barcode in barcodes:
+                            barcode_dir = os.path.join(flowcell.fastq_pass,
+                                                       barcode)
+                            for fq in os.listdir(barcode_dir):
+                                fastqs.append(os.path.join(barcode_dir, fq))
+                    else:
+                        for fq in os.listdir(flowcell.fastq_pass):
+                            fastqs.append(os.path.join(flowcell.fastq_pass, fq))
+        # Collect QC modules
+        qc_modules = args.modules.split(",")
+        # Fastq conf file
+        fastq_screen_conf_file = os.path.abspath(args.conf_file)
+        # Runners
+        runners = {
+            "fastq_screen": settings.runners.fastq_screen,
+            "nanoplot": settings.runners.nanoplot
+        }
+        default_runner = settings.general.default_runner
+        # Scheduler configuration
+        max_jobs = settings.scheduler.max_concurrent_jobs
+        max_slots = settings.scheduler.max_cores
+        poll_interval = settings.scheduler.poll_interval
+        # Output directory
+        if not args.out_dir:
+            out_dir = os.getcwd()
+        else:
+            out_dir = os.path.abspath(args.out_dir)
+        qc(fastqs, out_dir, fastq_screen_conf_file, qc_modules,
+           project_dir=args.project_dir,
+           runners=runners, default_runner=default_runner,
+           enable_conda=settings.conda.enable_conda,
+           max_jobs=max_jobs, max_slots=max_slots, poll_interval=poll_interval)

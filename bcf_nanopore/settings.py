@@ -23,6 +23,7 @@ from auto_process_ngs.settings import GenericSettings
 from auto_process_ngs.settings import locate_settings_file
 from auto_process_ngs.settings import get_config_dir
 from auto_process_ngs.settings import jobrunner
+from auto_process_ngs.settings import path
 
 #######################################################################
 # Classes
@@ -40,8 +41,8 @@ class Settings(GenericSettings):
     2. Config directory of the installation
 
     Arguments:
-      settings_file (str): path to configuration file to
-        read settings from (optional)
+      settings_file (str or None): path to configuration
+        file to read settings from (optional)
       resolve_undefined (bool): if True (default) then
         assign values to "null" parameters by checking
         fallback parameters and default values
@@ -54,14 +55,27 @@ class Settings(GenericSettings):
                 "general": { "default_runner": jobrunner,
                              "permissions": str,
                              "group": str },
+                "scheduler": { "max_concurrent_jobs": int,
+                               "max_cores": int,
+                               "poll_interval": float },
                 "metadata": { "custom_project_metadata": str,
                               "custom_run_metadata": str },
-                "runners": { "rsync": jobrunner },
+                "qc": { "modules": str,
+                        "fastq_screen_conf_file": path },
+                "conda": { "enable_conda": bool,
+                           "env_dir": path },
+                "runners": { "rsync": jobrunner,
+                             "fastq_screen": jobrunner,
+                             "nanoplot": jobrunner },
                 "reporting_templates": { "*": str },
             },
             # Defaults
             defaults = {
-                "general.default_runner": "SimpleJobRunner"
+                "general.default_runner": "SimpleJobRunner",
+                "qc.modules": "nanoplot,fastq_screen",
+                "conda.enable_conda": False,
+                "scheduler.max_concurrent_jobs": 12,
+                "scheduler.poll_interval": 5
             },
             # Fallbacks
             fallbacks = {

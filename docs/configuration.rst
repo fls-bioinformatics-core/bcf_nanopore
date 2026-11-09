@@ -22,6 +22,20 @@ General configuration options
 * ``group``: file system group to assign to copied and
   created data
 
+-------------
+Job scheduler
+-------------
+
+These settings configure the scheduler for running jobs within the
+package (for example within the QC pipeline):
+
+* ``max_concurrent_jobs``:  limits the number of jobs that the
+  scheduler is allowed to run at once
+* ``max_cores``: the maximum number of threads that the scheduler is
+  allowed to run at once (totalled across all running jobs)
+* ``poll_interval``: the interval (in seconds) at which the scheduler
+  checks and updates the status of running jobs
+
 -----------
 Job runners
 -----------
@@ -30,8 +44,29 @@ Define custom runners for certain types of job in this section,
 otherwise runners will default to the ``general.default_runner``
 specification.
 
+``fetch`` runners:
+
 * ``rsync``: runner for large and/or long-running data transfer
   operations (e.g. fetching raw data files)
+
+``qc`` runners:
+
+* ``fastq_screen``: runner for FastqScreen
+* ``nanoplot``: runner for NanoPlot
+
+---------------------------
+Conda dependency resolution
+---------------------------
+
+The ``conda`` section allows configuration of ``conda`` for
+resolving dependencies within pipelines (e.g. within the ``qc``
+command):
+
+* ``enable_conda``: if set to ``true`` then ``conda`` dependency
+  resolution will be used (turned off by default)
+* ``env_dir``: set the path where conda environments should be
+  created or looked for when resolving dependencies (not set by
+  default)
 
 --------------
 Metadata items
@@ -47,6 +82,19 @@ Additional site-specific metadata items can be configured in the
 
 Note that metadata item names can only contain letters, numbers
 and the underscore character, and cannot start with a digit).
+
+-----------
+QC settings
+-----------
+
+Custom defaults for running the QC pipeline can be configured in the
+``qc`` section:
+
+* ``modules``: specifies which QC modules to include when the
+  pipeline is run
+* ``fastqscreen_conf_file``: specifies the location of a ``.conf``
+  file with the panel of FASTA files to be used by the FastqScreen
+  program when screening for contaminants
 
 -------------------
 Reporting templates

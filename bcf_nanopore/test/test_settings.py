@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Tests for the 'analysis' module
+# Tests for the 'settings' module
 
 import os
 import shutil
@@ -29,9 +29,20 @@ class TestSettings(unittest.TestCase):
         # General settings
         self.assertTrue(isinstance(s.general.default_runner,
                                    SimpleJobRunner))
+        # QC
+        self.assertEqual(s.qc.modules, "nanoplot,fastq_screen")
+        self.assertEqual(s.qc.fastq_screen_conf_file, None)
+        # Conda
+        self.assertFalse(s.conda.enable_conda)
+        self.assertEqual(s.conda.env_dir, None)
+        # Scheduler
+        self.assertEqual(s.scheduler.max_concurrent_jobs, 12)
+        self.assertEqual(s.scheduler.max_cores, None)
+        self.assertEqual(s.scheduler.poll_interval, 5.0)
         # Runners
-        self.assertTrue(isinstance(s.runners.rsync,
-                                   SimpleJobRunner))
+        self.assertTrue(isinstance(s.runners.rsync, SimpleJobRunner))
+        self.assertTrue(isinstance(s.runners.fastq_screen, SimpleJobRunner))
+        self.assertTrue(isinstance(s.runners.nanoplot, SimpleJobRunner))
         # Custom metadata
         self.assertEqual(s.metadata.custom_project_metadata, None)
         self.assertEqual(s.metadata.custom_run_metadata, None)
@@ -73,6 +84,52 @@ custom_run_metadata = order_numbers,analysts
         # Custom metadata
         self.assertEqual(s.metadata.custom_project_metadata, "supplier")
         self.assertEqual(s.metadata.custom_run_metadata, "order_numbers,analysts")
+
+    def test_settings_qc_defaults(self):
+        """
+        Settings: load QC default settings from empty config .ini file
+        """
+        settings_file = Path(self.wd).joinpath("bcf_nanopore.ini")
+        with open(settings_file, "wt") as fp:
+            fp.write("""[qc]
+""")
+        # Load settings
+        s = Settings(settings_file)
+        # QC settings
+        self.assertEqual(s.qc.modules, "nanoplot,fastq_screen")
+        self.assertEqual(s.qc.fastq_screen_conf_file, None)
+
+    def test_settings_qc(self):
+        """
+        Settings: load QC settings from config .ini file
+        """
+        settings_file = Path(self.wd).joinpath("bcf_nanopore.ini")
+        with open(settings_file, "wt") as fp:
+            fp.write("""[qc]
+modules = nanoplot,fastq_screen,bababa
+fastq_screen_conf_file = /path/to/fastqscreen.conf
+""")
+        # Load settings
+        s = Settings(settings_file)
+        # QC settings
+        self.assertEqual(s.qc.modules, "nanoplot,fastq_screen,bababa")
+        self.assertEqual(s.qc.fastq_screen_conf_file, "/path/to/fastqscreen.conf")
+
+    def test_settings_conda(self):
+        """
+        Settings: load conda settings from config .ini file
+        """
+        settings_file = Path(self.wd).joinpath("bcf_nanopore.ini")
+        with open(settings_file, "wt") as fp:
+            fp.write("""[conda]
+enable_conda = True
+env_dir = /path/to/env_dir
+""")
+        # Load settings
+        s = Settings(settings_file)
+        # QC settings
+        self.assertTrue(s.conda.enable_conda)
+        self.assertEqual(s.conda.env_dir, "/path/to/env_dir")
 
     def test_settings_reporting_templates(self):
         """

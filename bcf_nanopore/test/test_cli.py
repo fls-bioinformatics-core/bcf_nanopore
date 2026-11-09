@@ -9,17 +9,25 @@ import shutil
 import tempfile
 import unittest
 from pathlib import Path
+from auto_process_ngs.mock import MockFastqScreen
+from auto_process_ngs.mock import MockSeqtk
 from bcf_nanopore.analysis import ProjectAnalysisDir
 from bcf_nanopore.analysis import ProjectInfo
 from bcf_nanopore.analysis import RunInfo
 from bcf_nanopore.mock import MockPromethionDataDir
 from bcf_nanopore.mock import MockProjectAnalysisDir
+from bcf_nanopore.mock import MockNanoPlot
+from bcf_nanopore.mock import mock_fastq
 from bcf_nanopore.cli import info as cli_info
 from bcf_nanopore.cli import setup as cli_setup
 from bcf_nanopore.cli import update as cli_update
 from bcf_nanopore.cli import fetch as cli_fetch
 from bcf_nanopore.cli import report as cli_report
 from bcf_nanopore.cli import metadata as cli_metadata
+from bcf_nanopore.cli import qc as cli_qc
+
+
+POLL_INTERVAL = 0.1
 
 
 class TestInfoCommand(unittest.TestCase):
@@ -925,3 +933,58 @@ class TestMetadataCommand(unittest.TestCase):
             run = "_".join(run_dir.split("_")[1:])
             run_info = RunInfo(os.path.join(analysis_dir_path, run_dir, "run.info"))
             self.assertEqual(run_info["name"], run)
+
+
+class TestQcCommand(unittest.TestCase):
+
+    def setUp(self):
+        # Store current directory
+        self.cwd = os.getcwd()
+        # Temporary working directory for the test
+        self.wd = tempfile.mkdtemp()
+        # Directory for mock executables
+        self.bin = os.path.join(self.wd,"bin")
+        os.mkdir(self.bin)
+        # Update PATH to include mock executables
+        self.path = os.environ["PATH"]
+        os.environ['PATH'] = "%s:%s" % (self.bin, self.path)
+        # Data directory within the temporary working directory
+        self.data = os.path.join(self.wd, "data")
+        os.mkdir(self.data)
+        # Add empty FastqScreen conf file
+        self.fastq_screen_conf_file = os.path.join(
+            self.data, "fastq_screen.conf")
+        with open(self.fastq_screen_conf_file, 'wt') as fp:
+            fp.write("")
+
+    def tearDown(self):
+        # Restore PATH
+        os.environ["PATH"] = self.path
+        # Remove working dir
+        if Path(self.wd).exists():
+            shutil.rmtree(self.wd)
+        # Return to original directory
+        os.chdir(self.cwd)
+
+    def test_qc_fastqs(self):
+        """
+        qc: run QC on a set of FASTQ files
+        """
+        # Make mock QC executables
+        MockSeqtk.create(os.path.join(self.bin, "seqtk"))
+        MockFastqScreen.create(os.path.join(self.bin, "fastq_screen"))
+        MockNanoPlot.create(os.path.join(self.bin, "NanoPlot"))
+        # Create mock Fastqs
+        fqs = ["PBC321213_pass_barcode01_45678a10_5432b345_0.fastq.gz",
+               "PBC321213_pass_barcode01_45678a10_5432b345_1.fastq.gz"]
+        fastqs = []
+        for fq in fqs:
+            fq = os.path.join(self.data, fq)
+            fastqs.append(fq)
+            mock_fastq(fq, nreads=5)
+        out_dir = os.path.join(self.wd, "nanopore_qc")
+        # Run the QC command
+        cli_qc(fastqs, out_dir, self.fastq_screen_conf_file, ["nanoplot", "fastq_screen"],
+               filter_fastqs_min_reads=1, project_dir=None,
+               poll_interval=POLL_INTERVAL, max_jobs=1)
+
