@@ -123,7 +123,7 @@ class NanoporeQC(Pipeline):
         self.add_task(make_report)
 
     def run(self, fastqs, fastq_screen_conf_file, out_dir,
-            nthreads=None, project_dir=None, filter_fastqs_min_reads=1000,
+            nthreads=None, project_dir=None, filter_fastqs_min_reads=None,
             working_dir=None, enable_conda=False, conda=None,
             conda_env_dir=None, runners=None, default_runner=None,
             poll_interval=None, max_jobs=1, max_slots=None):
