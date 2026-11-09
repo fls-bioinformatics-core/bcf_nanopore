@@ -559,7 +559,8 @@ def fetch(project_dir, target_dir, file_types=None, dry_run=False,
             set_group(group, os.path.join(target_dir, project_name))
 
 
-def qc(fastqs, out_dir, fastq_screen_conf_file, qc_modules, project_dir=None,
+def qc(fastqs, out_dir, fastq_screen_conf_file, qc_modules,
+       filter_fastqs_min_reads=None, project_dir=None,
        runners=None, default_runner=None, enable_conda=False,
        max_jobs=None, max_slots=None, poll_interval=None):
     """
@@ -570,6 +571,7 @@ def qc(fastqs, out_dir, fastq_screen_conf_file, qc_modules, project_dir=None,
         out_dir (list): path to directory where the outputs will be written
         fastq_screen_conf_file (str): path to FastqScreen configuration file
         qc_modules (list): list of QC module names to run
+        filter_fastqs_min_reads (int): minimum number of reads to filter fastqs
         project_dir (str): optional, path to PromethION project directory
         runners (dict): optional, dictionary of job runners; recognised runner
           IDs are: "fastq_screen", "nanoplot"
@@ -590,6 +592,7 @@ def qc(fastqs, out_dir, fastq_screen_conf_file, qc_modules, project_dir=None,
     nanopore_qc.run(fastqs,
                     fastq_screen_conf_file,
                     out_dir,
+                    filter_fastqs_min_reads=filter_fastqs_min_reads,
                     project_dir=project_dir,
                     enable_conda=enable_conda,
                     conda_env_dir=os.path.join(os.getcwd(),
