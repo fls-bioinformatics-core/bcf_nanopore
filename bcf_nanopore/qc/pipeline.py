@@ -152,7 +152,8 @@ class NanoporeQC(Pipeline):
                 "fastq_screen_conf_file": fastq_screen_conf_file,
                 "out_dir": out_dir,
                 "nthreads": nthreads,
-                "filter_fastqs_min_reads": filter_fastqs_min_reads,
+                "filter_fastqs_min_reads": (filter_fastqs_min_reads
+                                            if filter_fastqs_min_reads else 1000),
             },
             max_jobs=max_jobs,
             max_slots=max_slots,
