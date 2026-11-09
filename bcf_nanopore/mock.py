@@ -15,8 +15,6 @@ from pathlib import Path
 from textwrap import dedent
 
 from .analysis import ProjectInfo
-from .analysis import SamplesInfo
-from .analysis import FlowcellBasecallsInfo
 
 # Example JSON data from HTML files
 
