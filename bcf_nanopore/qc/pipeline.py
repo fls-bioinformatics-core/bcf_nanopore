@@ -1,6 +1,17 @@
 #!/usr/bin/env python3
+#
+#     qc/pipeline.py: QC pipeline for Nanopore data
+#     Copyright (C) University of Manchester 2026 Peter Briggs
+#
 
-# Create pipeline for running FastqScreen on Nanopore data
+"""
+Implements a QC pipeline including NanoPlot and FastqScreen
+for Oxford Nanopore PromethION data.
+
+Provides the following classes:
+
+- NanoporeQC: pipeline for Nanopore QC
+"""
 
 
 import os
