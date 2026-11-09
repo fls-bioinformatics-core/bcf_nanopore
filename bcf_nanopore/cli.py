@@ -805,14 +805,15 @@ def bcf_nanopore_main():
     mutex = qc_cmd.add_mutually_exclusive_group()
     mutex.add_argument("--project", action="store",
                        dest="project_dir",
-                       metavar="dir",
+                       metavar="PROJECT_DIR",
                        help="PromethION project directory")
     mutex.add_argument("--flowcell", action="store", nargs="+",
                        dest="flowcells",
-                       metavar="flowcell [flowcell..]",
+                       metavar="FLOWCELL_DIR",
                        help="Input flowcell directories")
     mutex.add_argument("--fastq", action="store", nargs="+",
-                       dest="fastqs", metavar="fastq [fastq...]",
+                       dest="fastqs",
+                       metavar="FASTQ",
                        help="Input Fastq files")
     qc_cmd.add_argument("--modules", action="store",
                         metavar="MODULE1[,MODULE2...]",
@@ -892,7 +893,7 @@ def bcf_nanopore_main():
                 for flowcell in run.flow_cells:
                     print(f"...flow cell: '{flowcell}'")
                     if "fastq" not in flowcell.file_types:
-                        logger.warn(f"{flowcell}: no Fastqs?")
+                        logger.warning(f"{flowcell}: no Fastqs?")
                         continue
                     barcodes = barcode_dirs(flowcell.fastq_pass)
                     if barcodes:
@@ -925,6 +926,7 @@ def bcf_nanopore_main():
         else:
             out_dir = os.path.abspath(args.out_dir)
         qc(fastqs, out_dir, fastq_screen_conf_file, qc_modules,
+           project_dir=args.project_dir,
            runners=runners, default_runner=default_runner,
            enable_conda=settings.conda.enable_conda,
            max_jobs=max_jobs, max_slots=max_slots, poll_interval=poll_interval)
