@@ -173,17 +173,21 @@ Usage:
 
 ::
 
-    bcf_nanopore qc [--project PROJECT_DIR | --flowcell FLOWCELL_DIR [FLOWCELL_DIR ...] | --fastq FASTQ [FASTQ ...]] [options...]
+    bcf_nanopore qc [ PROJECT_DIR | FLOWCELL_DIR [FLOWCELL_DIR ...] | FASTQ [FASTQ ...]] [options...]
 
 Run the QC pipeline on PromethION data.
 
 The pipeline requires FASTQ files as input, which can be specified in one of
 three ways:
 
-* ``--project PROJECT_DIR``: gather all FASTQs from ``PROJECT_DIR``
-* ``--flowcell FLOWCELL_DIR [FLOWCELL_DIR ...]``: gather all FASTQs from the
-  specified flowcell directories
-* ``--fastq FASTQ [FASTQ ...]``: specify individual FASTQ files
+* Specifying a single PromethION project directory ``PROJECT_DIR``, which will
+  operate on all FASTQs discovered within, or
+* Specifying one or more flowcell directories ``FLOWCELL_DIR [FLOWCELL_DIR ...]``,
+  which will operate on all FASTQs discovered within those directories, or
+* Specifying one or more individual FASTQs ``FASTQ [FASTQ ...]``, which will
+  operate on those FASTQ files.
+
+It is not permitted to mix input types in a single QC run.
 
 The pipeline groups FASTQs by flowcell and name. The following QC modules are
 implemented:
