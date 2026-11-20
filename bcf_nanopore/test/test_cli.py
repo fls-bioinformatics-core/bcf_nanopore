@@ -966,6 +966,76 @@ class TestQcCommand(unittest.TestCase):
         # Return to original directory
         os.chdir(self.cwd)
 
+    def test_qc_project_dir(self):
+        """
+        qc: run QC on a PromethION project directory
+        """
+        # Make a mock project directory
+        data_dir = MockPromethionDataDir("PromethION_Project_001_PerGynt")
+        data_dir.add_flow_cell("20240513_0829_1A_PAW15419_465bb23f",
+                               relpath=Path("PG1-4_20240513").joinpath("PG1-2"))
+        data_dir.add_flow_cell("20240529_0830_1A_PAW17328_523ce32d",
+                               relpath=Path("PG3-4_20240529").joinpath("PG3-4"))
+        project_dir = data_dir.create(self.wd)
+        flowcell_dirs = [
+            os.path.join(project_dir, fc)
+            for fc in [os.path.join("PG1-4_20240513", "PG1-2", "20240513_0829_1A_PAW15419_465bb23f"),
+                       os.path.join("PG3-4_20240529", "PG3-4", "20240529_0830_1A_PAW17328_523ce32d")]]
+        # Populate the flowcell dirs with mock Fastqs
+        fqs = ["PBC321213_pass_{barcode}_45678a10_5432b345_0.fastq.gz",
+               "PBC321213_pass_{barcode}_45678a10_5432b345_1.fastq.gz"]
+        for fc in flowcell_dirs:
+            # Only populate first four barcode directories
+            for bc in list(os.listdir(os.path.join(fc, "fastq_pass")))[:4]:
+                for fq in fqs:
+                    mock_fastq(os.path.join(fc, "fastq_pass", bc, fq.format(barcode=bc)),
+                               nreads=5)
+        # Make mock QC executables
+        MockSeqtk.create(os.path.join(self.bin, "seqtk"))
+        MockFastqScreen.create(os.path.join(self.bin, "fastq_screen"))
+        MockNanoPlot.create(os.path.join(self.bin, "NanoPlot"))
+        out_dir = os.path.join(self.wd, "nanopore_qc")
+        # Run the QC command
+        status = cli_qc([project_dir], out_dir, self.fastq_screen_conf_file, ["nanoplot", "fastq_screen"],
+                        filter_fastqs_min_reads=1,
+                        poll_interval=POLL_INTERVAL, max_jobs=1)
+        self.assertEqual(status, 0)
+
+    def test_qc_flowcell_dirs(self):
+        """
+        qc: run QC on a set of PromethION flowcell directories
+        """
+        # Make a mock project directory with flowcells
+        data_dir = MockPromethionDataDir("PromethION_Project_001_PerGynt")
+        data_dir.add_flow_cell("20240513_0829_1A_PAW15419_465bb23f",
+                               relpath=Path("PG1-4_20240513").joinpath("PG1-2"))
+        data_dir.add_flow_cell("20240529_0830_1A_PAW17328_523ce32d",
+                               relpath=Path("PG3-4_20240529").joinpath("PG3-4"))
+        project_dir = data_dir.create(self.wd)
+        flowcell_dirs = [
+            os.path.join(project_dir, fc)
+            for fc in [os.path.join("PG1-4_20240513", "PG1-2", "20240513_0829_1A_PAW15419_465bb23f"),
+                       os.path.join("PG3-4_20240529", "PG3-4", "20240529_0830_1A_PAW17328_523ce32d")]]
+        # Populate the flowcell dirs with mock Fastqs
+        fqs = ["PBC321213_pass_{barcode}_45678a10_5432b345_0.fastq.gz",
+               "PBC321213_pass_{barcode}_45678a10_5432b345_1.fastq.gz"]
+        for fc in flowcell_dirs:
+            # Only populate first four barcode directories
+            for bc in list(os.listdir(os.path.join(fc, "fastq_pass")))[:4]:
+                for fq in fqs:
+                    mock_fastq(os.path.join(fc, "fastq_pass", bc, fq.format(barcode=bc)),
+                               nreads=5)
+        # Make mock QC executables
+        MockSeqtk.create(os.path.join(self.bin, "seqtk"))
+        MockFastqScreen.create(os.path.join(self.bin, "fastq_screen"))
+        MockNanoPlot.create(os.path.join(self.bin, "NanoPlot"))
+        out_dir = os.path.join(self.wd, "nanopore_qc")
+        # Run the QC command
+        status = cli_qc(flowcell_dirs, out_dir, self.fastq_screen_conf_file, ["nanoplot", "fastq_screen"],
+                        filter_fastqs_min_reads=1, project_dir=project_dir,
+                        poll_interval=POLL_INTERVAL, max_jobs=1)
+        self.assertEqual(status, 0)
+
     def test_qc_fastqs(self):
         """
         qc: run QC on a set of FASTQ files
@@ -984,7 +1054,38 @@ class TestQcCommand(unittest.TestCase):
             mock_fastq(fq, nreads=5)
         out_dir = os.path.join(self.wd, "nanopore_qc")
         # Run the QC command
-        cli_qc(fastqs, out_dir, self.fastq_screen_conf_file, ["nanoplot", "fastq_screen"],
-               filter_fastqs_min_reads=1, project_dir=None,
-               poll_interval=POLL_INTERVAL, max_jobs=1)
+        status = cli_qc(fastqs, out_dir, self.fastq_screen_conf_file, ["nanoplot", "fastq_screen"],
+                        filter_fastqs_min_reads=1, project_dir=None,
+                        poll_interval=POLL_INTERVAL, max_jobs=1)
+        self.assertEqual(status, 0)
 
+    def test_qc_fail_for_multiple_project_dirs(self):
+        """
+        qc: refuse to run QC on multiple PromethION project directories
+        """
+        # Make mock project directories
+        project_dirs = []
+        data_dir = MockPromethionDataDir("PromethION_Project_001_PerGynt")
+        data_dir.add_flow_cell("20240513_0829_1A_PAW15419_465bb23f",
+                               relpath=Path("PG1-4_20240513").joinpath("PG1-2"))
+        project_dirs.append(data_dir.create(self.wd))
+        # Make mock project directories
+        data_dir = MockPromethionDataDir("PromethION_Project_002_HenrikIbsen")
+        data_dir.add_flow_cell("20240513_0829_1A_PAW26520_465bb23f",
+                               relpath=Path("HI5-8_20240513").joinpath("HI5-6"))
+        project_dirs.append(data_dir.create(self.wd))
+        # Make mock QC executables
+        MockSeqtk.create(os.path.join(self.bin, "seqtk"))
+        MockFastqScreen.create(os.path.join(self.bin, "fastq_screen"))
+        MockNanoPlot.create(os.path.join(self.bin, "NanoPlot"))
+        out_dir = os.path.join(self.wd, "nanopore_qc")
+        # QC command raises an exception
+        self.assertRaises(Exception,
+                          cli_qc,
+                          project_dirs,
+                          out_dir,
+                          self.fastq_screen_conf_file,
+                          ["nanoplot", "fastq_screen"],
+                          filter_fastqs_min_reads=1,
+                          poll_interval=POLL_INTERVAL,
+                          max_jobs=1)
