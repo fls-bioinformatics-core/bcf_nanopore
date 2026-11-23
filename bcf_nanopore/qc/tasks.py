@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
+#
+#     qc/tasks.py: individual tasks for Nanopore QC pipeline
+#     Copyright (C) University of Manchester 2026 Peter Briggs
+#
 
-# Tasks for Nanopore QC pipeline
+"""
+Classes implementing tasks that are used in the QC pipeline for
+Oxford Nanopore PromethION data.
+"""
 
 
 import os
