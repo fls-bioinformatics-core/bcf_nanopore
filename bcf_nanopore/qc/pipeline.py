@@ -77,7 +77,6 @@ class NanoporeQC(Pipeline):
         filter_fastqs = FilterFastqs(
             "Filter Fastqs on number of reads",
             get_fastqs.output.fastqs,
-            get_read_counts.output.counts,
             min_reads=self.params.filter_fastqs_min_reads)
         self.add_task(filter_fastqs)
 

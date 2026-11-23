@@ -4,9 +4,9 @@
 
 
 import os
+import gzip
 from .reporting import report_nanopore_qc
 from .utils import group_fastqs
-from .utils import split_fastq_name
 from auto_process_ngs.pipeliner import PipelineTask
 from auto_process_ngs.pipeliner import PipelineFunctionTask
 from auto_process_ngs.pipeliner import PipelineError
@@ -190,24 +190,55 @@ class GetReadCounts(PipelineTask):
 
 class FilterFastqs(PipelineTask):
     """
-    Filter Fastq list by read count
+    Filter FASTQs based on minimum read count
     """
 
-    def init(self, fastqs, counts, min_reads=1000):
+    def init(self, fastqs, min_reads=1000):
+        # Location of outputs
         self.add_output("fastqs", ListParam())
 
     def setup(self):
-        for fq in self.args.fastqs:
-            fc, bc, number = split_fastq_name(fq)
-            if bc is not None:
-                name = f"{fc}_{bc}"
-            else:
-                name = fc
-            if self.args.counts[name] >= self.args.min_reads:
-                self.output.fastqs.append(fq)
-        if len(self.output.fastqs) == 0:
-            raise PipelineError(f"No FASTQs passed minimum read filter "
-                                f"({self.args.min_reads} reads)")
+        # Put Fastqs into groups
+        fq_groups = group_fastqs(self.args.fastqs)
+        if self.args.fastqs[0].endswith(".fastq.gz"):
+            ftype = "fastqgz"
+        elif self.args.fastqs[0].endswith(".fastq"):
+            ftype = "fastq"
+        else:
+            raise Exception("Unknown extension for Fastqs")
+        # For each group, check if number of reads exceeds
+        # the minimum cutoff
+        for fc in fq_groups:
+            barcodes = fq_groups[fc]
+            for bc in barcodes:
+                if bc is not None:
+                    name = f"{fc}_{bc}"
+                else:
+                    name = fc
+                print(f"====> {name}")
+                nreads = 0
+                passed_filter = False
+                for fq in barcodes[bc]:
+                    if ftype == "fastqgz":
+                        with gzip.open(fq, "rt") as fp:
+                            fq_nreads = len(fp.readlines())/4
+                    elif ftype == "fastq":
+                        with open(fq, "rt") as fp:
+                            fq_nreads = len(fp.readlines())/4
+                    print(f"-- {fq}")
+                    nreads += fq_nreads
+                    print(f"   ...{nreads}")
+                    if nreads >= self.args.min_reads:
+                        # As soon as minimum reads is reached then
+                        # filter has passed - stop counting
+                        passed_filter = True
+                        break
+                if passed_filter:
+                    print("====> passed filter")
+                    for fq in barcodes[bc]:
+                        self.output.fastqs.append(fq)
+                else:
+                    print("====> failed filter")
 
 
 class FastqScreen(PipelineTask):
