@@ -560,9 +560,8 @@ def fetch(project_dir, target_dir, file_types=None, dry_run=False,
 
 
 def qc(inputs, out_dir, fastq_screen_conf_file, qc_modules,
-       filter_fastqs_min_reads=None, project_dir=None,
-       runners=None, default_runner=None, enable_conda=False,
-       max_jobs=None, max_slots=None, poll_interval=None):
+       filter_fastqs_min_reads=None, runners=None, default_runner=None,
+       enable_conda=False, max_jobs=None, max_slots=None, poll_interval=None):
     """
     Run the Nanopore QC pipeline
 
@@ -573,7 +572,6 @@ def qc(inputs, out_dir, fastq_screen_conf_file, qc_modules,
         fastq_screen_conf_file (str): path to FastqScreen configuration file
         qc_modules (list): list of QC module names to run
         filter_fastqs_min_reads (int): minimum number of reads to filter fastqs
-        project_dir (str): optional, path to PromethION project directory
         runners (dict): optional, dictionary of job runners; recognised runner
           IDs are: "fastq_screen", "nanoplot"
         default_runner (str): optional, default job runner (overridden by
@@ -610,6 +608,7 @@ def qc(inputs, out_dir, fastq_screen_conf_file, qc_modules,
         # If no flow cells collected then assume inputs are flow cells
         if not flow_cells:
             flow_cells = inputs
+            project_dir = None
         # Gather FASTQs from flow cells
         for fc in flow_cells:
             try:
@@ -926,7 +925,6 @@ def bcf_nanopore_main():
         else:
             out_dir = os.path.abspath(args.out_dir)
         return qc(args.inputs, out_dir, fastq_screen_conf_file, qc_modules,
-                  #project_dir=args.project_dir,
                   runners=runners, default_runner=default_runner,
                   enable_conda=settings.conda.enable_conda,
                   max_jobs=max_jobs, max_slots=max_slots, poll_interval=poll_interval)

@@ -1032,8 +1032,7 @@ class TestQcCommand(unittest.TestCase):
         out_dir = os.path.join(self.wd, "nanopore_qc")
         # Run the QC command
         status = cli_qc(flowcell_dirs, out_dir, self.fastq_screen_conf_file, ["nanoplot", "fastq_screen"],
-                        filter_fastqs_min_reads=1, project_dir=project_dir,
-                        poll_interval=POLL_INTERVAL, max_jobs=1)
+                        filter_fastqs_min_reads=1, poll_interval=POLL_INTERVAL, max_jobs=1)
         self.assertEqual(status, 0)
 
     def test_qc_fastqs(self):
@@ -1055,8 +1054,7 @@ class TestQcCommand(unittest.TestCase):
         out_dir = os.path.join(self.wd, "nanopore_qc")
         # Run the QC command
         status = cli_qc(fastqs, out_dir, self.fastq_screen_conf_file, ["nanoplot", "fastq_screen"],
-                        filter_fastqs_min_reads=1, project_dir=None,
-                        poll_interval=POLL_INTERVAL, max_jobs=1)
+                        filter_fastqs_min_reads=1, poll_interval=POLL_INTERVAL, max_jobs=1)
         self.assertEqual(status, 0)
 
     def test_qc_fail_for_multiple_project_dirs(self):
