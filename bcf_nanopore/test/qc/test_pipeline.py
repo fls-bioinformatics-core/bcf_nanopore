@@ -68,7 +68,7 @@ class TestNanoporeQC(unittest.TestCase):
             fastqs,
             self.fastq_screen_conf_file,
             out_dir,
-            filter_fastqs_min_reads=1,
+            filter_fastqs_min_reads=6,
             poll_interval=POLL_INTERVAL,
             max_jobs=1)
         # Check the outputs
