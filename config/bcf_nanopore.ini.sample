@@ -11,9 +11,28 @@
 ;custom_project_metadata = supplier
 ;custom_run_metadata = analysts,order_numbers
 
+# Job scheduler defaults
+;[scheduler]
+;max_concurrent_jobs = 12
+;max_cores = None
+;poll_interval = 5
+
+# Custom defaults for running QC
+;[qc]
+;modules = nanoplot,fastq_screen
+;fastq_screen_conf_file = /path/to/fastqscreen.conf
+
+# Conda dependency resolution
+# See https://auto-process-ngs.readthedocs.io/en/latest/configuration.html#using-conda-to-resolve-pipeline-dependencies
+;[conda]
+;enable_conda = False
+;env_dir = None
+
 # Define runners for specific jobs
 ;[runners]
 ;rsync = SimpleJobRunner
+;fastq_screen = SimpleJobRunner(nslots=8)
+;nanoplot = SimpleJobRunner(nslots=8)
 
 # Templates for reporting
 # Assign fields to template names for reporting projects

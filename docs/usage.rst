@@ -165,6 +165,59 @@ the items in the metadata files even if no values were updated; this is
 intended for updating "legacy" analysis project directories (i.e. those
 produced by earlier versions of the software).
 
+------
+``qc``
+------
+
+Usage:
+
+::
+
+    bcf_nanopore qc [ PROJECT_DIR | FLOWCELL_DIR [FLOWCELL_DIR ...] | FASTQ [FASTQ ...]] [options...]
+
+Run the QC pipeline on PromethION data.
+
+The pipeline requires FASTQ files as input, which can be specified in one of
+three ways:
+
+* Specifying a single PromethION project directory ``PROJECT_DIR``, which will
+  operate on all FASTQs discovered within, or
+* Specifying one or more flowcell directories ``FLOWCELL_DIR [FLOWCELL_DIR ...]``,
+  which will operate on all FASTQs discovered within those directories, or
+* Specifying one or more individual FASTQs ``FASTQ [FASTQ ...]``, which will
+  operate on those FASTQ files.
+
+It is not permitted to mix input types in a single QC run.
+
+The pipeline groups FASTQs by flowcell and name. The following QC modules are
+implemented:
+
+* ``nanoplot``: this runs NanoPlot on all the FASTQS in a group
+* ``fastq_screen``: this runs FastqScreen on merged and subsampled FASTQS
+  which are created from the FASTQs in each group
+
+If a group contains fewer than a minimum number of reads then it is omitted
+from the QC (this removes barcodes that were not included in the PromethION
+run).
+
+The options for the QC command are:
+
+* ``--modules MODULE1[,MODULE2...]``: specify the QC modules to execute (default:
+  run all QC modules)
+* ``-o OUT_DIR``: write the QC results and report under ``OUT_DIR``
+* ``-c CONF_FILE``: specify the configuration file for FastqScreen (default:
+  use the setting in the configuration file)
+
+Other options (for example the runners to use for each module) must be set via the
+configuration file.
+
+Notes:
+
+* FastqScreen uses ``minimap2``; the conf file for this should specify the
+  paths and basenames for FASTA files (i.e. without the ``.fa.gz``
+  extension). Note that FastqScreen does not appear to recognise ``.mmi``
+  index files for ``minimap2``.
+
 ----------
 ``report``
 ----------

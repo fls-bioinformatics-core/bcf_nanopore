@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
 #
 #     mock.py: utilities for creating mock data for tests
-#     Copyright (C) University of Manchester 2024-2025 Peter Briggs
+#     Copyright (C) University of Manchester 2024-2026 Peter Briggs
 #
 
 """
 Utilities for creating mock data for testing
 """
+import os
 import json
+import argparse
+import gzip
 from pathlib import Path
 from textwrap import dedent
 
 from .analysis import ProjectInfo
-from .analysis import SamplesInfo
-from .analysis import FlowcellBasecallsInfo
 
 # Example JSON data from HTML files
 
@@ -105,6 +106,14 @@ JSON_DATA_25 = {
          }
     ]
 }
+
+
+# Test FASTQ read
+FQ_READ = """@432b5bb9-932d-4295-a07f-ab0728acb2e2 runid=50109f28-37e9-4f00-7b64-55ea624ebb57 ch=1234 start_time=2026-11-06T08:23:53.991043+01:00 flow_cell_id=PBC32123 basecall_gpu=NVIDIA_A800_80GB_PCIe protocol_group_id=Example sample_id=Example01 barcode=barcode01 barcode_alias=barcode01 parent_read_id=432b5bb9-932d-4295-a07f-ab0728acb2e2 basecall_model_version_id=dna_r10.4.1_e8.2_400bps_hac@v4.3.0
+ACTGTAGTCTACTCGTTGGGGTTGTGCCAGCAATTGGCAAAGTCCTACCGTGACAAGAAAGTTGTCGGTGTCTTTGTGACTTGCCTGTCGCTCTATCTTCAGAGGAGTTTAACGTCTCCATGAAATCCCTGTCTGAAGGGCTGACGCATGCTATCATGAGCTCTTGTCGGCCAAAGCAATATCAGCACCAACAGAAACACAAAGACACCGACAACTTTCTTGTGGGCTGCTACCCCAAGGGAATCCTGCAAGAGTCTTGTCCCCAAAGCGCAATCCCAATCCCAATGGTTTGAGCTTAGAGTCTCTGTAAGGGACATGGGTGGCTCTCTT
++
+####%%#%$'()($$&''%%%&(&&$$%#$$%&())*)%$#%$%&(+001CCFEKFCDHIKGJSFJQFFEHHHISKSHDGLIJOFGDFA>==AF;8877289<DDE;::;CGA@@?AFIEKHIJKGFELJJIRPGHGFSGFGIPE@??@CCB????DFFH>=11111.))**00:28B??>7>78GB=>>@DA@@ADDHEBLJGS@@HKGSEB,3678:9:=?@@CSIHA:::;<+)()13<;=?SFJSFHLIGKIFLIHG?9421****11,MOSKBLJEEGGIGSHDFFIIKKLHLKOFJADD88:;@><664589AA891--,)*%%
+"""
 
 
 class MockPromethionDataDir:
@@ -642,3 +651,131 @@ def create_json_report(file_name, minknow_version="25"):
                             f"version '{minknow_version}'")
         # Write the mock JSON file
         Path(file_name).write_text(json.dumps(json_data) + "\n")
+
+
+class MockNanoPlot:
+    """
+    Create mock NanoPlot executable
+
+    This class can be used to create a mock
+    NanoPlot executable, which can be used
+    in place of the actual program for testing.
+
+    To create a mock script, use the 'create' static
+    method, e.g.
+
+    >>> MockNanoPlot.create("/tmpbin/NanoPlot")
+
+    The resulting executable will generate mock outputs
+    when run on Fastq files (ignoring their content).
+
+    The executable can be configured on creation to
+    produce different error conditions when run:
+
+    - the exit code can be set to an arbitrary value
+      via the `exit_code` argument
+    """
+
+    @staticmethod
+    def create(path,version=None,no_outputs=False,
+               exit_code=0):
+        """
+        Create a mock NanoPlot executable
+
+        Arguments:
+          path (str): path to the new executable
+            to create. The final executable must
+            not exist, however the directory it
+            will be created in must.
+          version (str): explicit version string
+          no_outputs (bool): if True then make
+            don't create mock outputs for NanoPlot
+          exit_code (int): exit code that the
+            mock executable should complete
+            with
+        """
+        path = os.path.abspath(path)
+        print("Building mock executable: %s" % path)
+        # Don't clobber an existing executable
+        assert(os.path.exists(path) is False)
+        with open(path, 'wt') as fp:
+            fp.write("""#!/usr/bin/env python
+import sys
+from bcf_nanopore.mock import MockNanoPlot
+sys.exit(MockNanoPlot(version=%s,
+                      no_outputs=%s,
+                      exit_code=%s).main(sys.argv[1:]))
+""" % (("\"%s\"" % version if version is not None else None),
+       no_outputs,
+       exit_code))
+            os.chmod(path, 0o775)
+        with open(path, 'rt') as fp:
+            print("NanoPlot:")
+            print("%s" % fp.read())
+        return path
+
+    def __init__(self,version=None,no_outputs=False,
+                 exit_code=0):
+        """
+        Internal: configure the mock NanoPlot
+        """
+        if version is None:
+            version = "1.46.2"
+        self._version = str(version)
+        self._no_outputs = no_outputs
+        self._exit_code = exit_code
+
+    def main(self,args):
+        """
+        Internal: provides mock NanoPlot functionality
+        """
+        # No args
+        if not args:
+            return self._exit_code
+        # Deal with arguments
+        p = argparse.ArgumentParser()
+        p.add_argument("-t",action="store")
+        p.add_argument("--fastq",action="store",nargs="+")
+        p.add_argument("--raw",action="store_true")
+        args = p.parse_args(args)
+        # Create NanoPlot outputs
+        if not self._no_outputs:
+            for fastq in args.fastq:
+                # Check input file
+                if not os.path.exists(fastq):
+                    print("%s: fastq file not found" % fastq)
+                    return 1
+                # Create mock outputs
+                for name in ["NanoPlot-report.html",
+                             "NanoStats.txt",
+                             "NanoPlot-data.tsv.gz",
+                             "LengthvsQualityScatterPlot_dot.png",
+                             "LengthvsQualityScatterPlot_kde.png",
+                             "Non_weightedHistogramReadlength.png",
+                             "Non_weightedLogTransformed_HistogramReadlength.png",
+                             "WeightedHistogramReadlength.png",
+                             "WeightedLogTransformed_HistogramReadlength.png",
+                             "Yield_By_Length.png"]:
+                    with open(name, "wt") as fp:
+                        fp.write("")
+        return self._exit_code
+
+
+def mock_fastq(fastq, nreads=0):
+    """
+    Create a mock FASTQ file for testing
+
+    Args:
+      fastq (str): path to the FASTQ file
+      nreads (int): number of reads to populate
+        the FASTQ file with (default: don't add
+        any reads i.e. file will be empty)
+    """
+    if fastq.endswith(".gz"):
+        with gzip.open(fastq, "wt") as fp:
+            for _ in range(nreads):
+                fp.write(FQ_READ)
+    else:
+        with open(fastq, "wt") as fp:
+            for _ in range(nreads):
+                fp.write(FQ_READ)

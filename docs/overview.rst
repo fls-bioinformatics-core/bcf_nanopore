@@ -27,6 +27,9 @@ The utilities support the following workflow:
    then both the analysis directory and the copied subset in the
    data directory can be updated to reflect this
    (``bcf_nanopore update`` and rerunning ``bcf_nanopore fetch``)
+5. A basic QC pipeline is available which can be run on either the
+   data from a whole project, on individual flowcells, or individual
+   FASTQs (``bcf_nanopore qc``)
 
 There also are functions to support examining the contents of (and
 metadata associated with) project directories, and reporting information
